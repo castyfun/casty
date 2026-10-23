@@ -1,0 +1,68 @@
+---
+title: Messages Snapchain
+description: "De quoi se compose un message Farcaster, comment il passe par votre nœud, et ce que casty vérifie avant d'en envoyer un."
+sidebar:
+  order: 7
+---
+
+Tout ce que fait un compte sur Farcaster est un message signé : un cast, un like, un follow, une
+modification de profil, un changement de clé. Les nœuds vérifient chaque message et stockent ceux
+qu'ils acceptent. Le protocole est décrit dans
+[Messages](https://docs.farcaster.xyz/learn/what-is-farcaster/messages) dans la documentation de
+Farcaster.
+
+## Ce que contient un message
+
+| Champ | Contenu |
+| --- | --- |
+| `data` | le contenu : type, fid, horodatage, réseau, et un corps propre au type |
+| `hash` | le hachage BLAKE3 de `data`, 20 octets |
+| `signature` | la signature Ed25519 sur le hachage |
+| `signer` | la clé publique qui a signé, qui doit être enregistrée pour le fid |
+
+casty ne les assemble jamais à la main ; il appelle les constructeurs de `@farcaster/core`
+(`makeCastAdd`, `makeReactionAdd`, `makeLinkAdd` et les autres) avec votre clé d'application.
+
+Les horodatages comptent les secondes depuis l'époque Farcaster, le 2021-01-01 00:00:00 UTC. Les
+nœuds rejettent un message horodaté de plus de 15 minutes dans le futur, c'est pourquoi
+`casty doctor` et l'étape 1 vérifient votre horloge.
+
+## Casts
+
+Un cast contient jusqu'à 320 octets de texte UTF-8, ou jusqu'à 1024 octets en cast long ; casty
+choisit le type d'après la longueur. Le texte se compte en octets, pas en caractères, si bien qu'un
+cast en cyrillique ou avec des emoji contient moins de caractères.
+
+Les mentions ne font pas partie du texte. Un cast stocke les fids mentionnés et les positions en
+octets où ils se placent, et le fil remet `@name` à sa place. Une réponse désigne son parent par fid
+et hachage ; une publication dans un canal désigne à la place l'URL du canal. Les liens vont dans les
+embeds, `--embed <url>` en ligne de commande.
+
+Supprimer un cast publie un `CAST_REMOVE`. Les likes et les recasts sont des réactions, les follows
+sont des links, et chacun a aussi un message de suppression.
+
+## Shards
+
+Snapchain découpe le réseau en shards. Les casts, réactions, follows et le profil d'un compte se
+trouvent sur un seul shard de messages, choisi d'après les 4 premiers octets du SHA-256 de son fid.
+Les changements de clé et quelques autres messages qui concernent tout le compte vont sur le shard 0.
+C'est pourquoi `status` et `casty doctor` affichent une ligne par shard : le nœud n'est synchronisé
+que lorsque chaque shard l'est.
+
+## En envoyer un à travers votre nœud
+
+1. casty construit et signe le message et envoie ses octets à `POST /v1/submitMessage`.
+2. Le nœud le vérifie et répond `200`, ou une erreur avec la raison.
+3. Un nœud de lecture ne garde rien : il transmet le message par gossip et l'oublie. `200` signifie
+   accepté pour relais, pas stocké.
+4. Une fois qu'un validateur inclut le message dans un bloc, chaque nœud, le vôtre compris, l'a.
+
+casty relit donc le message, par exemple avec `castById` après un cast, jusqu'à ce qu'il apparaisse ;
+[Nœuds de lecture et validateurs](../../concepts/read-nodes-vs-validators/) donne les délais. Les
+mêmes octets ont le même hachage, si bien qu'un message envoyé deux fois est stocké une fois.
+
+## Stockage
+
+Chaque message qu'un compte conserve compte dans son stockage, suppressions comprises : un
+`CAST_REMOVE` reste comme trace que le cast a disparu. Voir
+[Location de stockage](../../concepts/storage-rent/).

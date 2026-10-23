@@ -1,0 +1,189 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`clients --json 1`] = `
+[
+  {
+    "app": "app-alpha",
+    "expiresAt": null,
+    "key": "0xd0f6dfa507419ec3531d527f20f37417fc819535714ff3ef6c8c59cf1b6f9fb0",
+    "ours": false,
+    "requestFid": 2000009001,
+    "scopes": [],
+    "type": "onchain",
+  },
+]
+`;
+
+exports[`doctor --json 1`] = `
+{
+  "clockSkewSeconds": Any<Number>,
+  "configDir": "/nonexistent/casty",
+  "fid": null,
+  "keyPresent": false,
+  "node": Any<String>,
+  "shards": [
+    {
+      "blockDelay": 0,
+      "maxHeight": 1000100,
+      "shard": 0,
+    },
+    {
+      "blockDelay": 0,
+      "maxHeight": 1000101,
+      "shard": 1,
+    },
+    {
+      "blockDelay": 0,
+      "maxHeight": 1000102,
+      "shard": 2,
+    },
+  ],
+  "synced": true,
+  "version": "0.0.0-mock",
+}
+`;
+
+exports[`feed --json 1`] = `
+[
+  {
+    "app": {
+      "fid": 2000009001,
+      "name": "app-alpha",
+    },
+    "author": "user-2000000002",
+    "channel": null,
+    "embeds": [
+      "https://example.com/2000000002/3",
+    ],
+    "fid": 2000000002,
+    "hash": "0x973d398ad75e1f25fa780085f3c22d30b01d2504",
+    "mentions": [
+      {
+        "fid": 2000000001,
+        "name": "casty-test",
+        "position": 0,
+      },
+    ],
+    "ours": false,
+    "parent": null,
+    "parentAuthor": null,
+    "signer": "0xd0f6dfa507419ec3531d527f20f37417fc819535714ff3ef6c8c59cf1b6f9fb0",
+    "text": " thanks for the pointer, it worked.",
+    "time": "2026-09-30T23:50:00.000Z",
+    "timestamp": 181353000,
+  },
+  {
+    "app": {
+      "fid": 2000009002,
+      "name": "app-beta",
+    },
+    "author": "user-2000000003",
+    "channel": null,
+    "embeds": [],
+    "fid": 2000000003,
+    "hash": "0x2df06d74ae20988576de1e873e1050b7bba9580e",
+    "mentions": [],
+    "ours": false,
+    "parent": null,
+    "parentAuthor": null,
+    "signer": "0xa02392e81450f4dd957ce9fb8c8aab9b4eeade0978d6659aabc355e651d8b0c9",
+    "text": "gm. Coffee first, then the backlog.",
+    "time": "2026-09-30T23:49:59.000Z",
+    "timestamp": 181352999,
+  },
+  {
+    "app": {
+      "fid": 2000009001,
+      "name": "app-alpha",
+    },
+    "author": "user-2000000004",
+    "channel": null,
+    "embeds": [],
+    "fid": 2000000004,
+    "hash": "0xa0843b822791ec891bce16f96b6794b7cddcdc60",
+    "mentions": [],
+    "ours": false,
+    "parent": {
+      "fid": 2000000003,
+      "hash": "0x2df06d74ae20988576de1e873e1050b7bba9580e",
+    },
+    "parentAuthor": "user-2000000003",
+    "signer": "0x944bab1cdff15c7a364c9303a75ea7e68758ef6426d26ddbe85edddd57606839",
+    "text": "Same here. It took me a weekend to get right.",
+    "time": "2026-09-30T23:49:58.000Z",
+    "timestamp": 181352998,
+  },
+]
+`;
+
+exports[`storage --json 1`] = `
+{
+  "fid": 2000000001,
+  "stores": [
+    {
+      "limit": 100,
+      "percent": 0,
+      "store": "CASTS",
+      "used": 0,
+    },
+    {
+      "limit": 200,
+      "percent": 6,
+      "store": "LINKS",
+      "used": 12,
+    },
+    {
+      "limit": 200,
+      "percent": 0,
+      "store": "REACTIONS",
+      "used": 0,
+    },
+    {
+      "limit": 25,
+      "percent": 4,
+      "store": "USER_DATA",
+      "used": 1,
+    },
+    {
+      "limit": 5,
+      "percent": 0,
+      "store": "VERIFICATIONS",
+      "used": 0,
+    },
+  ],
+  "units": 1,
+  "warnings": [],
+}
+`;
+
+exports[`whoami --json 1`] = `
+{
+  "activeKey": StringMatching /\\^0x\\[0-9a-f\\]\\{64\\}\\$/,
+  "custodyAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "fid": 2000000001,
+  "storage": {
+    "CASTS": {
+      "limit": 100,
+      "used": 0,
+    },
+    "LINKS": {
+      "limit": 200,
+      "used": 12,
+    },
+    "REACTIONS": {
+      "limit": 200,
+      "used": 0,
+    },
+    "USER_DATA": {
+      "limit": 25,
+      "used": 1,
+    },
+    "VERIFICATIONS": {
+      "limit": 5,
+      "used": 0,
+    },
+    "units": 1,
+  },
+  "username": "casty-test",
+}
+`;

@@ -1,0 +1,58 @@
+---
+title: Snapchain 消息
+description: 一条 Farcaster 消息由什么组成，它如何经过你的节点，以及 casty 在发送之前检查什么。
+sidebar:
+  order: 7
+---
+
+一个账户在 Farcaster 上做的一切都是一条签名消息：一条 cast、一次点赞、一次关注、一次资料修改、一次密钥变更。
+节点检查每条消息，并保存它们接受的那些。该协议在 Farcaster 文档的
+[Messages](https://docs.farcaster.xyz/learn/what-is-farcaster/messages) 中有介绍。
+
+## 一条消息包含什么
+
+| 字段 | 内容 |
+| --- | --- |
+| `data` | 内容：类型、fid、时间戳、网络，以及对应类型的消息体 |
+| `hash` | `data` 的 BLAKE3 哈希，20 字节 |
+| `signature` | 对该哈希的 Ed25519 签名 |
+| `signer` | 签名所用的公钥，它必须注册到该 fid |
+
+casty 从不手工组装这些字段；它用你的应用密钥调用 `@farcaster/core` 的构建函数
+（`makeCastAdd`、`makeReactionAdd`、`makeLinkAdd` 等）。
+
+时间戳以自 Farcaster 纪元 2021-01-01 00:00:00 UTC 以来的秒数计。节点会拒绝时间戳在未来 15 分钟以上的消息，
+这就是 `casty doctor` 和第 1 步检查你的时钟的原因。
+
+## Cast
+
+一条 cast 最多包含 320 字节的 UTF-8 文本，作为长 cast 时最多 1024 字节；casty 根据长度选择类型。
+文本按字节而不是字符计数，所以用西里尔字母书写或带有表情符号的 cast 能容纳的字符更少。
+
+提及不是文本的一部分。一条 cast 保存被提及的 fid 以及它们所在位置的字节偏移量，时间线再把 `@name`
+放回原处。回复通过 fid 和哈希指向它的父 cast；频道帖子则改为指向频道的 URL。链接放在嵌入中，
+即命令行上的 `--embed <url>`。
+
+删除一条 cast 会发布一条 `CAST_REMOVE`。点赞和 recast 属于反应，关注属于链接，每一种也都有对应的移除消息。
+
+## 分片
+
+Snapchain 把网络分成多个分片。一个账户的 cast、反应、关注和个人资料位于同一个消息分片上，
+该分片由其 fid 的 SHA-256 的前 4 个字节选出。密钥变更和其他少数作用于整个账户的消息进入分片 0。
+这就是 `status` 和 `casty doctor` 每个分片打印一行的原因：只有每个分片都同步了，节点才算已同步。
+
+## 通过你的节点发送一条消息
+
+1. casty 构建并签署消息，然后把它的字节提交到 `POST /v1/submitMessage`。
+2. 节点检查它，返回 `200`，或者一个带原因的错误。
+3. 只读节点什么也不保存：它通过 gossip 把消息传出去，然后就忘了它。`200` 表示已接受并转发，而不是已保存。
+4. 一旦某个验证者把消息纳入区块，每个节点（包括你的）都会拥有它。
+
+因此 casty 会读回该消息，例如在发布 cast 之后用 `castById`，直到它出现；
+[只读节点与验证者](../../concepts/read-nodes-vs-validators/)给出了具体时间。相同的字节有相同的哈希，
+所以发送两次的消息只保存一次。
+
+## 存储
+
+一个账户保存的每条消息都计入它的存储，移除消息也不例外：`CAST_REMOVE` 会作为该 cast 已删除的记录保留下来。
+见[存储租用](../../concepts/storage-rent/)。

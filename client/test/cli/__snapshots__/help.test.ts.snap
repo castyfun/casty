@@ -1,0 +1,418 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`help for cast 1`] = `
+"Usage: casty cast [options] <text>
+
+publish a cast (up to 320 bytes, or 1024 as a long cast)
+
+Arguments:
+  text                     what to say; @names go out as mentions
+
+Options:
+  --reply <cast>           reply to this cast: its number in the last list shown
+                           (casty feed, mentions, thread or web), <fid>:<0x
+                           hash>, or its farcaster.xyz link
+  --channel <channel>      post in this channel: its parent url, or /name once
+                           shown
+  --embed <url>            embed a url (repeatable)
+  --no-mentions            send @names as text, not as mentions
+  --no-allow-fname-server  look @names up with your node only; by default names
+                           it does not know are looked up on
+                           fnames.farcaster.xyz (public, no key)
+  -h, --help               display help for command
+"
+`;
+
+exports[`help for casty 1`] = `
+"Usage: casty [options] [command]
+
+Read and write Farcaster through your own Snapchain node.
+
+Options:
+  --node <url>                    node HTTP API (default:
+                                  "http://127.0.0.1:3381")
+  --json                          print results as JSON
+  --config <dir>                  config directory (default:
+                                  $XDG_CONFIG_HOME/casty)
+  --quiet                         print results only, no progress notes
+  -h, --help                      display help for command
+
+Set up:
+  doctor                          check the node, its sync, the local clock and
+                                  the local setup
+  init [options]                  add a gasless app key for your fid: with --fid
+                                  and your wallet in casty web, or from your
+                                  seed phrase
+  whoami                          your fid, username, custody address, active
+                                  app key and storage
+  key                             your app keys
+
+Read:
+  feed [options]                  newest casts from you and the accounts you
+                                  follow, read from your node
+  mentions [options]              casts that mention you and replies to your
+                                  casts, newest first
+  thread <cast>                   a cast with what it answers and its replies,
+                                  numbered as the feed is
+  clients [options]               the app keys of a fid and which app requested
+                                  each
+  storage [options]               storage units and how full each message store
+                                  is
+  node                            about the node itself
+
+Write:
+  cast [options] <text>           publish a cast (up to 320 bytes, or 1024 as a
+                                  long cast)
+  reply [options] <cast> <text>   reply to a cast; same as cast --reply
+  delete <cast>                   delete one of your casts
+  like <cast>                     like a cast
+  unlike <cast>                   take a like back
+  recast <cast>                   recast a cast to your followers
+  unrecast <cast>                 take a recast back
+  follow [options] <fid|@name>    follow an account
+  unfollow [options] <fid|@name>  stop following an account
+
+In a browser:
+  web [options]                   the feed, threads and a compose box in a
+                                  browser, on this machine or a phone
+  serve [options]                 the page over an index of the feed, with push;
+                                  on the node's host behind HTTPS, which
+                                  1-node.sh serve installs
+
+Commands:
+  help [command]                  display help for command
+
+Examples:
+  casty feed --since 24h --no-replies
+  casty feed --exclude-app <name>     leave out casts posted through one app
+  casty like 2                        the second cast of the last casty feed
+  casty reply 2 "agreed"
+  casty follow @name
+  casty web                           the feed in your browser, or on your phone
+"
+`;
+
+exports[`help for clients 1`] = `
+"Usage: casty clients [options]
+
+the app keys of a fid and which app requested each
+
+Options:
+  --fid <fid>  whose keys (default: yours)
+  -h, --help   display help for command
+"
+`;
+
+exports[`help for delete 1`] = `
+"Usage: casty delete [options] <cast>
+
+delete one of your casts
+
+Arguments:
+  cast        your cast: its 0x hash, its number in the last list shown (casty
+              feed, mentions, thread or web), <fid>:<0x hash>, or its
+              farcaster.xyz link
+
+Options:
+  -h, --help  display help for command
+"
+`;
+
+exports[`help for doctor 1`] = `
+"Usage: casty doctor [options]
+
+check the node, its sync, the local clock and the local setup
+
+Options:
+  -h, --help  display help for command
+"
+`;
+
+exports[`help for feed 1`] = `
+"Usage: casty feed [options]
+
+newest casts from you and the accounts you follow, read from your node
+
+Options:
+  --limit <n>               how many casts (default: 50)
+  --no-replies              leave out replies
+  --since <duration>        only casts newer than this, e.g. 24h
+  --channel <channel>       only casts in this channel: its parent url, or /name
+                            once shown
+  --only-app <name|fid>     only casts signed by keys this app requested
+                            (repeatable)
+  --exclude-app <name|fid>  leave out casts signed by keys this app requested
+                            (repeatable)
+  --fids <list>             read these accounts instead of your follows: fids or
+                            @names, e.g. 2,@alice
+  --refresh                 ignore the 10-minute follow list cache
+  -h, --help                display help for command
+"
+`;
+
+exports[`help for follow 1`] = `
+"Usage: casty follow [options] <fid|@name>
+
+follow an account
+
+Arguments:
+  fid|@name                a fid, or a username
+
+Options:
+  --no-allow-fname-server  resolve @names with your node only; by default names
+                           the node does not know are looked up on
+                           fnames.farcaster.xyz (public, no key)
+  -h, --help               display help for command
+"
+`;
+
+exports[`help for init 1`] = `
+"Usage: casty init [options]
+
+add a gasless app key for your fid: with --fid and your wallet in casty web, or
+from your seed phrase
+
+Options:
+  --fid <fid>              set up for this fid with no seed phrase and no key:
+                           casty web then adds a key with your wallet
+  --mnemonic-stdin         read the seed phrase from stdin instead of a hidden
+                           prompt
+  --address-index <n>      custody account index in the seed phrase (default: 0)
+  --scopes <list>          what the key may sign: cast,reaction,link,user-data
+                           (default: "cast,reaction,link")
+  --ttl <duration>         key lifetime, renewed by every use, at most 90d
+                           (default: "30d")
+  --app-fid <fid>          fid of the app requesting the key (default: your own
+                           fid)
+  --app-address-index <n>  custody account index of --app-fid in the same seed
+                           phrase
+  --op-rpc <url>           OP Mainnet RPC, only needed when the node cannot map
+                           your address to a fid
+  -h, --help               display help for command
+"
+`;
+
+exports[`help for key 1`] = `
+"Usage: casty key [options] [command]
+
+your app keys
+
+Options:
+  -h, --help              display help for command
+
+Commands:
+  list                    keys registered to your fid, marking the ones casty
+                          holds
+  revoke [options] [key]  remove an app key from your fid (KEY_REMOVE); with no
+                          key, your newest
+  help [command]          display help for command
+"
+`;
+
+exports[`help for key list 1`] = `
+"Usage: casty key list [options]
+
+keys registered to your fid, marking the ones casty holds
+
+Options:
+  -h, --help  display help for command
+"
+`;
+
+exports[`help for key revoke 1`] = `
+"Usage: casty key revoke [options] [key]
+
+remove an app key from your fid (KEY_REMOVE); with no key, your newest
+
+Arguments:
+  key                  0x public key to revoke
+
+Options:
+  --self               sign the removal with the key itself; no seed phrase
+                       needed
+  --mnemonic-stdin     read the seed phrase from stdin instead of a hidden
+                       prompt
+  --address-index <n>  custody account index in the seed phrase (default: 0)
+  -h, --help           display help for command
+"
+`;
+
+exports[`help for like 1`] = `
+"Usage: casty like [options] <cast>
+
+like a cast
+
+Arguments:
+  cast        the cast: its number in the last list shown (casty feed, mentions,
+              thread or web), <fid>:<0x hash>, or its farcaster.xyz link
+
+Options:
+  -h, --help  display help for command
+"
+`;
+
+exports[`help for mentions 1`] = `
+"Usage: casty mentions [options]
+
+casts that mention you and replies to your casts, newest first
+
+Options:
+  --limit <n>  how many casts (default: 30)
+  -h, --help   display help for command
+"
+`;
+
+exports[`help for node 1`] = `
+"Usage: casty node [options] [command]
+
+about the node itself
+
+Options:
+  -h, --help      display help for command
+
+Commands:
+  status          sync status only, for scripts: exit code 1 until synced
+  help [command]  display help for command
+"
+`;
+
+exports[`help for node status 1`] = `
+"Usage: casty node status [options]
+
+sync status only, for scripts: exit code 1 until synced
+
+Options:
+  -h, --help  display help for command
+"
+`;
+
+exports[`help for recast 1`] = `
+"Usage: casty recast [options] <cast>
+
+recast a cast to your followers
+
+Arguments:
+  cast        the cast: its number in the last list shown (casty feed, mentions,
+              thread or web), <fid>:<0x hash>, or its farcaster.xyz link
+
+Options:
+  -h, --help  display help for command
+"
+`;
+
+exports[`help for reply 1`] = `
+"Usage: casty reply [options] <cast> <text>
+
+reply to a cast; same as cast --reply
+
+Arguments:
+  cast                     the cast: its number in the last list shown (casty
+                           feed, mentions, thread or web), <fid>:<0x hash>, or
+                           its farcaster.xyz link
+  text                     what to say; @names go out as mentions
+
+Options:
+  --no-mentions            send @names as text, not as mentions
+  --no-allow-fname-server  look @names up with your node only; by default names
+                           it does not know are looked up on
+                           fnames.farcaster.xyz (public, no key)
+  -h, --help               display help for command
+"
+`;
+
+exports[`help for storage 1`] = `
+"Usage: casty storage [options]
+
+storage units and how full each message store is
+
+Options:
+  --fid <fid>  whose storage (default: yours)
+  -h, --help   display help for command
+"
+`;
+
+exports[`help for thread 1`] = `
+"Usage: casty thread [options] <cast>
+
+a cast with what it answers and its replies, numbered as the feed is
+
+Arguments:
+  cast        the cast: its number in the last list shown (casty feed, mentions,
+              thread or web), <fid>:<0x hash>, or its farcaster.xyz link
+
+Options:
+  -h, --help  display help for command
+"
+`;
+
+exports[`help for unfollow 1`] = `
+"Usage: casty unfollow [options] <fid|@name>
+
+stop following an account
+
+Arguments:
+  fid|@name                a fid, or a username
+
+Options:
+  --no-allow-fname-server  resolve @names with your node only; by default names
+                           the node does not know are looked up on
+                           fnames.farcaster.xyz (public, no key)
+  -h, --help               display help for command
+"
+`;
+
+exports[`help for unlike 1`] = `
+"Usage: casty unlike [options] <cast>
+
+take a like back
+
+Arguments:
+  cast        the cast: its number in the last list shown (casty feed, mentions,
+              thread or web), <fid>:<0x hash>, or its farcaster.xyz link
+
+Options:
+  -h, --help  display help for command
+"
+`;
+
+exports[`help for unrecast 1`] = `
+"Usage: casty unrecast [options] <cast>
+
+take a recast back
+
+Arguments:
+  cast        the cast: its number in the last list shown (casty feed, mentions,
+              thread or web), <fid>:<0x hash>, or its farcaster.xyz link
+
+Options:
+  -h, --help  display help for command
+"
+`;
+
+exports[`help for web 1`] = `
+"Usage: casty web [options]
+
+the feed, threads and a compose box in a browser, on this machine or a phone
+
+Options:
+  --listen <host:port>     where to serve; 0.0.0.0:3390 lets a phone on the same
+                           network in (default: "127.0.0.1:3390")
+  --new-token              pair again; links printed before stop working
+  --read-only              do not unlock the app key; the page reads but cannot
+                           write
+  --no-allow-fname-server  look @names up with your node only; by default names
+                           it does not know are looked up on
+                           fnames.farcaster.xyz (public, no key)
+  -h, --help               display help for command
+"
+`;
+
+exports[`help for whoami 1`] = `
+"Usage: casty whoami [options]
+
+your fid, username, custody address, active app key and storage
+
+Options:
+  -h, --help  display help for command
+"
+`;

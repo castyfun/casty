@@ -1,0 +1,71 @@
+---
+title: 托管地址与应用密钥
+description: 为什么 casty 只询问一次你的助记词，以及它添加的不需要 gas 的应用密钥可以做什么。
+sidebar:
+  order: 6
+---
+
+这里涉及两种密钥。托管地址拥有你的 fid。应用密钥签署你日常的消息：cast、反应、关注。
+casty 只使用托管地址一次，用来添加应用密钥，并且只保存应用密钥。托管地址的签名要么在钱包中完成，
+从页面发起（[钱包与密钥](../../concepts/wallets/)），要么在终端中完成，使用 `casty init`
+询问的助记词。
+
+## 托管地址
+
+它是一个由你的助记词推导出的 Ethereum 账户。它可以添加和移除应用密钥，也可以转移 fid，
+所以 casty 从不保存它：`casty init` 读取助记词，签署一个请求，然后把助记词清零。
+`casty key revoke` 会再次询问它，因为用托管地址移除密钥需要一个新的签名。
+
+## 应用密钥
+
+一个由 casty 在你的机器上生成的 Ed25519 密钥。它为你的 fid 签署消息，只要该密钥已注册且没有失效，
+节点就会接受这些消息。
+
+从引擎版本 16 起，Snapchain 用一条 `KEY_ADD` 消息而不是链上交易来注册这样的密钥：不需要 gas，
+消息合并后密钥立即可用。casty 用 `@farcaster/core` 的辅助函数 `makeKeyAddBody` 和 `makeKeyAdd`
+构建它。见 Snapchain 文档中的[写入消息](https://snapchain.farcaster.xyz/guides/writing-messages)。
+
+一条 `KEY_ADD` 携带三个签名：
+
+- 请求方应用对一个密钥请求的签名，由应用 fid（`--app-fid`，默认是你自己的 fid）的托管地址做出；
+- 托管地址对密钥、其权限范围、有效期、一个 nonce 和一个截止时间的签名；
+- 消息信封，由新密钥本身签名，证明 casty 持有它的私钥部分。
+
+nonce 按 fid 计算，每次密钥变更都必须增大：casty 从节点读取当前值并加 1。如果另一次变更先到达，
+节点会拒绝该消息，`casty init` 会用新的 nonce 重试一次。
+
+## 权限范围
+
+不需要 gas 的密钥会列出它可以签署的消息类型。casty 默认请求这些：
+
+| `--scopes` 名称 | 消息类型 |
+| --- | --- |
+| `cast` | `CAST_ADD`、`CAST_REMOVE` |
+| `reaction` | `REACTION_ADD`、`REACTION_REMOVE` |
+| `link` | `LINK_ADD`、`LINK_REMOVE` |
+
+`user-data`（`USER_DATA_ADD`，你的个人资料）只在你要求时才添加。`KEY_ADD` 和 `KEY_REMOVE`
+永远不能出现在密钥的权限范围中，所以应用密钥不能添加密钥，也不能移除其他密钥；它只能移除它自己。
+
+## 有效期
+
+`--ttl` 设置密钥在不使用的情况下能存活多久：默认 30 天，最多 90 天。密钥签署的每条已合并的消息都会
+重新开始计时，所以你在使用的密钥不会失效。`casty init` 会打印密钥在不使用的情况下将会失效的日期。
+一个 fid 最多可以持有 1000 个有效的不需要 gas 的密钥。
+
+## 哪个应用发布了一条 cast
+
+每个密钥都记录了请求它的应用的 fid。一条 cast 携带签署它的公钥，所以时间线能说明它来自哪个应用：
+casty 在作者的密钥列表中查找签名者，取出请求方 fid，并在 `via` 后面显示该 fid 的用户名。
+`--only-app` 和 `--exclude-app` 据此过滤，`casty clients --fid <fid>` 列出任意账户的密钥及其应用。
+链上添加的密钥携带同样的请求，casty 以同样的方式读取它们。
+
+## 移除密钥
+
+| 命令 | 签名者 | 需要 |
+| --- | --- | --- |
+| `casty key revoke <key>` | 托管地址 | 助记词 |
+| `casty key revoke <key> --self` | 应用密钥本身 | casty 存储中的该密钥 |
+
+两者都发送一条 `KEY_REMOVE`，并等到节点不再列出该密钥。链上添加的密钥要在链上的 KeyRegistry 合约中
+移除；casty 不做这件事。

@@ -1,0 +1,11 @@
+# gitleaks reads every 0x hex "key" as a secret. The fixtures and snapshots hold Ed25519 public
+# keys of throwaway signers made from the BIP-39 test phrase; nothing in them is private.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "public test keys"
+paths = [
+  '''^test/mock-node/fixtures/''',
+  '''^client/test/cli/__snapshots__/''',
+]

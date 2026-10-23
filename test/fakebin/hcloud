@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Fake hcloud for bats. Records each call in $FAKE_LOG. `<kind> list` prints the names in
+# $FAKE_HCLOUD_EXISTING (ssh keys: the "fingerprint name" pairs in $FAKE_HCLOUD_SSH_KEYS,
+# separated by ";", a name may hold spaces; printed in the order columns= asks for, padded as
+# hcloud's table is), then $FAKE_HCLOUD_PADDING more lines, and fails when FAKE_HCLOUD_LIST_FAIL
+# is set. `describe -o format=...` fills the Go template's .ID and .PublicNet.IPv4.IP with fixed
+# values (`server describe` after $FAKE_HCLOUD_SLOW_DESCRIBE seconds), and fails when
+# FAKE_HCLOUD_DESCRIBE_FAIL is set, with .Status from $FAKE_HCLOUD_SERVER_STATUS (default running);
+# `server create` fails for the types in $FAKE_HCLOUD_FAIL_TYPES; the first $FAKE_HCLOUD_VOLUME_BUSY
+# `volume delete` calls fail as for a volume still attached.
+printf 'hcloud %s\n' "$*" >>"${FAKE_LOG:-/dev/null}"
+case "$1 $2" in
+  "server list" | "volume list" | "firewall list" | "ssh-key list")
+    [ -z "${FAKE_HCLOUD_LIST_FAIL:-}" ] || { echo "hcloud: unauthorized" >&2 && exit 1; }
+    if [ "$1" = ssh-key ]; then
+      columns=$(printf '%s\n' "$@" | sed -n 's/^columns=//p')
+      printf '%s\n' "${FAKE_HCLOUD_SSH_KEYS:-}" | tr ';' '\n' | sed '/^$/d' | while read -r fingerprint name; do
+        case $columns in
+          fingerprint,name) printf '%-47s   %s\n' "$fingerprint" "$name" ;;
+          name,fingerprint) printf '%-16s   %s\n' "$name" "$fingerprint" ;;
+          *) echo "fake hcloud: columns=$columns is not modelled" >&2 && exit 1 ;;
+        esac
+      done
+    else
+      for name in ${FAKE_HCLOUD_EXISTING:-}; do echo "$name"; done
+    fi
+    for _ in $(seq "${FAKE_HCLOUD_PADDING:-0}"); do echo "padding-resource"; done
+    ;;
+  "server describe" | "volume describe")
+    [ -z "${FAKE_HCLOUD_DESCRIBE_FAIL:-}" ] || { echo "hcloud: server error" >&2 && exit 1; }
+    [ "$1" = volume ] || sleep "${FAKE_HCLOUD_SLOW_DESCRIBE:-0}"
+    id=4242
+    [ "$1" = server ] || id=777
+    printf '%s\n' "$@" | sed -n 's/^format=//p' |
+      sed -e "s/{{\.ID}}/$id/g" -e 's/{{\.PublicNet\.IPv4\.IP}}/198.51.100.7/g' \
+        -e "s/{{\.Status}}/${FAKE_HCLOUD_SERVER_STATUS:-running}/g"
+    ;;
+  "volume delete")
+    counter="${FAKE_REMOTE_HOME:?}.volume-deletes"
+    tries=$(($(cat "$counter" 2>/dev/null || echo 0) + 1))
+    echo "$tries" >"$counter"
+    if [ "$tries" -le "${FAKE_HCLOUD_VOLUME_BUSY:-0}" ]; then
+      echo "hcloud: volume is attached (locked)" >&2 && exit 1
+    fi
+    ;;
+  "server create")
+    for type in ${FAKE_HCLOUD_FAIL_TYPES:-}; do
+      case " $* " in *" --type $type "*) echo "server type $type unavailable" >&2 && exit 1 ;; esac
+    done
+    ;;
+esac
+exit 0

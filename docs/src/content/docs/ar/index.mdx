@@ -1,0 +1,155 @@
+---
+title: "عقدة Farcaster وعميل خاصان بك"
+description: عقدة قراءة Farcaster خاصة بك، وعميل يقرأ منها ويكتب من خلالها. ثلاثة أوامر، بلا مفاتيح API، وبلا رسوم غاز.
+template: splash
+sidebar:
+  label: نظرة عامة
+  order: 0
+hero:
+  title: casty
+  tagline: عقدة قراءة Farcaster خاصة بك، وعميل يقرأ منها ويكتب من خلالها. ثلاثة أوامر، بلا مفاتيح API، وبلا رسوم غاز.
+  actions:
+    - text: ابدأ الدليل
+      link: guide/
+      icon: right-arrow
+    - text: كل الأوامر
+      link: commands/
+      variant: minimal
+    - text: الشيفرة المصدرية على GitHub
+      link: https://github.com/savvax/casty
+      icon: external
+      variant: minimal
+---
+
+## ما هو casty
+
+يضع casty عقدة قراءة [Snapchain](https://snapchain.farcaster.xyz) على مضيف تتحكم فيه،
+ويمنحك عميلًا لا يتصل بشيء غيرها. تحتفظ العقدة بنسخة كاملة من Farcaster؛ ويقرأ العميل منها
+تغذيتك وإشارات الذِكر وسلاسل المحادثة، وينشر من خلالها المنشورات والردود والإعجابات وإعادات النشر
+والمتابعات. لا يمر شيء عبر واجهة Farcaster API مستضافة، ولا يقف بينك وبين الشبكة مفتاح أحد آخر
+أو حدّ معدّل طلباته.
+
+- **ثلاثة سكربتات.** يستأجر `0-provision.sh` خادمًا مع قرص بسعة 2 TB وجدار حماية على
+  Hetzner أو AWS، أو يفحص جهازًا لديك بالفعل. يثبّت `1-node.sh` برنامج Snapchain، وينتظر
+  اكتمال مزامنته، ويفتح نفق SSH. يثبّت `2-client.sh` أداة `casty`، ويضيف مفتاح تطبيق، ويقرأ
+  تغذيتك. ويشغّل `deploy.sh` الثلاثة.
+- **مفتاح تطبيق بلا رسوم غاز.** يُضاف المفتاح الذي يوقّع منشوراتك برسالة موقّعة واحدة، لا
+  بمعاملة: توقّعها محفظتك في المتصفح، أو عبارة البذرة مرة واحدة في الطرفية. بلا
+  ETH، وبلا RPC.
+- **عميل للطرفية.** `casty feed` و`casty cast` و`casty like 2`: كل أمر يطبع نصًا عاديًا
+  أو، مع `--json`، بيانات JSON للسكربتات.
+- **صفحة للمتصفح والهاتف.** يقدّم `casty web` التغذية وسلاسل المحادثة وإشارات الذِكر ومربع
+  كتابة على هذا الجهاز؛ ويضع `casty serve` الصفحة نفسها على مضيف العقدة خلف
+  HTTPS، مع إشعارات دفع لإشارات الذِكر والردود.
+- **مُختبَر دون اتصال.** تتحقق عقدة Snapchain وهمية من كل توقيع، فيعمل العميل كله والسكربتات
+  والصفحة في CI دون عقدة حقيقية.
+
+## بداية سريعة
+
+```sh
+git clone https://github.com/savvax/casty.git && cd casty
+./scripts/deploy.sh --domain node.example.org   # everything below in order, and the page on the host behind HTTPS
+```
+
+يشغّل `deploy.sh` الخطوات الثلاث، ومع `--domain` أو `--tailscale` خطوة رابعة، [من أي
+شبكة](serve/). يشرح [الطريق كله](guide/) كل ذلك، ثم تشغيله، بالترتيب. يمكن إعادة تشغيل كل خطوة بأمان، لذا يتابع الأمر نفسه من حيث
+توقف التشغيل السابق. خطوة بخطوة:
+
+```sh
+./scripts/0-provision.sh   # a VM, 2 TB volume and firewall on Hetzner or AWS, whichever credentials are set; or --host user@ip
+./scripts/1-node.sh        # Snapchain read node, wait for sync, SSH tunnel to 127.0.0.1:3381
+./scripts/2-client.sh      # download casty, add a gasless app key with your wallet (--fid) or seed phrase, read your feed
+```
+
+عبارة البذرة تتحكم في الحساب كله. استخدم حساب اختبار لهذا الدليل، ولا تلصق عبارة
+البذرة إلا في برامج من مطورين تثق بهم، وفضّل مفتاحًا تأذن به
+محفظتك: `casty init --fid <fid>`، ثم `casty web`، وتحت «you» اختر «add a key with your wallet».
+
+شغّل السكربتات الثلاثة بالترتيب من نسخة محلية من مستودع casty. في النهاية يكون لديك
+عقدة قراءة [Snapchain](https://snapchain.farcaster.xyz) على مضيف تتحكم فيه، و`./bin/casty`،
+وهو عميل يقرأ تغذيتك من تلك العقدة وينشر من خلالها.
+
+لا يحتاج العميل إلى مفتاح API من خدمة Farcaster مستضافة، ولا إلى Ethereum RPC في المسار
+المعتاد. يُضاف مفتاح تطبيقه برسالة موقّعة، لا بمعاملة على السلسلة، فلا توجد رسوم غاز
+تدفعها.
+
+## ما تحتاجه
+
+- حساب Farcaster للاختبار: معرّف fid له وحدة تخزين واحدة على الأقل، ومحفظة تحمل
+  العنوان المسجّل له، أو عبارة البذرة لذلك العنوان. يستخدم casty العبارة مرة واحدة،
+  لتوقيع طلب المفتاح، ولا يكتبها على القرص أبدًا.
+- مضيف. إما بيانات اعتماد Hetzner Cloud (`HCLOUD_TOKEN` وأداة `hcloud`) أو AWS (أداة
+  AWS CLI v2 مع ملف تعريف أو مفتاح وصول)، أو وصول SSH إلى جهاز لديك بالفعل يستطيع
+  تشغيل Docker. راجع [عقدة في المنزل](home-node/) للحالة الأخيرة.
+- زوج مفاتيح SSH، افتراضيًا `~/.ssh/id_ed25519` و`~/.ssh/id_ed25519.pub`.
+- على جهازك: `ssh` و`curl` و`jq`. ولا يلزم Node.js 22.12 أو أحدث إلا لبناء العميل
+  بنفسك (`2-client.sh --from-source`). يعمل على macOS وLinux؛ وعلى Windows، شغّل السكربتات داخل
+  WSL2.
+
+يحتاج مضيف العقدة إلى ما يطلبه Snapchain: ذاكرة 16 GB، و4 vCPU، و2 TB من القرص الحر، وعنوان IP
+عام ([البدء](https://snapchain.farcaster.xyz/getting-started)). على مضيف مستأجر، تختار الخطوة 0
+الخادم والقرص، وتفحص الخطوة 1 المضيف قبل أن تثبّت أي شيء.
+
+## كم يستغرق ذلك
+
+الخطوة 1 هي الأطول: عند أول تشغيل تنزّل العقدة لقطة بحجم عدة مئات من
+GB، ثم تلحق بالكتل التي أُنتجت منذ تلك اللقطة. توقّع ساعات.
+ينتظر `1-node.sh` ويطبع مقدار تأخر العقدة بعد كل فحص. الضغط على Ctrl-C ينهي
+الانتظار فقط؛ وتواصل العقدة المزامنة، ويستأنف `./scripts/1-node.sh status --wait` الانتظار
+مجددًا.
+
+## كم يكلّف ذلك
+
+لا يعرف casty أسعار مزوّدك. يسرد التشغيل الفعلي لـ `0-provision.sh` الخادم والقرص
+وجدار الحماية الذي سينشئه، ويذكر أنها تُحاسَب حتى تحذفها، ولا يتابع
+إلا بعد أن تكتب اسم الخادم مجددًا. ويحذف `./scripts/0-provision.sh --destroy` الثلاثة.
+
+## جرّبه بدون عقدة
+
+يأتي المستودع مع عقدة Snapchain وهمية تقدّم واجهة HTTP API نفسها من بيانات ثابتة، وتتحقق
+من التواقيع على كل رسالة تُرسل إليها. بها يعمل العميل كله دون اتصال:
+
+```sh
+pnpm install --frozen-lockfile
+pnpm demo
+```
+
+يشغّل `pnpm demo` العقدة الوهمية على منفذ حر، ويضيف مفتاح تطبيق بعبارة الاختبار BIP-39
+`test test test test test test test test test test test junk`، ويقرأ التغذية مع منشورات
+تطبيق واحد وبدونها، وينشر منشورًا، ويعجب بآخر، ثم يحذف إعداداته المؤقتة في النهاية. تبدأ
+معرّفات fid في البيانات الثابتة من 2000000001 ولا تخص أحدًا.
+
+يقوم `pnpm demo:web` بالتهيئة نفسها، ثم يقدّم [casty web](web/)، صفحة المتصفح والهاتف،
+على منفذ حر حتى تضغط Ctrl-C.
+
+## أمر واحد
+
+```text
+Usage: deploy.sh [--domain <name> | --tailscale] [--read-only] [--fid <fid>] [--from-source]
+                 [--env <file>] [--yes] [--dry-run] [-- <0-provision.sh options>]
+
+  Runs, in order: 0-provision.sh (unless --env's file already describes a host; with --domain,
+  again on that host to open 80 and 443), 1-node.sh (the node, the wait for its sync, the
+  tunnel), 2-client.sh (the client, an app key, the feed) and, with a front named, 1-node.sh
+  serve. Every step is safe to run again: the same command picks up where a run stopped.
+
+  --domain <name>   serve the page on the host as https://<name> (Caddy; opens 80 and 443)
+  --tailscale       serve it as the host's name on your tailnet instead
+  --read-only       a page that reads only: no app key or passphrase leaves this machine
+  --fid <fid>       no seed phrase: 2-client.sh --fid; add the key in ./bin/casty web with your
+                    wallet, then run the same command again for the page on the host
+  --from-source     build the client here with Node and pnpm instead of downloading it
+  --env <file>      node.env to write or read (default: node.env)
+  --yes             do not ask before creating anything
+  --dry-run         print what provisioning and the node would run; the client is skipped
+  -- <options>      passed to 0-provision.sh, e.g. -- --provider aws --region eu-west-1
+
+Exit codes: 0 ok, 2 bad arguments, otherwise the code of the step that stopped.
+```
+
+## إلى أين بعد ذلك
+
+ابدأ بـ [0. تجهيز مضيف](0-provision/). إن أردت أن تعرف ما تُعِدّه السكربتات
+قبل تشغيلها، فاقرأ [عقد القراءة والمدقِّقون](concepts/read-nodes-vs-validators/) و
+[عنوان الحفظ ومفاتيح التطبيقات](concepts/custody-and-app-keys/). تسرد صفحة [الأمان](security/)
+كل سر معني وكيفية إلغاء كل واحد منها.

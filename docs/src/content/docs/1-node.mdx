@@ -1,0 +1,181 @@
+---
+title: 1. Run the read node
+description: Install Snapchain on the host, wait for it to sync, and open an SSH tunnel to its API.
+sidebar:
+  order: 2
+---
+
+Step 1 installs a Snapchain read node on the host in `node.env`, waits until it has caught up
+with the network, and opens an SSH tunnel so `http://127.0.0.1:3381` on your machine reaches the
+node's HTTP API.
+
+```sh
+./scripts/1-node.sh
+```
+
+## What it does on the host
+
+1. Waits until the host answers SSH. A new server needs to boot and run cloud-init
+   first; the script tries 60 times, 5 seconds apart.
+2. Waits for cloud-init to finish, if the host uses it.
+3. Checks the host and prints one row per check:
+
+   | Check | Needs |
+   | --- | --- |
+   | `ram` | 15 GiB (Snapchain asks for 16 GB; the kernel keeps some) |
+   | `disk` | 1.8 TiB free in the data directory, skipped once `~/snapchain/.rocks` exists |
+   | `docker` | a Docker server the SSH user can talk to |
+   | `compose` | Docker Compose 2.24.4 or newer, which the override below needs |
+   | `ports` | 3381 to 3383 free; shown, never fails, since on a rerun the node holds them |
+   | `clock` | within 60 seconds of your machine's clock |
+
+   A `no` in any row stops the run with exit code 5.
+4. Writes `~/snapchain/.env` with `AGREE_NO_REWARDS_FOR_ME=true`, `HUB_OPERATOR_FID` (your
+   `--fid`, 0 by default), `SKIP_CRONTAB=true` unless you pass `--autoupgrade`, one random
+   Grafana password as `GRAFANA_CREDS` (which Snapchain's own script reads) and
+   `GRAFANA_PASSWORD` (which the override gives Grafana), and `STATSD_PUBLISH` and
+   `STATSD_ADMIN_PUBLISH` set to the host's loopback, where the compose file publishes statsd.
+   It only adds keys the file does not have yet, and never changes a value that is already
+   there.
+5. Downloads `docker-compose.mainnet.yml` (saved as `docker-compose.yml`), `validators.toml`,
+   Grafana's `grafana.ini` and the Snapchain dashboard from the Snapchain repository at the
+   `@latest` tag, or at `v<version>` with `--release`.
+6. Writes `docker-compose.override.yml`, which Docker Compose merges over the downloaded file and
+   which Snapchain upgrades never replace. It publishes Grafana on the host's loopback only,
+   gives it the password from `.env` and its datasource and dashboard, and, with
+   `--block-retention`, sets block pruning.
+7. Starts the `snapchain` and `statsd` services with `docker compose up -d`.
+8. Waits for the sync, up to `--timeout` seconds (12 hours by default).
+9. Opens the tunnel, unless you pass `--no-tunnel`.
+
+Steps 4 to 7 are the non-interactive parts of Snapchain's own `snapchain.sh upgrade`; the
+[node guide](https://snapchain.farcaster.xyz/guides/managing-a-node) describes the `.env` keys and
+the override file.
+
+## Waiting for the sync
+
+The first start downloads a snapshot of several hundred GB, then syncs the blocks since that
+snapshot. Expect hours. The script prints the full status once:
+
+```text
+snapchain <version>, synced: no
+shard 0  height <n>  behind <s>s  size <x> GiB  mempool n/a
+shard 1  height <n>  behind <s>s  size <x> GiB  mempool n/a
+shard 2  height <n>  behind <s>s  size <x> GiB  mempool n/a
+```
+
+then one line per check, with the time, how far behind the slowest shard is, and an estimate
+from the rate since the first check:
+
+```text
+<HH:MM>  <hours>h <minutes>m behind, ETA <estimate>
+```
+
+The checks start 10 seconds apart and back off to one a minute. The node counts as synced when
+every shard is less than 10 seconds behind; the full status is printed again then. `behind` is
+the `blockDelay` the node reports in `/v1/info`. Read nodes report no mempool size for some
+shards, which shows as `n/a`.
+
+Pressing Ctrl-C ends only the wait. The node keeps syncing on the host;
+`./scripts/1-node.sh status --wait` watches it from where it is. Running `./scripts/1-node.sh` again
+works too, but repeats every step, downloading the compose file again (the latest release's
+unless you pass the same `--release`).
+
+## The tunnel
+
+```sh
+./scripts/1-node.sh tunnel          # forward 127.0.0.1:3381 and :3383 to the node
+./scripts/1-node.sh tunnel --stop   # close it
+```
+
+The tunnel is an `ssh -N` process in the background, found and stopped through its control
+socket in `~/.ssh`. It does not come back by itself after the connection drops or your machine
+restarts: run `tunnel` again. If something else
+already listens on local port 3381 or 3383, the tunnel does not come up and the script says so.
+
+## Other commands
+
+| Command | What it does |
+| --- | --- |
+| `status` | the sync status once; exit code 0 when synced, 1 otherwise |
+| `status --wait` | poll until synced, as `up` does |
+| `logs` | follow the `snapchain` container's logs; `logs casty` the page's |
+| `upgrade` | fetch the latest release's compose file, or `--release`'s, then pull and restart |
+| `serve` | run casty on the host behind HTTPS, with `--domain` or `--tailscale`: [From any network](../serve/) |
+| `down` | stop the node, and casty if it serves; the database stays on the volume |
+
+`status` asks the node over SSH, so port 3381 never has to be public for it.
+
+## Pinning a release and upgrades
+
+The compose file of every Snapchain release names the image `farcasterxyz/snapchain:latest`.
+`--release 0.14.3` downloads the `v0.14.3` files and rewrites that line to
+`farcasterxyz/snapchain:0.14.3`; if the file no longer names `:latest`, the script stops rather
+than run something else. `./scripts/1-node.sh upgrade` without `--release` goes back to the latest
+release.
+
+`--autoupgrade --fid <fid>` installs `snapchain.sh`'s weekly upgrade job instead, on a weekday
+derived from your fid the way `snapchain.sh` derives it. That job runs
+`docker system prune --volumes -f`, which affects every Docker project on the host, not only
+Snapchain. `--release` and `--autoupgrade` cannot be combined, and `--release` removes an upgrade
+job it finds, since the job would replace the pinned version.
+
+## Block retention
+
+`--block-retention <n>` sets `SNAPCHAIN_PRUNING__BLOCK_RETENTION` so the node prunes blocks older
+than `n` days. Snapchain allows this on read nodes only and leaves it off by default. The value
+is a duration, read as humantime by Snapchain's config, so the `<n>d` casty writes is `30d` for
+30 days.
+
+## Grafana
+
+Snapchain's compose file includes Grafana. casty starts only `snapchain` and `statsd`, but
+prepares Grafana so that one command starts it with the Snapchain dashboard in place: on the
+host, run `docker compose up -d grafana` in `~/snapchain`. The override publishes it on the
+host's loopback, so reach it through SSH:
+
+```sh
+ssh -L 3000:127.0.0.1:3000 <user>@<node ip>   # then open http://127.0.0.1:3000
+```
+
+The dashboard opens without a login (Snapchain's `grafana.ini` lets anyone view); to edit, log
+in as `admin` with the password `GRAFANA_PASSWORD` in `~/snapchain/.env` holds. Grafana reads
+that password on its first start only: if you set `GRAFANA_CREDS` yourself before casty ran,
+set `GRAFANA_PASSWORD` to match it.
+
+## Options
+
+```text
+Usage: 1-node.sh [up|status|logs|tunnel|upgrade|serve|down] [options]
+
+  (no command)            up, wait for sync, then open the tunnel
+  up                      check the host, write ~/snapchain, start the node, wait for sync
+  status [--wait]         sync progress per shard; --wait polls until synced
+  logs [casty]            follow the node's logs, or the casty service's
+  tunnel [--stop]         forward local ports 3381 and 3383 to the node over SSH
+  upgrade                 fetch the latest release's compose file (or --release) and restart
+  serve                   run casty on the host, reached over HTTPS from any network: needs
+                          --domain <name> (Caddy gets the certificate; open 80 and 443 with
+                          0-provision.sh --https) or --tailscale (tailscale serve on the host)
+  down                    stop the node, and casty if it serves
+
+  --fid <fid>             your fid, recorded as HUB_OPERATOR_FID (default: 0)
+  --autoupgrade           install snapchain.sh's weekly auto-upgrade (needs --fid). It runs
+                          docker system prune --volumes -f on the whole host.
+  --block-retention <n>   prune blocks older than n days (read nodes only)
+  --release <version>     run this Snapchain release, such as 0.14.3, instead of the latest
+  --no-tunnel             do not open the tunnel after sync
+  --timeout <seconds>     how long status --wait waits (default: 43200, 12 hours)
+  --env <file>            node.env from step 0 (default: node.env)
+  --dry-run               print the ssh commands instead of running them
+  serve:
+  --domain <name>         the name the page is reached at; must point at the host
+  --tailscale             reach it as the host's name on your tailnet instead
+  --read-only             a page that reads only: no app key or passphrase leaves this machine
+  --config <dir>          casty's config directory here (default: $XDG_CONFIG_HOME/casty)
+
+Exit codes: 0 ok, 1 not synced or the node did not answer, 2 bad arguments, 3 missing prerequisite,
+4 no ssh connection or download failed, 5 preflight failed.
+```
+
+Next: [2. Install the client](../2-client/).

@@ -1,0 +1,5 @@
+dry run: printing provider calls, creating nothing; node.env gets placeholder values
+checking u@127.0.0.1
+DRY: ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 -o IdentitiesOnly=yes -o 'UserKnownHostsFile="TMP/node.known_hosts"' -i ROOT/scripts/tests/fixtures/id_ed25519 -o ControlMaster=auto -o ControlPersist=120 -o 'ControlPath="TMP/home/.ssh/casty-%C"' u@127.0.0.1 bash -s -- . NOW < ROOT/scripts/lib/preflight.sh
+wrote TMP/node.env (existing, u@127.0.0.1)
+next: ROOT/scripts/1-node.sh --env TMP/node.env --dry-run

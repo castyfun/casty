@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Fake curl for bats. api.ipify.org answers 203.0.113.7; raw.githubusercontent.com downloads
+# write a stub file, which for a compose file names the node image the way Snapchain's does
+# (unless FAKE_CURL_NO_IMAGE=1). Every other URL goes to the real curl, so tests can reach the
+# mock node.
+fakebin=$(cd "$(dirname "$0")" && pwd)
+out=""
+url=""
+previous=""
+for arg in "$@"; do
+  [ "$previous" = -o ] && out=$arg
+  case $arg in
+    *api.ipify.org*) printf 'curl %s\n' "$*" >>"${FAKE_LOG:-/dev/null}" && echo 203.0.113.7 && exit 0 ;;
+    https://raw.githubusercontent.com/*) url=$arg ;;
+  esac
+  previous=$arg
+done
+if [ -n "$url" ]; then
+  printf 'curl %s\n' "$*" >>"${FAKE_LOG:-/dev/null}"
+  stub=$(printf '# stub of %s' "$url")
+  case $url in
+    *docker-compose*.yml) [ -n "${FAKE_CURL_NO_IMAGE:-}" ] ||
+      stub=$(printf '%s\nservices:\n  snapchain:\n    image: farcasterxyz/snapchain:latest' "$stub") ;;
+  esac
+  if [ -n "$out" ]; then printf '%s\n' "$stub" >"$out"; else printf '%s\n' "$stub"; fi
+  exit 0
+fi
+IFS=:
+for dir in $PATH; do
+  [ "$dir" != "$fakebin" ] && [ -x "$dir/curl" ] && exec "$dir/curl" "$@"
+done
+echo "fake curl: no real curl on PATH" >&2
+exit 127

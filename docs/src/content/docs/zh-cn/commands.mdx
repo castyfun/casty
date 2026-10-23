@@ -1,0 +1,124 @@
+---
+title: 命令
+description: 每个脚本和每条 casty 命令，各自做什么，以及你最常用的选项。
+---
+
+命令有两类：`scripts/` 中的脚本，用来搭建主机、节点和客户端；以及 `casty`，即客户端本身。
+每个脚本和每条命令都接受 `--help`，并打印其完整的选项列表。
+
+## 快速开始
+
+```sh
+git clone https://github.com/savvax/casty.git && cd casty
+./scripts/0-provision.sh   # a server with a 2 TB volume and a firewall, or --host user@ip for your own
+./scripts/1-node.sh        # Snapchain on that host, the wait for its sync, an SSH tunnel to it
+./scripts/2-client.sh      # casty in ./bin, an app key for your fid, your feed
+./bin/casty feed           # read
+./bin/casty cast "hello"   # write
+./bin/casty web            # the same in a browser
+```
+
+或者一次运行全部三个步骤，并以 HTTPS 把页面放到主机上：
+
+```sh
+./scripts/deploy.sh --domain node.example.org
+```
+
+## 脚本
+
+| 命令 | 作用 |
+| --- | --- |
+| `./scripts/deploy.sh` | 按顺序运行第 0、1、2 步，使用 `--domain` 或 `--tailscale` 时还会把页面放到主机上。可以安全地重复运行：它会从上次中断的地方继续。 |
+| `./scripts/0-provision.sh` | 在 Hetzner 或 AWS（取决于设置了哪家的凭据）上创建一台服务器、一个 2 TB 数据卷和一个防火墙，并写入 `node.env`。在创建任何收费资源之前会先询问。 |
+| `./scripts/0-provision.sh --host user@ip` | 使用一台你已有的机器：不创建任何东西，通过 SSH 检查内存、磁盘、Docker 和时钟。 |
+| `./scripts/0-provision.sh --dry-run` | 打印每一个服务商调用而不执行。 |
+| `./scripts/0-provision.sh --https` | 同时打开 80 和 443 端口，用于主机上的页面。 |
+| `./scripts/0-provision.sh --destroy` | 依次删除服务器、它的卷和它的防火墙。 |
+| `./scripts/1-node.sh` | 检查主机，把 Snapchain 安装到 `~/snapchain`，启动它，等待它同步，并打开隧道。 |
+| `./scripts/1-node.sh status [--wait]` | 每个分片落后多少；`--wait` 轮询直到节点追上。 |
+| `./scripts/1-node.sh tunnel [--stop]` | 通过 SSH 把本地端口 3381 和 3383 转发到节点，使 casty 能在 `127.0.0.1:3381` 访问它。 |
+| `./scripts/1-node.sh logs [casty]` | 跟踪节点的日志，或主机上 casty 的日志。 |
+| `./scripts/1-node.sh upgrade` | 获取最新的 Snapchain 版本（或 `--release <version>` 指定的版本），并重启节点。 |
+| `./scripts/1-node.sh serve --domain <name>` | 在主机上的 Caddy 后面运行 `casty serve`，使用 Let's Encrypt 证书；`--tailscale` 改为在你的 tailnet 上提供。 |
+| `./scripts/1-node.sh down` | 停止节点，以及主机上运行的 casty（如果有）。 |
+| `./scripts/2-client.sh` | 下载适用于你的平台的 casty，用发布版的校验和检查它，运行 `casty doctor`，然后运行 `casty init`。 |
+| `./scripts/2-client.sh --fid <fid>` | 不使用助记词完成设置；之后你在 `casty web` 中用钱包添加密钥。 |
+| `./scripts/2-client.sh --from-source` | 用 Node 22.12 或更新版本在本机构建 casty，而不是下载。 |
+
+脚本的退出码：0 完成，1 未同步或节点没有应答，2 参数错误，3 缺少前置条件，
+4 服务商、SSH 或下载失败，5 主机不满足要求。
+
+## casty
+
+### 适用于每条命令的选项
+
+| 选项 | 作用 |
+| --- | --- |
+| `--node <url>` | 节点的 HTTP API。默认 `http://127.0.0.1:3381`，即第 1 步建立的隧道。 |
+| `--json` | 以 JSON 输出结果，供脚本使用。 |
+| `--quiet` | 只输出结果，不输出进度说明。 |
+| `--config <dir>` | casty 保存配置和密钥的位置。默认 `~/.config/casty`。 |
+
+### 设置
+
+| 命令 | 作用 |
+| --- | --- |
+| `casty doctor` | 检查节点是否应答、它落后多少、你的时钟与节点时钟的差异，以及本地设置了什么。 |
+| `casty init --fid <fid>` | 为你的账户完成设置，不需要助记词，也没有密钥；之后 `casty web` 用你的钱包添加密钥。 |
+| `casty init` | 用你的助记词添加一个不需要 gas 的应用密钥，助记词在隐藏输入的提示符下输入，从不保存。`--ttl 90d` 设置最长有效期，`--address-index <n>` 选择同一助记词的另一个账户。 |
+| `casty whoami` | 你的 fid、用户名、托管地址、当前应用密钥和存储。 |
+| `casty key list` | 注册到你的 fid 的密钥，并标出这个 casty 持有的那些。 |
+| `casty key revoke --self` | 移除这个 casty 的密钥，由该密钥本身签名。 |
+| `casty key revoke <key>` | 移除你的 fid 的任意密钥；会询问助记词。 |
+
+### 读取
+
+| 命令 | 作用 |
+| --- | --- |
+| `casty feed` | 你和你关注的账户的最新 cast，带编号。`--limit`、`--since 24h`、`--no-replies`、`--channel /name`、`--only-app` 和 `--exclude-app` 缩小范围；`--fids 2,@alice` 读取其他账户。 |
+| `casty mentions` | 提及你的 cast 和对你的 cast 的回复，最新的在前。 |
+| `casty thread <cast>` | 一条 cast、它所回复的内容，以及对它的回复。 |
+| `casty clients [--fid <fid>]` | 一个账户的应用密钥，以及每个密钥由哪个应用请求。 |
+| `casty storage [--fid <fid>]` | storage unit，以及每个消息存储已用了多少。 |
+| `casty node status` | 只显示节点的同步状态；在追上之前退出码为 1。 |
+
+### 写入
+
+| 命令 | 作用 |
+| --- | --- |
+| `casty cast "<text>"` | 发布一条 cast：最多 320 字节，作为长 cast 时最多 1024 字节。`--reply <cast>`、`--channel /name`、`--embed <url>`（最多两次）；`@names` 会变成提及。 |
+| `casty reply <cast> "<text>"` | 回复一条 cast。 |
+| `casty delete <cast>` | 删除你的一条 cast。 |
+| `casty like <cast>` / `casty unlike <cast>` | 点赞一条 cast，或撤回点赞。 |
+| `casty recast <cast>` / `casty unrecast <cast>` | 把一条 cast recast 给你的关注者，或撤回。 |
+| `casty follow <fid or @name>` / `casty unfollow` | 关注一个账户，或取消关注。 |
+
+每次写入都发送到你的节点，由节点转发到网络；casty 会等到能读回该消息，如果读不回，会明确告诉你。
+
+### 在浏览器中
+
+| 命令 | 作用 |
+| --- | --- |
+| `casty web` | 在 `http://127.0.0.1:3390` 提供时间线、会话、提及、个人资料和撰写框，通过它打印的链接配对。`--listen 0.0.0.0:3390` 允许同一网络中的手机访问；`--read-only` 让密钥保持锁定。 |
+| `casty serve` | 同一个页面，基于时间线索引，带推送通知，用于以 HTTPS 运行在节点主机上。由 `1-node.sh serve` 安装。 |
+
+### 指定一条 cast
+
+凡是命令接受 `<cast>` 的地方，以下任意一种都可以：
+
+- 它在 `casty feed`、`mentions`、`thread` 或页面最近一次显示的列表中的编号：`casty like 2`；
+- `<fid>:<0x hash>`：`casty like 2000000001:0x1a2b...`；
+- 它在 farcaster.xyz 上的链接。
+
+### 退出码
+
+| 退出码 | 含义 |
+| --- | --- |
+| 0 | 完成。 |
+| 1 | 未同步（`casty node status`），或其他失败。 |
+| 2 | 参数错误。 |
+| 3 | 节点拒绝了该消息，或消息没有合并。 |
+| 4 | 无法访问节点。 |
+| 5 | 配置、密钥库或助记词有问题。 |
+
+[故障排除](../troubleshooting/)列出了每个退出码背后的消息以及应该怎么做。

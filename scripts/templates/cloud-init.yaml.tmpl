@@ -1,0 +1,58 @@
+#cloud-config
+# Written by casty scripts/0-provision.sh for {{NAME}}. Prepares the host and leaves it running.
+package_update: true
+packages:
+  - chrony
+  - jq
+write_files:
+  - path: /etc/sysctl.d/90-snapchain.conf
+    content: |
+      fs.file-max = 1048576
+  - path: /etc/security/limits.d/90-snapchain.conf
+    content: |
+      * soft nofile 1048576
+      * hard nofile 1048576
+      root soft nofile 1048576
+      root hard nofile 1048576
+  - path: /usr/local/sbin/casty-data-volume
+    permissions: "0755"
+    content: |
+      #!/bin/bash
+      # Mounts the data volume at /data and points ~/snapchain at it.
+      set -euo pipefail
+      device="{{DATA_DEVICE}}"
+      for _ in $(seq 120); do [ -e "$device" ] && break; sleep 5; done
+      [ -e "$device" ] || { echo "data volume $device never appeared" >&2; exit 1; }
+      # Format only a volume blkid calls blank (exit 2); any other failure stops here, so
+      # existing data is never wiped. No blocks are reserved for root on a data-only volume.
+      status=0
+      blkid -p "$device" >/dev/null || status=$?
+      if [ "$status" = 2 ]; then mkfs.ext4 -m 0 -L snapchain "$device"
+      elif [ "$status" != 0 ]; then echo "blkid failed on $device ($status), not formatting" >&2; exit 1
+      fi
+      tune2fs -m 0 "$device"
+      mkdir -p /data
+      grep -q " /data " /etc/fstab || echo "$device /data ext4 defaults,noatime,nofail 0 2" >> /etc/fstab
+      mountpoint -q /data || mount /data
+      mkdir -p /data/snapchain
+      chown {{USER}}: /data/snapchain
+      [ -e {{HOME}}/snapchain ] || ln -s /data/snapchain {{HOME}}/snapchain
+  - path: /usr/local/sbin/casty-docker
+    permissions: "0755"
+    content: |
+      #!/bin/bash
+      # Installs Docker with its official convenience script. A new server's network or a
+      # mirror can fail for a while, so it tries five times; pipefail makes a failed download
+      # count, as sh would run the empty script it got and succeed.
+      set -uo pipefail
+      for attempt in 1 2 3 4 5; do
+        curl -fsSL https://get.docker.com | sh && exit 0
+        echo "docker install attempt $attempt of 5 failed" >&2
+        [ "$attempt" = 5 ] || sleep 30
+      done
+      exit 1
+runcmd:
+  - [sysctl, --system]
+  - [/usr/local/sbin/casty-data-volume]
+  - [/usr/local/sbin/casty-docker]
+  - usermod -aG docker {{USER}}

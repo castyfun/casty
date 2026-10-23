@@ -1,0 +1,45 @@
+---
+title: 存储租用
+description: 一个账户可以保存多少内容，存满时会发生什么，以及 casty 显示哪些相关信息。
+sidebar:
+  order: 9
+---
+
+只有当账户拥有存储时，节点才会保存它的消息。存储按单位租用，每个单位允许每种消息保存一定数量。
+Farcaster 文档在 [Messages](https://docs.farcaster.xyz/learn/what-is-farcaster/messages) 中介绍了它。
+
+## 一个单位能容纳什么
+
+每个单位的上限取决于单位的类型。`@farcaster/core` 0.20.0 定义了三种：
+
+| 单位类型 | Cast | 反应 | 链接 | 用户数据 | 验证 |
+| --- | --- | --- | --- | --- | --- |
+| `UNIT_TYPE_LEGACY` | 5000 | 2500 | 2500 | 50 | 25 |
+| `UNIT_TYPE_2024` | 2000 | 1000 | 1000 | 50 | 25 |
+| `UNIT_TYPE_2025` | 100 | 200 | 200 | 25 | 5 |
+
+casty 自己不计算上限；它显示你的节点为你的 fid 报告的数值。
+
+## 存储存满时
+
+当一个账户的某一种消息超过上限时，该种类中最旧的消息会被裁剪以腾出空间。移除消息也计入：
+删除的 cast 会留下一条 `CAST_REMOVE`，它和 cast 一样占用一个位置。
+
+存储到期后，节点会在 30 天的宽限期内保留这些消息，然后丢弃它们。
+
+## casty 显示什么
+
+```sh
+./bin/casty storage
+```
+
+打印你的单位，以及每个存储中有多少条消息、它的上限和已用比例。达到 90% 时它会发出警告：
+
+```text
+warning: <store> is <percent>% full; when it fills, the oldest messages of that kind are pruned
+```
+
+`casty whoami` 在一行中显示同样的数字，`casty storage --fid <fid>` 显示任意账户的数字。
+`casty init` 拒绝完全没有单位的 fid，因为网络不会接受它的消息。
+
+casty 不租用存储。

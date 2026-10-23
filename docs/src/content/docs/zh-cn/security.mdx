@@ -1,0 +1,67 @@
+---
+title: 安全
+description: casty 涉及的每一个机密，它保存在哪里，能做什么，以及如何收回。
+sidebar:
+  order: 10
+---
+
+casty 没有经过审计。本页列出它保存的内容以及每一项能做什么。
+
+## 机密
+
+| 机密 | 位置 | 它能做什么 | 如何收回 |
+| --- | --- | --- | --- |
+| 助记词 | `casty init` 或 `casty key revoke` 运行期间在内存中；从不写入磁盘，也从不发送到任何地方。使用 `casty init --fid` 并由钱包在页面上添加密钥时，casty 完全看不到它 | 一切：它掌握着你的 fid 的托管权 | casty 无能为力。请离线保管 |
+| 应用密钥（Ed25519） | `~/.config/casty/keys.enc.json`，用 scrypt 和 XChaCha20-Poly1305 加密，权限 0600 | 为你的 fid 签署 cast、反应和关注，直到它因未使用而失效（默认 30 天，最多 90 天） | 用助记词运行 `casty key revoke <key>`，或用密钥本身加上 `--self` |
+| 尚未确认的已签名 `KEY_ADD` | 在同一个加密存储中，直到 `casty init` 看到密钥被列出，或节点拒绝该消息 | 添加那一个密钥，一次 | 如果它最终合并了，运行 `casty key revoke` |
+| 密钥库口令 | 在隐藏输入的提示符下输入 | 在这台机器上解密应用密钥 | 撤销密钥，删除 `keys.enc.json`，运行 `casty init` |
+| casty web 令牌 | `~/.config/casty/web-token`，权限 0600；以及已配对浏览器的存储中 | `casty web` 运行期间：从任何能访问该页面的地方读取时间线，并用你的应用密钥写入 | 停止 `casty web`，然后用 `--new-token` 启动它 |
+| 同样的内容，在节点主机上（`1-node.sh serve`） | `~/snapchain/casty/config/keys.enc.json`（0600），口令在 `~/snapchain/casty/passphrase`（0600，一个 Docker secret），令牌在 `~/snapchain/casty/config/web-token`；服务运行期间密钥在其内存中处于解密状态 | 服务运行期间，从任何网络以你的身份读取和写入；主机上的 root 拥有该密钥 | 用助记词运行 `casty key revoke <key>`；在主机上运行 `docker compose stop casty`；`--read-only` 把密钥留在家中 |
+| 推送密钥对和订阅（`casty serve`） | 主机上的 `~/snapchain/casty/config/vapid.json`（0600）和 `cache/push.json` | 向已订阅的浏览器发送推送 “new mention from @name”；推送服务只能看到密文 | 删除这两个文件并重启 `casty`；在浏览器中关闭通知 |
+| 云令牌（`HCLOUD_TOKEN`、AWS 凭据） | 你的环境变量；脚本从不写入它 | 在该账户中创建和删除服务器 | 在服务商的控制台中撤销它 |
+| SSH 密钥 | 你自己的；只上传公钥部分 | 以 root 权限登录节点主机 | 从主机和服务商处删除它 |
+
+助记词掌控整个账户。跟着本教程操作时请使用测试账户，只把助记词粘贴到你信任的开发者所写的软件中，
+并优先使用由钱包授权的密钥：`casty init --fid <fid>`，然后运行 `casty web`，在“你”页面中选择
+“add a key with your wallet”。
+
+助记词提示符在关闭回显的情况下从终端读取。使用 `--mnemonic-stdin` 时，助记词改为来自管道，
+而口令提示符仍然从终端读取。casty 在使用后把助记词的字节清零；交给密钥派生库的字符串及其派生出的密钥，
+在 JavaScript 中无法从内存中清除。
+
+`CASTY_PASSPHRASE` 代替口令提示符。它为测试和 `pnpm demo` 而存在；不要把它用于保存真实密钥的密钥库。
+
+## 哪些可以访问
+
+- 在租用的主机上，防火墙只向 `--allow-ip`（默认是你自己的地址）开放 SSH（22）、HTTP API（3381）和
+  gRPC（3383）。Gossip（3382）对所有人开放，以便其他节点连接。对于你已有的主机，casty 不设置防火墙。
+- statsd（8125/udp、8126/tcp）和 Grafana（3000）只发布在主机的回环地址上，statsd 通过 compose
+  文件自身在 `.env` 中的 `STATSD_PUBLISH` 变量，Grafana 通过覆盖文件。Grafana 的 `admin` 密码是
+  `.env` 中记录的随机密码；查看无需登录，这是 Snapchain 的 `grafana.ini` 的设置。
+- casty 通过 `127.0.0.1:3381` 处的 SSH 隧道与你的节点通信。它不调用任何托管的 Farcaster API。
+  只有在节点不知道某个名称时，才会询问 `fnames.farcaster.xyz` 上的公共 fname 注册表：你关注的
+  或在 cast 中提及的 `@name`（`--no-allow-fname-server` 关闭这一点），用 `feed --fids` 读取的或在
+  `casty web` 中查找的名称，以及你用 farcaster.xyz 链接指定的 cast 的作者。只有当你传入 `--op-rpc`
+  时才会询问 OP Mainnet RPC。
+- 除非 `--listen` 指定了其他地址，`casty web` 监听 127.0.0.1，对它的每个 API 请求都需要令牌。
+  [在浏览器和手机上](../web/)列出了页面如何受到保护，以及手机通过本地网络访问它时有什么变化。
+- `1-node.sh serve --domain` 通过 HTTPS 向互联网开放页面（80 和 443，用 `0-provision.sh --https`
+  打开）；`--tailscale` 只向你的 tailnet 开放。此时页面需要令牌，发送 HSTS，并且每个地址每分钟
+  最多应答 120 个 API 请求。[从任何网络访问](../serve/)列出了主机保存的内容。
+- 其他人的 cast 可能包含终端转义序列。casty 在打印之前会去掉控制字符和双向覆盖字符，网页则把 cast
+  文本作为文本插入。
+
+## 如果有东西泄露
+
+- 应用密钥：`casty key list` 显示注册到你的 fid 的内容。在仍持有该密钥的机器上用
+  `casty key revoke <key> --self` 撤销它，或者在任何地方用助记词撤销。
+- 助记词：用你信任的钱包把 fid 转移到一个新的托管地址，然后撤销每一个应用密钥。
+- 云令牌：撤销它，然后查看账户中是否有不是你创建的服务器。
+- casty web 令牌：停止 `casty web`，然后用 `--new-token` 重新启动它。之前打印的每个链接都会失效。
+  在节点主机上：删除 `~/snapchain/casty/config/web-token` 并运行 `docker compose restart casty`。
+- 节点主机：用助记词撤销应用密钥，删除 `~/snapchain/casty`，并把该主机视为对节点而言也已被攻破。
+
+## 报告问题
+
+请通过仓库的 security advisories 私下报告漏洞，不要在公开的 issue 中报告。仓库的 `SECURITY.md`
+包含同样的表格。

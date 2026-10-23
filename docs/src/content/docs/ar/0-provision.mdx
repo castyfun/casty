@@ -1,0 +1,204 @@
+---
+title: 0. تجهيز مضيف
+description: استأجر خادمًا وقرصًا بسعة 2 TB وجدار حماية، أو افحص مضيفًا لديك بالفعل، واكتب node.env.
+sidebar:
+  order: 1
+---
+
+تمنحك الخطوة 0 مضيفًا يستطيع تشغيل عقدة قراءة Snapchain، وتكتب `node.env`، وهو الملف الذي تقرؤه الخطوة 1
+لتعثر عليه.
+
+```sh
+./scripts/0-provision.sh
+```
+
+## أي مزوّد
+
+بدون `--provider`، يقرر السكربت بحسب ما ضبطته:
+
+| ما ضبطته | المزوّد |
+| --- | --- |
+| `--host user@ip` | `existing`: لا يُنشأ شيء، ويُفحص المضيف عبر SSH |
+| `HCLOUD_TOKEN` | `hetzner` |
+| `AWS_PROFILE`، أو `AWS_ACCESS_KEY_ID`، أو ملف `~/.aws/credentials` أو `~/.aws/config` | `aws` |
+
+عندما تكون بيانات اعتماد Hetzner وAWS مضبوطة معًا، يتوقف ويطلب منك تمرير `--provider`. وعندما
+لا تكون أيّ منهما مضبوطة، يتوقف ويذكر ما يجب ضبطه. يوجد Cherry Servers لـ `--dry-run` فقط؛ أما
+التشغيل الفعلي فيتوقف ويقترح إنشاء الخادم يدويًا، ثم استخدام `--host`.
+
+## انظر قبل أن تنشئ
+
+```sh
+./scripts/0-provision.sh --provider hetzner --dry-run
+```
+
+يطبع التشغيل التجريبي كل استدعاء للمزوّد في سطر `DRY:` ولا ينشئ شيئًا. ولا يحتاج إلى رمز، ولا
+إلى أداة سطر أوامر للمزوّد، ولا إلى مفتاح SSH، فتستطيع قراءة ما سيفعله التشغيل قبل أن تسجّل في أي مكان.
+لكنه يظل يكتب `node.env`، بقيم مؤقتة مثل عنوان التوثيق `192.0.2.1`،
+لكن ليس فوق ملف `node.env` يصف عقدة حقيقية أبدًا. لا يقبل `1-node.sh` ذلك الملف إلا مع
+`--dry-run`، والخطوة التالية التي يطبعها التشغيل التجريبي تقول ذلك.
+
+```text
+dry run: printing provider calls, creating nothing; node.env gets placeholder values
+DRY: curl -s --max-time 10 https://api.ipify.org
+DRY: hcloud ssh-key list -o noheader -o columns=fingerprint,name
+DRY: hcloud ssh-key create --name fc-node --public-key-from-file /home/you/.ssh/id_ed25519.pub
+DRY: hcloud firewall list -o noheader -o columns=name
+DRY: hcloud firewall create --name fc-node-fw --rules-file ./fc-node.firewall.json
+DRY: hcloud volume list -o noheader -o columns=name
+DRY: hcloud volume create --name fc-node-data --size 2000 --location fsn1 --format ext4
+...
+```
+
+## Hetzner
+
+ثبّت [أداة hcloud](https://github.com/hetznercloud/cli#installation) وأنشئ
+رمز API للقراءة والكتابة في لوحة Hetzner Cloud (مشروعك، ثم Security، ثم API tokens).
+
+```sh
+export HCLOUD_TOKEN=<your token>
+./scripts/0-provision.sh
+```
+
+ينشئ، في `fsn1` ما لم تمرّر `--region`:
+
+- الخادم `fc-node`، بنظام Ubuntu 24.04، من أول نوع يمكن إنشاؤه من بين `cpx41`
+  و`ccx23` و`cpx51` (مرّر `--type` لتختار)؛
+- القرص `fc-node-data`، بسعة 2000 GB، مهيأ بنظام ext4؛
+- جدار الحماية `fc-node-fw`؛
+- مفتاح SSH ‏`fc-node`، ما لم يكن مفتاحك موجودًا في المشروع باسم آخر.
+
+## AWS
+
+ثبّت [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+وأعطه بيانات اعتماد: `AWS_PROFILE`، أو `AWS_ACCESS_KEY_ID` و`AWS_SECRET_ACCESS_KEY`، أو
+`aws configure` (و`aws configure sso` و`aws sso login` لـ SSO).
+
+المنطقة هي `--region`، وإلا `AWS_REGION`، وإلا `AWS_DEFAULT_REGION`، وإلا `us-east-1`. في المنطقة الفرعية
+`<region>a` ينشئ:
+
+- النسخة `fc-node`، من نوع `m6i.xlarge` وإلا `m5.xlarge`، من صورة Ubuntu 24.04 الحالية من Canonical،
+  مع قرص جذر بسعة 40 GB؛
+- قرص gp3 ‏`fc-node-data`، بسعة 2000 GB، يُوصَل بعد أن تعمل النسخة؛
+- مجموعة الأمان `fc-node-fw` وزوج المفاتيح `fc-node`.
+
+مستخدم العقدة هو `ubuntu`.
+
+## مضيف لديك بالفعل
+
+```sh
+./scripts/0-provision.sh --host user@203.0.113.7
+```
+
+لا يُنشأ شيء. يسجّل السكربت الدخول بمفتاحك ويشغّل الفحوصات نفسها التي تشغّلها الخطوة 1. راجع
+[عقدة في المنزل](../home-node/) لمعرفة ما يحتاجه مثل هذا المضيف.
+
+## التأكيد
+
+يطبع التشغيل الفعلي خطته وينتظر أن تكتب اسم الخادم:
+
+```text
+On hetzner this creates, or reuses when they already exist under these names:
+  server    fc-node: cpx41 ccx23 cpx51 (the first one available), ubuntu-24.04, fsn1
+  firewall  fc-node-fw: ssh, 3381 and 3383 from 203.0.113.10/32; gossip 3382 from anywhere
+  volume    fc-node-data, 2000 GB
+The server and the volume are billed until you run this again with --destroy.
+Type fc-node to create them:
+```
+
+أي شيء آخر، أو مدخل قياسي مغلق، يوقف التشغيل دون إنشاء أي شيء. يتخطى `--yes` السؤال.
+
+## جدار الحماية
+
+مع القيمة الافتراضية `--allow-ip auto`، يسأل السكربت `api.ipify.org` عن عنوان IP العام لديك ويفتح
+SSH (22)، وواجهة HTTP API للعقدة (3381)، وواجهة gRPC API الخاصة بها (3383) لذلك العنوان وحده. أما Gossip (3382،
+UDP وTCP) فمفتوح للجميع، لأن العقد الأخرى تتصل به. لا يحتاج العميل أبدًا إلى أن يكون 3381
+عامًا: فهو يمر عبر نفق SSH الذي تفتحه الخطوة 1.
+
+مرّر `--allow-ip 198.51.100.0/24` للسماح بنطاق بدلًا من ذلك. تشغيل السكربت مجددًا من شبكة
+أخرى ينقل القواعد إلى عنوانك الجديد، على Hetzner وعلى AWS. على AWS لا تنتقل إلا القواعد التي أنشأها casty،
+ويُميَّز بينها بأوصافها؛ أما القاعدة التي أضفتها إلى المجموعة بنفسك فتبقى.
+
+يفتح `--https` أيضًا المنفذين 80 و443 للجميع، وهو ما يحتاجه `./scripts/1-node.sh serve --domain` من أجل
+شهادته ومن أجل هاتف على شبكة جوال ([من أي شبكة](../serve/)). وإعادة التشغيل
+بدون `--https` تغلقهما مجددًا.
+
+## ما يفعله الخادم عند أول إقلاع
+
+ملف cloud-init، المكتوب بجانب `node.env` باسم `fc-node.cloud-init.yaml`:
+
+- يثبّت `chrony` و`jq` ويرفع حدّ الملفات المفتوحة؛
+- ينتظر قرص البيانات، ولا يهيئه إلا إن كان فارغًا، ويركّبه في `/data`؛
+- يربط `~/snapchain` بـ `/data/snapchain`، فتقع قاعدة البيانات على القرص؛
+- يثبّت Docker بسكربت التثبيت الخاص بـ Docker ويضيف المستخدم إلى مجموعة `docker`.
+
+لا يعيد تشغيل الخادم.
+
+## node.env
+
+```text
+NODE_PROVIDER=hetzner
+NODE_NAME=fc-node
+NODE_REGION=fsn1
+NODE_IP=192.0.2.1
+NODE_USER=root
+NODE_SSH_KEY=/home/you/.ssh/id_ed25519
+NODE_SERVER_ID=dry-run
+NODE_VOLUME_ID=dry-run-volume
+NODE_DATA_DIR=/data
+NODE_CREATED_AT=dry-run
+NODE_STARTED_AT=dry-run
+```
+
+يحمل الأسماء، والمعرّفات، وعنوان IP، ومسار مفتاح SSH الخاص بك، ولا يحمل رمزًا أو مفتاحًا أبدًا.
+`NODE_STARTED_AT` هو آخر وقت أنشأ فيه تشغيلٌ الخادمَ أو شغّله أو أقلعه: تنتظر الخطوة 1 حتى
+عشرين دقيقة لـ ssh على خادم بدأ في آخر 15 دقيقة، ودقيقة أو اثنتين في غير ذلك. احتفظ
+به: تقرؤه الخطوة 1، ويحتاج إليه `--destroy` ليعرف ما يحذفه. يطبعه `--json` بصيغة JSON
+أيضًا، ويكتبه `--out <file>` في مكان آخر.
+
+## إعادة التشغيل
+
+يُعثر على كل شيء بالاسم، لذا فإعادة تشغيل الأمر نفسه تعيد استخدام ما هو موجود ولا تنشئ
+إلا ما ينقص. تأخذ إعادة التشغيل المزوّد والاسم والمنطقة من `node.env`، لذا فإن
+`--https` أو `--allow-ip` جديدًا لاحقًا يقع على العقدة نفسها؛ والخيار الذي يحدد مزوّدًا أو اسمًا
+أو منطقة أخرى يوقف التشغيل، و`--out <file>` هو الطريق إلى عقدة ثانية. إن توقف تشغيل في منتصفه، بسبب خطأ أو Ctrl-C، يظل `node.env` يسجّل
+ما أُنشئ حتى تلك اللحظة. شغّل الأمر نفسه مجددًا للإكمال، أو أضف `--destroy` لإزالته.
+
+## حذف العقدة
+
+```sh
+./scripts/0-provision.sh --destroy
+```
+
+يقرأ `node.env`، ويطلب منك كتابة الاسم، ثم يحذف الخادم والقرص وجدار
+الحماية، بهذا الترتيب، ويزيل `node.env`. يحمل القرص قاعدة البيانات المتزامنة، لذا تبدأ العقدة
+الجديدة المزامنة من البداية. يطبع `--destroy --dry-run` الاستدعاءات بدلًا من ذلك. على AWS
+يحذف معرّفات النسخة والقرص التي يسجّلها `node.env`؛ ولا يبحث عن أحدها بوسم Name إلا
+عندما لا يحوي `node.env` معرّفًا له، بعد تشغيل توقف في منتصفه.
+
+## الخيارات
+
+```text
+Usage: 0-provision.sh [--provider hetzner|aws|cherry|existing] [options]
+
+  --provider <name>      hetzner, aws, cherry (dry run only for now) or existing; without it,
+                         existing with --host, else the one whose credentials are set
+  --name <name>          server name; also <name>-data and <name>-fw (default: fc-node)
+  --region <region>      provider region (default: fsn1, us-east-1, eu_nord_1)
+  --type <type>          server type (default: cpx41 then ccx23, cpx51; m6i.xlarge then m5.xlarge)
+  --disk-gb <n>          data volume size, at least 2000 (default: 2000)
+  --ssh-pubkey <file>    key to log in with (default: ~/.ssh/id_ed25519.pub)
+  --allow-ip auto|<cidr> who may reach ssh, 3381 and 3383 (default: auto, your current IP)
+  --https                also open 80 and 443 to everyone, for 1-node.sh serve --domain; a
+                         rerun without it closes them again
+  --host <user@ip>       the host, for --provider existing
+  --dry-run              print every provider call instead of making it
+  --destroy              delete the server, then its volume, then its firewall
+  --yes                  do not ask before creating or deleting anything
+  --json                 print node.env as JSON
+  --out <file>           where to write node.env (default: node.env)
+
+Exit codes: 0 ok, 2 bad arguments, 3 missing prerequisite, 4 provider error, 5 preflight failed.
+```
+
+التالي: [1. تشغيل عقدة القراءة](../1-node/).

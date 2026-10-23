@@ -1,0 +1,19 @@
+# Written by casty scripts/1-node.sh serve: the casty service beside the node, reached as
+# https://{{PUBLIC_HOST}}. Named in COMPOSE_FILE in .env, so every docker compose command here
+# includes it; snapchain.sh upgrades touch only docker-compose.yml.
+services:
+  casty:
+    build: ./casty/src
+    restart: unless-stopped
+    networks: [snapchain]
+    command: ["serve", "--node", "http://snapchain:3381", "--public-host", "{{PUBLIC_HOST}}", "--listen", "0.0.0.0:3390"{{READ_ONLY}}]
+    environment:
+      CASTY_PASSPHRASE_FILE: /run/secrets/casty_passphrase
+    secrets:
+      - casty_passphrase
+    volumes:
+      - ./casty/config:/config/casty
+{{FRONT}}
+secrets:
+  casty_passphrase:
+    file: ./casty/passphrase

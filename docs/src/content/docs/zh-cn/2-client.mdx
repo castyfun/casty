@@ -1,0 +1,251 @@
+---
+title: 2. 安装客户端
+description: 构建 casty，检查它能访问你的节点，添加一个不需要 gas 的应用密钥，并读取你的时间线。
+sidebar:
+  order: 3
+---
+
+```sh
+./scripts/2-client.sh
+```
+
+## 它做什么
+
+1. 从项目最新的 GitHub 发布版下载 `casty-<os>-<arch>`，用旁边发布的 `SHA256SUMS` 检查它的 sha256，
+   并把它安装为 `./bin/casty`：一个在 macOS 上约 77 MB、在 Linux 上约 97 MB 的单个文件，
+   内含客户端、它的依赖和网页，用 bun 构建。它不需要 Node.js。旁边的 `THIRD_PARTY_LICENSES`
+   列出了文件中的每一个软件包及其许可。发布版为 linux-x64、linux-arm64 和 darwin-arm64 构建；
+   在其他任何机器上，或者使用 `--from-source` 时，脚本会改为检查 Node.js 22.12 或更新版本，
+   通过 corepack 使用 pnpm 按锁文件安装客户端的依赖（Node 25 及更高版本不再附带 corepack；
+   `npm install -g corepack`），构建客户端，并把 `./bin/casty` 写成一个用 Node 运行它的包装脚本。
+2. 针对 `http://127.0.0.1:3381` 运行 `casty doctor`。如果没有应答，它以退出码 4 停止，
+   并告诉你打开隧道。
+3. 使用 `--fid` 时运行 `casty init --fid <fid>`，否则运行 `casty init`，后者会询问你的助记词。
+   如果 casty 已经持有一个节点为你的 fid 列出的密钥，就跳过这一步，所以再次运行脚本从不会添加第二个密钥。
+4. 打印你的时间线和几条可以试试的命令；使用 `--fid` 时，打印如何在 `casty web` 中用钱包添加密钥。
+
+`--node <url>` 让它指向另一个节点。`--no-init` 在 `casty doctor` 之后停止。`--` 之后的任何内容
+都传给 `casty init`，例如 `./scripts/2-client.sh -- --address-index 1`。
+`CASTY_RELEASE_URL` 指定另一个下载位置，用于分叉或镜像。当没有可下载的内容时（从未发布过的检出，
+或没有网络连接），脚本会说明这一点，并像 `--from-source` 那样自己从源代码构建 casty。
+
+## casty init
+
+助记词掌控整个账户。跟着本教程操作时请使用测试账户，只把助记词粘贴到你信任的开发者所写的软件中，
+并优先使用由钱包授权的密钥：`casty init --fid <fid>`，然后运行 `casty web`，在“你”页面中选择
+“add a key with your wallet”。
+
+用你的钱包：`./bin/casty init --fid <fid>` 从节点获取信息写入配置（包括托管地址），不创建密钥；
+然后 `./bin/casty web` 在浏览器中用钱包添加一个（[在浏览器和手机上](../web/)）。
+
+用助记词：`casty init` 询问密钥库的口令（首次需输入两次），然后打印上面的警告并询问你的助记词。
+两者都不会回显。
+
+```text
+A seed phrase controls the whole account. Use a test account to try casty, and paste a seed
+phrase only into software from developers you trust. Prefer a key authorised by your wallet:
+casty init --fid <fid>, then casty web and, under you, "add a key with your wallet".
+custody address 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 holds fid 2000000001
+adding a gasless app key (no transaction, no gas)
+fid      2000000001
+custody  0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+app key  0x4224ff3035db6350cfae06e0ad54b79d98a6bbcb962488e0c090c24bd54e6190
+scopes   cast, reaction, link
+expires  2026-11-17, after 30 days without use
+next: casty feed, then casty cast "hello from my own node"
+```
+
+这次运行在模拟节点上使用了测试助记词；你的运行会显示你的地址和 fid。casty 依次：
+
+1. 从助记词的索引 0 推导出托管地址（`--address-index` 选择另一个）；
+2. 询问节点该地址持有哪个 fid；
+3. 拒绝没有 storage unit 的 fid，因为网络不会接受它的消息；
+4. 生成一个新的 Ed25519 密钥，并让托管地址为它签署一个请求；
+5. 把密钥连同签名的 `KEY_ADD` 消息加密保存，并把该消息提交给你的节点；
+6. 等到节点列出该密钥，然后丢弃保存的消息。
+
+助记词从不写入磁盘。该密钥可以签署 cast、反应和关注；如果还要用它修改你的个人资料，请加上
+`--scopes cast,reaction,link,user-data`。它在 30 天未使用后失效（`--ttl`，最多 `90d`），
+它签署的每条消息都会让它续期。[托管地址与应用密钥](../concepts/custody-and-app-keys/)解释了这个请求。
+
+如果节点接受了密钥，但 casty 在它出现之前就停止了等待，密钥会被保留。再次运行
+`casty init` 会把同一条签名消息再发送一次，并且不需要助记词。
+
+如果节点因为仍在同步而还不知道你的地址，`--op-rpc <url>` 会改为从 OP Mainnet 上的 IdRegistry 合约
+读取 fid。
+
+## 读取
+
+`casty mentions` 列出别人对你说的话：提及你的 cast，以及对你最新 25 条 cast 的回复，
+像时间线一样编号，所以 `casty reply 1 "thanks"` 回复第一条。
+
+`casty thread 2` 显示上一次列表中的第二条 cast，连同它所回复的 cast 和对它的回复，
+最早的在前，并重新编号，所以 `casty like 3` 点赞第一条回复。
+
+```text
+$ casty feed --limit 3
+1  @casty-test · 1s · via casty
+   hello from casty
+
+2  @user-2000000002 · 17d · via app-alpha
+   @casty-test thanks for the pointer, it worked.
+   https://example.com/2000000002/3
+
+3  @user-2000000011 · 17d · via app-beta
+   Reading the Snapchain docs on a train. A good way to spend an hour.
+```
+
+时间线是你自己的 cast 和你关注的账户的 cast，最新的在前。每条 cast 显示作者、发布了多久、
+发布它的应用、它回复的内容以及它所在的频道。`via` 给出请求了签署这条 cast 的密钥的应用；
+任意 fid 的密钥和应用列表可以用 `casty clients --fid <fid>` 查看。
+
+| 参数 | 显示 |
+| --- | --- |
+| `--limit 20` | 最多 20 条 cast（默认 50） |
+| `--since 24h` | 比某个时长更新的 cast：`45m`、`24h`、`7d` |
+| `--no-replies` | 不显示回复 |
+| `--channel /name` | 某一个频道中的 cast，按时间线中显示的名称，或按其父 URL 指定 |
+| `--only-app <name\|fid>` | 只显示通过该应用发布的 cast；可重复 |
+| `--exclude-app <name\|fid>` | 显示除通过该应用发布的 cast 之外的全部内容；可重复 |
+| `--fids 2,@alice` | 显示这些账户而不是你关注的账户，按 fid 或 @name 指定 |
+
+casty 从每个账户最多读取 `--limit` 条 cast（最多 100），开始时读取五条，只在可能属于最新内容的地方
+才读取更多，所以过滤后返回的 cast 可能少于 `--limit`。
+
+## 写入
+
+```sh
+./bin/casty cast "hello from my own node"
+./bin/casty reply 2 "agreed"
+./bin/casty like 2
+./bin/casty recast 2
+./bin/casty delete 1
+./bin/casty follow @name
+```
+
+数字是 cast 在最近一次显示的列表中的位置，该列表由 `casty feed`、`casty mentions`、
+`casty thread` 或 casty web 显示。也可以用 `<fid>:<0x hash>` 指定一条 cast，
+或者用 `casty cast` 打印的 farcaster.xyz 链接。一条 cast 最多 320 字节，作为长 cast 时最多 1024 字节，
+casty 会自行选择。
+
+`casty cast "text" --channel /name` 在频道中发帖。频道的名称不在节点上，只有它的父 URL 在，
+所以只有当 casty 打印过的某个列表中出现过该频道的 cast 之后，casty 才接受 `/name`；
+父 URL 本身则随时可以使用。
+
+`casty cast "gm @alice"` 提及 alice：她的应用会在通知中显示这条 cast。casty 像 `follow` 那样
+查找每个 @name，先在你的节点上，然后在公共 fname 注册表上（`--no-allow-fname-server` 只在节点上查找），
+并把它从文本中取出，记下她的 fid 和它所在的位置，提及就是这样传递的。没有人持有的名称会作为文本发出，
+casty 会说明这一点；`--no-mentions` 把每个 @name 都作为文本发送。一条 cast 最多提及 10 个账户。
+
+每次写入都会等到节点拥有该消息，因为只读节点只负责转发它。
+[只读节点与验证者](../concepts/read-nodes-vs-validators/)说明了 casty 等待多久，
+以及消息没有出现时它会怎么做。
+
+## casty 把文件保存在哪里
+
+在 `~/.config/casty`、`$XDG_CONFIG_HOME/casty`，或用 `--config` 指定的目录中：
+
+| 文件 | 内容 |
+| --- | --- |
+| `config.json` | 你的 fid、托管地址以及 casty 应用密钥的公钥部分 |
+| `keys.enc.json` | 应用密钥，用你的口令加密（scrypt，XChaCha20-Poly1305），权限 0600 |
+| `last-feed.json` | 最近一次显示的列表所编号的 cast，供 `casty like 2` 等使用 |
+| `web-token` | 把浏览器与 `casty web` 配对的令牌，权限 0600 |
+| `cache/` | 关注列表、应用标签和用户名，使下一次读取时间线时少问节点；列表中出现过的频道；以及向你显示过的最新一条提及，用于 `casty web` 中的计数 |
+
+只读取的命令从不询问口令。若想输入 `casty` 而不是 `./bin/casty`：
+
+```sh
+ln -s "$PWD/bin/casty" ~/.local/bin/casty
+```
+
+任何命令加上 `--json` 都会以 JSON 输出结果，`--quiet` 去掉进度说明。
+
+## 选项
+
+```text
+Usage: 2-client.sh [--node <url>] [--fid <fid>] [--from-source] [--no-init]
+                   [-- <casty init options>]
+
+  --node <url>    the node's HTTP API (default: http://127.0.0.1:3381, the tunnel from step 1)
+  --fid <fid>     no seed phrase: casty init --fid, then add the key in casty web with your wallet
+  --from-source   build casty here with Node 22.12 or newer and pnpm, instead of downloading it
+  --no-init       stop after casty doctor; run ./bin/casty init yourself later
+  -- <options>    passed to casty init, e.g. -- --address-index 1
+
+Without --fid, casty init asks for your seed phrase. Use a test account for this.
+
+The download is casty-<os>-<arch> and SHA256SUMS from CASTY_RELEASE_URL, by default this
+project's latest GitHub release, which has linux-x64, linux-arm64 and darwin-arm64.
+
+Exit codes: 0 ok, 2 bad arguments, 3 missing prerequisite, 4 node unreachable or no good download,
+5 key problem.
+```
+
+```text
+Usage: casty [options] [command]
+
+Read and write Farcaster through your own Snapchain node.
+
+Options:
+  --node <url>                    node HTTP API (default:
+                                  "http://127.0.0.1:3381")
+  --json                          print results as JSON
+  --config <dir>                  config directory (default:
+                                  $XDG_CONFIG_HOME/casty)
+  --quiet                         print results only, no progress notes
+  -h, --help                      display help for command
+
+Set up:
+  doctor                          check the node, its sync, the local clock and
+                                  the local setup
+  init [options]                  add a gasless app key for your fid: with --fid
+                                  and your wallet in casty web, or from your
+                                  seed phrase
+  whoami                          your fid, username, custody address, active
+                                  app key and storage
+  key                             your app keys
+
+Read:
+  feed [options]                  newest casts from you and the accounts you
+                                  follow, read from your node
+  mentions [options]              casts that mention you and replies to your
+                                  casts, newest first
+  thread <cast>                   a cast with what it answers and its replies,
+                                  numbered as the feed is
+  clients [options]               the app keys of a fid and which app requested
+                                  each
+  storage [options]               storage units and how full each message store
+                                  is
+  node                            about the node itself
+
+Write:
+  cast [options] <text>           publish a cast (up to 320 bytes, or 1024 as a
+                                  long cast)
+  reply [options] <cast> <text>   reply to a cast; same as cast --reply
+  delete <cast>                   delete one of your casts
+  like <cast>                     like a cast
+  unlike <cast>                   take a like back
+  recast <cast>                   recast a cast to your followers
+  unrecast <cast>                 take a recast back
+  follow [options] <fid|@name>    follow an account
+  unfollow [options] <fid|@name>  stop following an account
+
+In a browser:
+  web [options]                   the feed, threads and a compose box in a
+                                  browser, on this machine or a phone
+  serve [options]                 the page over an index of the feed, with push;
+                                  on the node's host behind HTTPS, which
+                                  1-node.sh serve installs
+
+Commands:
+  help [command]                  display help for command
+
+Examples:
+  casty feed --since 24h --no-replies
+  casty feed --exclude-app <name>     leave out casts posted through one app
+  casty like 2                        the second cast of the last casty feed
+  casty reply 2 "agreed"
+  casty follow @name
+  casty web                           the feed in your browser, or on your phone
+```

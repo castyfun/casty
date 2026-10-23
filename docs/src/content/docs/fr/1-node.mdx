@@ -1,0 +1,184 @@
+---
+title: 1. Lancer le nœud de lecture
+description: "Installer Snapchain sur l'hôte, attendre qu'il soit synchronisé, et ouvrir un tunnel SSH vers son API."
+sidebar:
+  order: 2
+---
+
+L'étape 1 installe un nœud de lecture Snapchain sur l'hôte de `node.env`, attend qu'il ait rattrapé
+le réseau, et ouvre un tunnel SSH pour que `http://127.0.0.1:3381` sur votre machine atteigne l'API
+HTTP du nœud.
+
+```sh
+./scripts/1-node.sh
+```
+
+## Ce qu'il fait sur l'hôte
+
+1. Attend que l'hôte réponde en SSH. Un nouveau serveur doit d'abord démarrer et exécuter
+   cloud-init ; le script essaie 60 fois, à 5 secondes d'intervalle.
+2. Attend que cloud-init se termine, si l'hôte l'utilise.
+3. Vérifie l'hôte et affiche une ligne par vérification :
+
+   | Vérification | Exige |
+   | --- | --- |
+   | `ram` | 15 Gio (Snapchain demande 16 Go ; le noyau en garde une partie) |
+   | `disk` | 1,8 Tio libre dans le répertoire de données, ignoré dès que `~/snapchain/.rocks` existe |
+   | `docker` | un serveur Docker auquel l'utilisateur SSH peut parler |
+   | `compose` | Docker Compose 2.24.4 ou plus récent, dont l'override ci-dessous a besoin |
+   | `ports` | 3381 à 3383 libres ; affiché, n'échoue jamais, puisque lors d'une nouvelle exécution le nœud les occupe |
+   | `clock` | à moins de 60 secondes de l'horloge de votre machine |
+
+   Un `no` sur n'importe quelle ligne arrête l'exécution avec le code de sortie 5.
+4. Écrit `~/snapchain/.env` avec `AGREE_NO_REWARDS_FOR_ME=true`, `HUB_OPERATOR_FID` (votre `--fid`,
+   0 par défaut), `SKIP_CRONTAB=true` sauf si vous passez `--autoupgrade`, un mot de passe Grafana
+   aléatoire unique sous forme de `GRAFANA_CREDS` (que lit le script propre à Snapchain) et de
+   `GRAFANA_PASSWORD` (que l'override donne à Grafana), et `STATSD_PUBLISH` et
+   `STATSD_ADMIN_PUBLISH` fixés sur la boucle locale de l'hôte, où le fichier compose publie statsd.
+   Il n'ajoute que les clés que le fichier n'a pas encore, et ne modifie jamais une valeur déjà
+   présente.
+5. Télécharge `docker-compose.mainnet.yml` (enregistré sous `docker-compose.yml`), `validators.toml`,
+   le `grafana.ini` de Grafana et le tableau de bord Snapchain depuis le dépôt Snapchain au tag
+   `@latest`, ou à `v<version>` avec `--release`.
+6. Écrit `docker-compose.override.yml`, que Docker Compose fusionne par-dessus le fichier téléchargé
+   et que les mises à jour de Snapchain ne remplacent jamais. Il publie Grafana sur la boucle locale
+   de l'hôte uniquement, lui donne le mot de passe de `.env` ainsi que sa source de données et son
+   tableau de bord, et, avec `--block-retention`, configure l'élagage des blocs.
+7. Démarre les services `snapchain` et `statsd` avec `docker compose up -d`.
+8. Attend la synchronisation, jusqu'à `--timeout` secondes (12 heures par défaut).
+9. Ouvre le tunnel, sauf si vous passez `--no-tunnel`.
+
+Les étapes 4 à 7 sont les parties non interactives du `snapchain.sh upgrade` propre à Snapchain ; le
+[guide du nœud](https://snapchain.farcaster.xyz/guides/managing-a-node) décrit les clés de `.env` et
+le fichier d'override.
+
+## Attendre la synchronisation
+
+Le premier démarrage télécharge un instantané de plusieurs centaines de Go, puis synchronise les blocs
+produits depuis cet instantané. Comptez des heures. Le script affiche une fois l'état complet :
+
+```text
+snapchain <version>, synced: no
+shard 0  height <n>  behind <s>s  size <x> GiB  mempool n/a
+shard 1  height <n>  behind <s>s  size <x> GiB  mempool n/a
+shard 2  height <n>  behind <s>s  size <x> GiB  mempool n/a
+```
+
+puis une ligne par vérification, avec l'heure, le retard du shard le plus lent, et une estimation
+tirée du rythme depuis la première vérification :
+
+```text
+<HH:MM>  <hours>h <minutes>m behind, ETA <estimate>
+```
+
+Les vérifications commencent à 10 secondes d'intervalle et s'espacent jusqu'à une par minute. Le
+nœud compte comme synchronisé quand chaque shard a moins de 10 secondes de retard ; l'état complet
+est alors affiché de nouveau. `behind` est le `blockDelay` que le nœud indique dans `/v1/info`. Les
+nœuds de lecture n'indiquent pas de taille de mempool pour certains shards, ce qui s'affiche `n/a`.
+
+Ctrl-C ne met fin qu'à l'attente. Le nœud continue de se synchroniser sur l'hôte ;
+`./scripts/1-node.sh status --wait` le surveille à partir de là où il en est. Relancer
+`./scripts/1-node.sh` fonctionne aussi, mais répète chaque étape et télécharge de nouveau le fichier
+compose (celui de la dernière version, sauf si vous passez le même `--release`).
+
+## Le tunnel
+
+```sh
+./scripts/1-node.sh tunnel          # forward 127.0.0.1:3381 and :3383 to the node
+./scripts/1-node.sh tunnel --stop   # close it
+```
+
+Le tunnel est un processus `ssh -N` en arrière-plan, retrouvé et arrêté par son socket de contrôle
+dans `~/.ssh`. Il ne revient pas tout seul après une coupure de la connexion ou un redémarrage de
+votre machine : relancez `tunnel`. Si autre chose écoute déjà sur le port local 3381 ou 3383, le
+tunnel ne s'établit pas et le script le signale.
+
+## Autres commandes
+
+| Commande | Ce qu'elle fait |
+| --- | --- |
+| `status` | l'état de la synchronisation une fois ; code de sortie 0 si synchronisé, 1 sinon |
+| `status --wait` | interroge jusqu'à la synchronisation, comme le fait `up` |
+| `logs` | suit les journaux du conteneur `snapchain` ; `logs casty` ceux de la page |
+| `upgrade` | récupère le fichier compose de la dernière version, ou de celle de `--release`, puis tire l'image et redémarre |
+| `serve` | fait tourner casty sur l'hôte derrière HTTPS, avec `--domain` ou `--tailscale` : [Depuis n'importe quel réseau](../serve/) |
+| `down` | arrête le nœud, et casty s'il sert la page ; la base de données reste sur le volume |
+
+`status` interroge le nœud par SSH, si bien que le port 3381 n'a jamais besoin d'être public pour
+lui.
+
+## Fixer une version et mises à jour
+
+Le fichier compose de chaque version de Snapchain nomme l'image `farcasterxyz/snapchain:latest`.
+`--release 0.14.3` télécharge les fichiers de `v0.14.3` et réécrit cette ligne en
+`farcasterxyz/snapchain:0.14.3` ; si le fichier ne nomme plus `:latest`, le script s'arrête plutôt
+que d'exécuter autre chose. `./scripts/1-node.sh upgrade` sans `--release` revient à la dernière
+version.
+
+`--autoupgrade --fid <fid>` installe à la place la tâche de mise à jour hebdomadaire de
+`snapchain.sh`, un jour de la semaine dérivé de votre fid de la même façon que `snapchain.sh` le
+dérive. Cette tâche exécute `docker system prune --volumes -f`, ce qui touche chaque projet Docker de
+l'hôte, pas seulement Snapchain. `--release` et `--autoupgrade` ne peuvent pas être combinés, et
+`--release` supprime une tâche de mise à jour qu'il trouve, puisque la tâche remplacerait la version
+fixée.
+
+## Rétention des blocs
+
+`--block-retention <n>` définit `SNAPCHAIN_PRUNING__BLOCK_RETENTION` pour que le nœud élague les
+blocs de plus de `n` jours. Snapchain ne le permet que sur les nœuds de lecture et le laisse désactivé
+par défaut. La valeur est une durée, lue au format humantime par la configuration de Snapchain, si
+bien que le `<n>d` qu'écrit casty vaut `30d` pour 30 jours.
+
+## Grafana
+
+Le fichier compose de Snapchain inclut Grafana. casty ne démarre que `snapchain` et `statsd`, mais
+prépare Grafana pour qu'une seule commande le démarre avec le tableau de bord Snapchain en place :
+sur l'hôte, exécutez `docker compose up -d grafana` dans `~/snapchain`. L'override le publie sur la
+boucle locale de l'hôte, donc accédez-y par SSH :
+
+```sh
+ssh -L 3000:127.0.0.1:3000 <user>@<node ip>   # then open http://127.0.0.1:3000
+```
+
+Le tableau de bord s'ouvre sans connexion (le `grafana.ini` de Snapchain permet à tout le monde de
+consulter) ; pour modifier, connectez-vous en tant que `admin` avec le mot de passe que contient
+`GRAFANA_PASSWORD` dans `~/snapchain/.env`. Grafana ne lit ce mot de passe qu'à son premier
+démarrage : si vous avez défini `GRAFANA_CREDS` vous-même avant que casty ne s'exécute, donnez à
+`GRAFANA_PASSWORD` la même valeur.
+
+## Options
+
+```text
+Usage: 1-node.sh [up|status|logs|tunnel|upgrade|serve|down] [options]
+
+  (no command)            up, wait for sync, then open the tunnel
+  up                      check the host, write ~/snapchain, start the node, wait for sync
+  status [--wait]         sync progress per shard; --wait polls until synced
+  logs [casty]            follow the node's logs, or the casty service's
+  tunnel [--stop]         forward local ports 3381 and 3383 to the node over SSH
+  upgrade                 fetch the latest release's compose file (or --release) and restart
+  serve                   run casty on the host, reached over HTTPS from any network: needs
+                          --domain <name> (Caddy gets the certificate; open 80 and 443 with
+                          0-provision.sh --https) or --tailscale (tailscale serve on the host)
+  down                    stop the node, and casty if it serves
+
+  --fid <fid>             your fid, recorded as HUB_OPERATOR_FID (default: 0)
+  --autoupgrade           install snapchain.sh's weekly auto-upgrade (needs --fid). It runs
+                          docker system prune --volumes -f on the whole host.
+  --block-retention <n>   prune blocks older than n days (read nodes only)
+  --release <version>     run this Snapchain release, such as 0.14.3, instead of the latest
+  --no-tunnel             do not open the tunnel after sync
+  --timeout <seconds>     how long status --wait waits (default: 43200, 12 hours)
+  --env <file>            node.env from step 0 (default: node.env)
+  --dry-run               print the ssh commands instead of running them
+  serve:
+  --domain <name>         the name the page is reached at; must point at the host
+  --tailscale             reach it as the host's name on your tailnet instead
+  --read-only             a page that reads only: no app key or passphrase leaves this machine
+  --config <dir>          casty's config directory here (default: $XDG_CONFIG_HOME/casty)
+
+Exit codes: 0 ok, 1 not synced or the node did not answer, 2 bad arguments, 3 missing prerequisite,
+4 no ssh connection or download failed, 5 preflight failed.
+```
+
+Suite : [2. Installer le client](../2-client/).

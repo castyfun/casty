@@ -1,0 +1,47 @@
+---
+title: FIDs
+description: El número que identifica una cuenta de Farcaster, quién es su dueño y cómo encuentra casty el tuyo.
+sidebar:
+  order: 5
+---
+
+Un fid es el número que identifica una cuenta de Farcaster. Cada mensaje lleva el fid en cuyo nombre
+habla, y cada mensaje debe estar firmado por una clave registrada para ese fid.
+
+## Quién es dueño de un fid
+
+Los fids se registran en el contrato IdRegistry en OP Mainnet. La dirección de Ethereum para la que se
+registra un fid es su dirección de custodia, y quien tenga la clave privada de esa dirección controla la
+cuenta: puede añadir y quitar las claves que firman mensajes, y mover el fid a otra dirección. Una frase
+semilla contiene esas claves; casty deriva de ella la dirección de custodia en `--address-index`, 0 por
+defecto.
+
+casty toma la dirección y la interfaz del contrato de `@farcaster/core`; nada de eso está escrito en el
+propio casty.
+
+## Cómo encuentra casty el tuyo
+
+Los nodos de Snapchain indexan los eventos del IdRegistry. `casty init` pide a tu nodo el último evento
+de registro de tu dirección de custodia (`/v1/onChainIdRegistryEventByAddress`) y toma el fid de él, así
+que no hace falta ningún RPC de Ethereum.
+
+Un nodo que todavía se está sincronizando puede no tener aún ese evento. `casty init --op-rpc <url>`
+llama entonces a `IdRegistry.idOf(address)` a través de un RPC de OP Mainnet que elijas. Un fid que se
+movió a otra dirección no se encuentra bajo la antigua.
+
+## Nombres
+
+Un nombre de usuario, o fname, es independiente del fid: el nodo guarda pruebas que vinculan un nombre a
+un fid. `casty follow @name` pide primero la prueba a tu nodo y pregunta al registro público en
+`fnames.farcaster.xyz` solo si el nodo no conoce el nombre. En el feed, un fid sin nombre conocido se
+muestra como `!<fid>`.
+
+## Almacenamiento
+
+Un fid solo puede publicar mientras tiene almacenamiento. `casty init` rechaza un fid sin storage units;
+consulta [Alquiler de almacenamiento](../../concepts/storage-rent/).
+
+## Los fids de esta documentación
+
+Los ejemplos vienen del nodo simulado del repositorio. Sus fids empiezan en 2000000001 y no pertenecen a
+nadie; la frase semilla de prueba contiene 2000000001.

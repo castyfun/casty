@@ -1,0 +1,51 @@
+---
+title: Alquiler de almacenamiento
+description: Cuánto puede guardar una cuenta, qué pasa cuando está llena y qué muestra casty al respecto.
+sidebar:
+  order: 9
+---
+
+Los nodos guardan los mensajes de una cuenta solo mientras la cuenta tiene almacenamiento. El
+almacenamiento se alquila en unidades, y cada unidad permite un número de mensajes de cada tipo. La
+documentación de Farcaster lo describe en
+[Messages](https://docs.farcaster.xyz/learn/what-is-farcaster/messages).
+
+## Qué contiene una unidad
+
+Los límites por unidad dependen del tipo de unidad. `@farcaster/core` 0.20.0 define tres:
+
+| Tipo de unidad | Casts | Reacciones | Links | Datos de usuario | Verificaciones |
+| --- | --- | --- | --- | --- | --- |
+| `UNIT_TYPE_LEGACY` | 5000 | 2500 | 2500 | 50 | 25 |
+| `UNIT_TYPE_2024` | 2000 | 1000 | 1000 | 50 | 25 |
+| `UNIT_TYPE_2025` | 100 | 200 | 200 | 25 | 5 |
+
+casty no calcula los límites por sí mismo; muestra lo que tu nodo informa para tu fid.
+
+## Cuando un almacén se llena
+
+Cuando una cuenta supera el límite de un tipo, el mensaje más antiguo de ese tipo se poda para hacer
+sitio. Las eliminaciones también cuentan: un cast borrado deja atrás un `CAST_REMOVE`, y este ocupa un
+hueco igual que un cast.
+
+Cuando el almacenamiento caduca, los nodos guardan los mensajes durante un periodo de gracia de 30 días
+y luego los descartan.
+
+## Qué muestra casty
+
+```sh
+./bin/casty storage
+```
+
+imprime tus unidades y, para cada almacén, cuántos mensajes contiene, su límite y cuán lleno está.
+Avisa al 90 por ciento:
+
+```text
+warning: <store> is <percent>% full; when it fills, the oldest messages of that kind are pruned
+```
+
+`casty whoami` muestra los mismos números en una línea, y `casty storage --fid <fid>` muestra los de
+cualquier cuenta. `casty init` rechaza un fid sin ninguna unidad, porque la red no aceptaría sus
+mensajes.
+
+casty no alquila almacenamiento.

@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# Fake ssh for bats. Records each call in $FAKE_LOG. A tunnel (-N) runs a sleep: in the
+# foreground, or with -f in the background, its pid written to the -S control socket path as a
+# master's socket would be. -S <socket> -O check|exit asks that "master" or stops it. Anything
+# else runs the remote command locally, inside $FAKE_REMOTE_HOME as $HOME, so tests can inspect
+# what the scripts did "on the host". Other fakes stay first on PATH, so docker, curl and
+# crontab are fakes there too.
+printf 'ssh %s\n' "$*" >>"${FAKE_LOG:-/dev/null}"
+background=0 tunnel=0 master="" socket="" control=""
+while [ $# -gt 0 ]; do
+  case $1 in
+    -f) background=1 ;;
+    -N) tunnel=1 ;;
+    -S) socket=$2 && shift ;;
+    -O) control=$2 && shift ;;
+    -o)
+      [ "$2" != ControlMaster=auto ] || master=auto
+      shift
+      ;;
+    -i | -L | -p | -l) shift ;;
+    -*) ;;
+    *) break ;;
+  esac
+  shift
+done
+
+# A control command talks to the master through its socket, never to the host.
+if [ -n "$control" ]; then
+  pid=$(cat "$socket" 2>/dev/null)
+  if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
+    echo "Control socket connect($socket): Connection refused" >&2
+    exit 255
+  fi
+  [ "$control" != exit ] || { kill "$pid" && rm -f "$socket"; }
+  exit 0
+fi
+
+# FAKE_SSH_HOST_KEY_CHANGED=1: the host's key is not the one known_hosts has.
+if [ -n "${FAKE_SSH_HOST_KEY_CHANGED:-}" ]; then
+  printf '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n' >&2
+  printf '@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @\n' >&2
+  printf 'Host key verification failed.\n' >&2
+  exit 255
+fi
+
+# FAKE_SSH_FAIL_TIMES=n: the first n connections fail as if sshd were not up yet.
+if [ -n "${FAKE_SSH_FAIL_TIMES:-}" ]; then
+  counter="${FAKE_REMOTE_HOME:?}.ssh-attempts"
+  attempts=$(($(cat "$counter" 2>/dev/null || echo 0) + 1))
+  echo "$attempts" >"$counter"
+  if [ "$attempts" -le "$FAKE_SSH_FAIL_TIMES" ]; then
+    echo "ssh: connect to host port 22: Connection refused" >&2
+    exit 255
+  fi
+fi
+
+if [ "$tunnel" = 1 ]; then
+  # FAKE_SSH_FORWARD_FAIL=1: a local port is taken, and ExitOnForwardFailure ends ssh.
+  if [ -n "${FAKE_SSH_FORWARD_FAIL:-}" ]; then
+    printf 'bind [127.0.0.1]:3381: Address already in use\nCould not request local forwarding.\n' >&2
+    exit 255
+  fi
+  [ "$background" = 1 ] || exec sleep 600
+  sleep 600 >/dev/null 2>&1 3>&- &
+  # ControlMaster=auto takes over a socket a dead master left behind and listens there.
+  if [ -n "$master" ] && [ -n "$socket" ]; then
+    echo $! >"$socket"
+  fi
+  exit 0
+fi
+
+shift # the destination
+[ $# -gt 0 ] || exit 0
+home=${FAKE_REMOTE_HOME:?FAKE_REMOTE_HOME must be set}
+mkdir -p "$home"
+cd "$home" && HOME=$home exec bash -c "$*"

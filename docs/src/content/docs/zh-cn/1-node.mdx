@@ -1,0 +1,166 @@
+---
+title: 1. 运行只读节点
+description: 在主机上安装 Snapchain，等待它同步，并打开一条到其 API 的 SSH 隧道。
+sidebar:
+  order: 2
+---
+
+第 1 步在 `node.env` 所描述的主机上安装 Snapchain 只读节点，等到它追上网络，然后打开一条 SSH 隧道，
+使你机器上的 `http://127.0.0.1:3381` 能访问节点的 HTTP API。
+
+```sh
+./scripts/1-node.sh
+```
+
+## 它在主机上做什么
+
+1. 等待主机响应 SSH。新服务器需要先启动并运行 cloud-init；
+   脚本尝试 60 次，每次间隔 5 秒。
+2. 如果主机使用 cloud-init，等待它完成。
+3. 检查主机，每项检查打印一行：
+
+   | 检查 | 要求 |
+   | --- | --- |
+   | `ram` | 15 GiB（Snapchain 要求 16 GB；内核会占用一部分） |
+   | `disk` | 数据目录中有 1.8 TiB 可用空间，`~/snapchain/.rocks` 存在后跳过 |
+   | `docker` | 一个 SSH 用户可以访问的 Docker 服务 |
+   | `compose` | Docker Compose 2.24.4 或更新版本，下面的覆盖文件需要它 |
+   | `ports` | 3381 到 3383 空闲；只显示，从不失败，因为再次运行时节点占用着它们 |
+   | `clock` | 与你机器的时钟相差不超过 60 秒 |
+
+   任何一行出现 `no` 都会以退出码 5 停止运行。
+4. 写入 `~/snapchain/.env`，内容包括 `AGREE_NO_REWARDS_FOR_ME=true`、`HUB_OPERATOR_FID`（你的
+   `--fid`，默认为 0）、`SKIP_CRONTAB=true`（除非你传入 `--autoupgrade`）、一个随机的 Grafana 密码，
+   同时写作 `GRAFANA_CREDS`（Snapchain 自己的脚本读取它）和 `GRAFANA_PASSWORD`（覆盖文件把它交给
+   Grafana），以及设置为主机回环地址的 `STATSD_PUBLISH` 和 `STATSD_ADMIN_PUBLISH`，compose 文件
+   在那里发布 statsd。它只添加文件中还没有的键，从不修改已有的值。
+5. 从 Snapchain 仓库的 `@latest` 标签（或使用 `--release` 时的 `v<version>`）下载
+   `docker-compose.mainnet.yml`（保存为 `docker-compose.yml`）、`validators.toml`、
+   Grafana 的 `grafana.ini` 和 Snapchain 仪表板。
+6. 写入 `docker-compose.override.yml`，Docker Compose 会把它合并到下载的文件之上，
+   Snapchain 升级也从不替换它。它只在主机的回环地址上发布 Grafana，为它提供 `.env` 中的密码、
+   数据源和仪表板，并在使用 `--block-retention` 时设置区块裁剪。
+7. 用 `docker compose up -d` 启动 `snapchain` 和 `statsd` 服务。
+8. 等待同步，最多 `--timeout` 秒（默认 12 小时）。
+9. 打开隧道，除非你传入 `--no-tunnel`。
+
+第 4 到第 7 步是 Snapchain 自己的 `snapchain.sh upgrade` 中不需要交互的部分；
+[节点指南](https://snapchain.farcaster.xyz/guides/managing-a-node)介绍了 `.env` 的各个键和覆盖文件。
+
+## 等待同步
+
+首次启动会下载几百 GB 的快照，然后同步该快照之后的区块。预计需要数小时。脚本先打印一次完整状态：
+
+```text
+snapchain <version>, synced: no
+shard 0  height <n>  behind <s>s  size <x> GiB  mempool n/a
+shard 1  height <n>  behind <s>s  size <x> GiB  mempool n/a
+shard 2  height <n>  behind <s>s  size <x> GiB  mempool n/a
+```
+
+然后每次检查打印一行，包括时间、最慢的分片落后多少，以及根据第一次检查以来的速度得出的估计：
+
+```text
+<HH:MM>  <hours>h <minutes>m behind, ETA <estimate>
+```
+
+检查开始时间隔 10 秒，之后逐渐放慢到每分钟一次。当每个分片落后都不到 10 秒时，节点算作已同步；
+此时会再次打印完整状态。`behind` 是节点在 `/v1/info` 中报告的 `blockDelay`。只读节点对某些分片
+不报告 mempool 大小，显示为 `n/a`。
+
+按 Ctrl-C 只结束等待。节点在主机上继续同步；
+`./scripts/1-node.sh status --wait` 从当前进度继续观察它。再次运行 `./scripts/1-node.sh`
+也可以，但会重复每一步，再次下载 compose 文件（除非你传入相同的 `--release`，否则下载最新版本的）。
+
+## 隧道
+
+```sh
+./scripts/1-node.sh tunnel          # forward 127.0.0.1:3381 and :3383 to the node
+./scripts/1-node.sh tunnel --stop   # close it
+```
+
+隧道是一个在后台运行的 `ssh -N` 进程，通过 `~/.ssh` 中的控制套接字查找和停止。连接断开或你的机器重启后，
+它不会自行恢复：请再次运行 `tunnel`。如果本地端口 3381 或 3383 已有其他程序在监听，
+隧道不会建立，脚本会说明这一点。
+
+## 其他命令
+
+| 命令 | 作用 |
+| --- | --- |
+| `status` | 显示一次同步状态；已同步时退出码为 0，否则为 1 |
+| `status --wait` | 像 `up` 那样轮询直到同步完成 |
+| `logs` | 跟踪 `snapchain` 容器的日志；`logs casty` 跟踪页面的日志 |
+| `upgrade` | 获取最新版本（或 `--release` 指定版本）的 compose 文件，然后拉取并重启 |
+| `serve` | 使用 `--domain` 或 `--tailscale`，在主机上以 HTTPS 运行 casty：[从任何网络访问](../serve/) |
+| `down` | 停止节点，以及正在提供页面的 casty；数据库保留在卷上 |
+
+`status` 通过 SSH 询问节点，所以它从不需要公开 3381 端口。
+
+## 固定版本与升级
+
+每个 Snapchain 版本的 compose 文件都把镜像写为 `farcasterxyz/snapchain:latest`。
+`--release 0.14.3` 下载 `v0.14.3` 的文件，并把这一行改写为
+`farcasterxyz/snapchain:0.14.3`；如果文件中不再是 `:latest`，脚本会停下，而不是运行别的东西。
+不带 `--release` 的 `./scripts/1-node.sh upgrade` 会回到最新版本。
+
+`--autoupgrade --fid <fid>` 则改为安装 `snapchain.sh` 的每周升级任务，运行日按 `snapchain.sh`
+的方式从你的 fid 推算出来。该任务会运行 `docker system prune --volumes -f`，这会影响主机上的每一个
+Docker 项目，而不只是 Snapchain。`--release` 和 `--autoupgrade` 不能同时使用，`--release`
+会删除它发现的升级任务，因为该任务会替换固定的版本。
+
+## 区块保留
+
+`--block-retention <n>` 设置 `SNAPCHAIN_PRUNING__BLOCK_RETENTION`，使节点裁剪 `n` 天之前的区块。
+Snapchain 只允许在只读节点上这样做，并且默认关闭。该值是一个时长，由 Snapchain 的配置按 humantime
+格式解析，所以 casty 写入的 `<n>d` 表示 30 天时就是 `30d`。
+
+## Grafana
+
+Snapchain 的 compose 文件包含 Grafana。casty 只启动 `snapchain` 和 `statsd`，但会把 Grafana 准备好，
+使一条命令就能启动它并带上 Snapchain 仪表板：在主机上，在 `~/snapchain` 中运行
+`docker compose up -d grafana`。覆盖文件把它发布在主机的回环地址上，所以请通过 SSH 访问：
+
+```sh
+ssh -L 3000:127.0.0.1:3000 <user>@<node ip>   # then open http://127.0.0.1:3000
+```
+
+仪表板无需登录即可打开（Snapchain 的 `grafana.ini` 允许任何人查看）；要编辑，请以 `admin` 身份登录，
+密码是 `~/snapchain/.env` 中 `GRAFANA_PASSWORD` 的值。Grafana 只在首次启动时读取这个密码：
+如果你在 casty 运行之前自己设置了 `GRAFANA_CREDS`，请把 `GRAFANA_PASSWORD` 设置为与之一致。
+
+## 选项
+
+```text
+Usage: 1-node.sh [up|status|logs|tunnel|upgrade|serve|down] [options]
+
+  (no command)            up, wait for sync, then open the tunnel
+  up                      check the host, write ~/snapchain, start the node, wait for sync
+  status [--wait]         sync progress per shard; --wait polls until synced
+  logs [casty]            follow the node's logs, or the casty service's
+  tunnel [--stop]         forward local ports 3381 and 3383 to the node over SSH
+  upgrade                 fetch the latest release's compose file (or --release) and restart
+  serve                   run casty on the host, reached over HTTPS from any network: needs
+                          --domain <name> (Caddy gets the certificate; open 80 and 443 with
+                          0-provision.sh --https) or --tailscale (tailscale serve on the host)
+  down                    stop the node, and casty if it serves
+
+  --fid <fid>             your fid, recorded as HUB_OPERATOR_FID (default: 0)
+  --autoupgrade           install snapchain.sh's weekly auto-upgrade (needs --fid). It runs
+                          docker system prune --volumes -f on the whole host.
+  --block-retention <n>   prune blocks older than n days (read nodes only)
+  --release <version>     run this Snapchain release, such as 0.14.3, instead of the latest
+  --no-tunnel             do not open the tunnel after sync
+  --timeout <seconds>     how long status --wait waits (default: 43200, 12 hours)
+  --env <file>            node.env from step 0 (default: node.env)
+  --dry-run               print the ssh commands instead of running them
+  serve:
+  --domain <name>         the name the page is reached at; must point at the host
+  --tailscale             reach it as the host's name on your tailnet instead
+  --read-only             a page that reads only: no app key or passphrase leaves this machine
+  --config <dir>          casty's config directory here (default: $XDG_CONFIG_HOME/casty)
+
+Exit codes: 0 ok, 1 not synced or the node did not answer, 2 bad arguments, 3 missing prerequisite,
+4 no ssh connection or download failed, 5 preflight failed.
+```
+
+下一步：[2. 安装客户端](../2-client/)。

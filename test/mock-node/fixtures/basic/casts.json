@@ -1,0 +1,1166 @@
+[
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000002,
+      "timestamp": 181351200,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "text": "Small wins today: the build is green and the tests are fast.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xaec27a055683a1d4f909223d304d14c523e40fc2",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "sTtXKxHKsBXiP6JXG1FmLDzp0t8Nd2Pm2DIyl156d8dH0150jCvbbfXmUSOHqmP2jIofAdd1SEMAo9ntj7K6Bg==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xd0f6dfa507419ec3531d527f20f37417fc819535714ff3ef6c8c59cf1b6f9fb0"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000002,
+      "timestamp": 181351800,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentCastId": {
+          "fid": 2000000002,
+          "hash": "0xaec27a055683a1d4f909223d304d14c523e40fc2"
+        },
+        "text": "Agreed, and the second part matters more.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x2fd1d812d8e19b46613e05315de6e1e12de4b62b",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "FQFCfBx/JyUAhoEB25vPIazTwTwPCH2oia/IbW0rm6DJEcY7qgg+QiZdZn+yyW+h3q+YXLno730s4cDnem3LCA==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xd0f6dfa507419ec3531d527f20f37417fc819535714ff3ef6c8c59cf1b6f9fb0"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000002,
+      "timestamp": 181352400,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentUrl": "https://example.com/~/channel/casty",
+        "text": "Notes from the reading group are up.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x50779ac8752bec59e42f44ba39f6d2ab0f668db0",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "hqv02PJO755qGFi7NxfG6yEEGUlc9XxPYbEpjQnUkHhFTCGUQGiasjAr7hI/Hb03fBq/1YWjIHPHw3kDMS5VBw==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xd0f6dfa507419ec3531d527f20f37417fc819535714ff3ef6c8c59cf1b6f9fb0"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000002,
+      "timestamp": 181353000,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [
+          2000000001
+        ],
+        "text": " thanks for the pointer, it worked.",
+        "mentionsPositions": [
+          0
+        ],
+        "embeds": [
+          {
+            "url": "https://example.com/2000000002/3"
+          }
+        ],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x973d398ad75e1f25fa780085f3c22d30b01d2504",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "eQHAUH2AwgKZqvaOYRL3QpgrYI0zFpHrUSx2yyceaMB5g3MtP8ywsNWjMORVjrHVjPLB9RvecNQYjLlDuL/BAg==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xd0f6dfa507419ec3531d527f20f37417fc819535714ff3ef6c8c59cf1b6f9fb0"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000003,
+      "timestamp": 181351199,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentCastId": {
+          "fid": 2000000002,
+          "hash": "0x973d398ad75e1f25fa780085f3c22d30b01d2504"
+        },
+        "text": "Agreed, and the second part matters more.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x4bd4826adb071ea2b9f3647c4a2ad7296f6ae6a2",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "9RMSIYAo/xfmh/bEUIbt/3c96JzdS1HADB9fCVHvCvyX7uOADT48H1uUa+UeipIs+5uEdSrT7qKdMo6r4aIbBg==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xa02392e81450f4dd957ce9fb8c8aab9b4eeade0978d6659aabc355e651d8b0c9"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000003,
+      "timestamp": 181351799,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentUrl": "https://example.com/~/channel/casty",
+        "text": "Posting from the command line today.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xc8a251c36d6f324ab7c5ef645f360754ff50c6c5",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "pGrYhNIBQUiamuF/yblebQAMANDBkCsm2P6w8r18v0LswEOQRFR+sN/eh4uK5471M2Rc/XW/rP3hzL1FntDRDQ==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xa02392e81450f4dd957ce9fb8c8aab9b4eeade0978d6659aabc355e651d8b0c9"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000003,
+      "timestamp": 181352399,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [
+          2000000001
+        ],
+        "text": " thanks for the pointer, it worked.",
+        "mentionsPositions": [
+          0
+        ],
+        "embeds": [
+          {
+            "url": "https://example.com/2000000003/2"
+          }
+        ],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x9dbd0826583fd8b9a268e2f984eb5505178899c6",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "mvfzEp+K5NduRQYNi/DPsU16eWZ8FDZImOx1ZlNKxWNFqf30h4w3CQaSk4LmxnofqSfw7R+AJvslclRXpBelBw==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xa02392e81450f4dd957ce9fb8c8aab9b4eeade0978d6659aabc355e651d8b0c9"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000003,
+      "timestamp": 181352999,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "text": "gm. Coffee first, then the backlog.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x2df06d74ae20988576de1e873e1050b7bba9580e",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "xgIiYPU5g0W+9hLvinZt48piCf7RF4xtLXcO98kMfSeXF72JWDdVtPNSJxH0qLeHfHzIzkHFTwMtnsavzBLuCQ==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xa02392e81450f4dd957ce9fb8c8aab9b4eeade0978d6659aabc355e651d8b0c9"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000004,
+      "timestamp": 181351198,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentUrl": "https://example.com/~/channel/casty",
+        "text": "Notes from the reading group are up.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x39b58019e928340c89d4cc372d1f13eaa0f559bb",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "x2ZPIJxqdZsOdugtiY+WpS2CtHFxcv33mWZTbB0fmrJGuG6h5o4eeU2xlpVnRfCVlHrhheS37gKLzGXN1ebPBw==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x944bab1cdff15c7a364c9303a75ea7e68758ef6426d26ddbe85edddd57606839"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000004,
+      "timestamp": 181351798,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [
+          2000000001
+        ],
+        "text": " the write-up is at the link below.",
+        "mentionsPositions": [
+          0
+        ],
+        "embeds": [
+          {
+            "url": "https://example.com/2000000004/1"
+          }
+        ],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xa2b48d820e9772ff5a5a3d0e1956f1d0b482ae67",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "6VSYSyq6fA0p1/yKYgveLkbH/+ktyOkDEg0Q2nL9tuiQwi41x2SLwW8A6++rmrSUe4ZR5vZ4p3/gp7KZyvN0AQ==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x944bab1cdff15c7a364c9303a75ea7e68758ef6426d26ddbe85edddd57606839"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000004,
+      "timestamp": 181352398,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "text": "Moved all my notes into one folder. Ten minutes of work I put off for a year.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xd23c08886e8674bbd8257d508b86338d1174a4e2",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "OeVGn+WBRYvSJheDGcci8TAcV1uJaQONMu29DXSez99c6A5XewCWKmQF0pNrM3Xu1aCM+9uyMO+SrJax6keiDg==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x944bab1cdff15c7a364c9303a75ea7e68758ef6426d26ddbe85edddd57606839"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000004,
+      "timestamp": 181352998,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentCastId": {
+          "fid": 2000000003,
+          "hash": "0x2df06d74ae20988576de1e873e1050b7bba9580e"
+        },
+        "text": "Same here. It took me a weekend to get right.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xa0843b822791ec891bce16f96b6794b7cddcdc60",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "nSTrj130wb/5NYPNl8VhgIjdEeckzyaW7lb5HBqEX6fEv7yfudIviJmw3D/LUIfQz1wzNmTpRZXeeiwY9HbZCA==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x944bab1cdff15c7a364c9303a75ea7e68758ef6426d26ddbe85edddd57606839"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000005,
+      "timestamp": 181351200,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [
+          2000000001
+        ],
+        "text": " thanks for the pointer, it worked.",
+        "mentionsPositions": [
+          0
+        ],
+        "embeds": [
+          {
+            "url": "https://example.com/2000000005/0"
+          }
+        ],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xe9d197a656d24636fc635ee9338570c3feec6772",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "LB2XnhlZNMbHaIEBrEYBQT9p0SlmGgiWpp52xurfG8Fs407dNwAEl/qLgOEIola1fp9nfPejAOvho/URPEuLBw==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xdea86e07d09a95095eae85ba14073d42d20df348852ba9e79f4b16080b3903c1"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000005,
+      "timestamp": 181351800,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "text": "Long walk, no phone. Recommended.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x1a28cdd8eb717a83e97b93ec5cc5cf91dc52e636",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "g1iFXnDoiuOSyfSAtS5zyDy2/PcEpydtlZooLPjkwZuQ+yQMCa/zHvCaeXP/f7fF/0SU/NUJ7G7eWuuyoUD8Aw==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xdea86e07d09a95095eae85ba14073d42d20df348852ba9e79f4b16080b3903c1"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000005,
+      "timestamp": 181352400,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentCastId": {
+          "fid": 2000000004,
+          "hash": "0xa0843b822791ec891bce16f96b6794b7cddcdc60"
+        },
+        "text": "Agreed, and the second part matters more.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x20c4af255bb73d6745e5d3284eb2152a7f729ddd",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "Ow/+e4vGJpPG2PbslS26nDl6AuWMt9SNeGtMkPWHE0tTAHxCgQZ2R5DwewYC6Mt2uMyyUqKbJkk3Ii8UFjSqCQ==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xdea86e07d09a95095eae85ba14073d42d20df348852ba9e79f4b16080b3903c1"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000005,
+      "timestamp": 181353000,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentUrl": "https://example.com/~/channel/casty",
+        "text": "Posting from the command line today.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xb6063f9d0a03fd52729e5c4a054337b338662b9a",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "4s3izaLza0ZwGqukupFFf1h2ujC1VSWKOvcimPKkMP6PC5Q1NPxNDohcCsQxxCQYTS7Z64EJHjGnHNsE/3ZJBA==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xdea86e07d09a95095eae85ba14073d42d20df348852ba9e79f4b16080b3903c1"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000006,
+      "timestamp": 181351199,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "text": "Long walk, no phone. Recommended.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x34d4f62d50df1e5efef0dd1e6dc5a5be4d52a34d",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "lcE+LDb7zgLRLpj1/FW7aW7Mz6jEIm9YojJvH/aJ/37BMPS8b2PQTmhj7GcUM/gpNulcPBlBSI0VH2mGtmFYCA==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x8f68b97c1e401ac9c9c96b2dd2ed07cc1c90f26d602b5577ef99cc7b7a09cf43"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000006,
+      "timestamp": 181351799,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentCastId": {
+          "fid": 2000000005,
+          "hash": "0xb6063f9d0a03fd52729e5c4a054337b338662b9a"
+        },
+        "text": "I would start with something you use every day.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x2ac789bd13372399b210e0668e4d487f0036ffb7",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "VfbEeNZKlEu6oz8FzQHYyA3o0RVJu8EgbHW32kEeb/TXVVoy9QNfq4SR99pOAebpA/uSSmr83p8NDkiprxEyDg==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x8f68b97c1e401ac9c9c96b2dd2ed07cc1c90f26d602b5577ef99cc7b7a09cf43"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000006,
+      "timestamp": 181352399,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentUrl": "https://example.com/~/channel/casty",
+        "text": "Posting from the command line today.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xcd0caf9ea327379c537660ca2fc9fbcf3f20e9b7",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "95eyUyejKQODRbjfTTv+VK/0GYQ1i3vKUQkzE114SVhqsjautkzHGP30py+NZe60fy7bR+F0Sei+ErvKnPvUBQ==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x8f68b97c1e401ac9c9c96b2dd2ed07cc1c90f26d602b5577ef99cc7b7a09cf43"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000006,
+      "timestamp": 181352999,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [
+          2000000001
+        ],
+        "text": " have you tried the --since flag?",
+        "mentionsPositions": [
+          0
+        ],
+        "embeds": [
+          {
+            "url": "https://example.com/2000000006/3"
+          }
+        ],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x1761b0f9416448e90a68f65bc7a7e97bfdb26096",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "fveel3s7G3e/XEgsxuEEaUOsYRmR3y2v1GpbbsnD6RsZWINRoIXZ4RBQJ78Lc9EDkTrkllBvaMJN28dizkEmAg==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x8f68b97c1e401ac9c9c96b2dd2ed07cc1c90f26d602b5577ef99cc7b7a09cf43"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000007,
+      "timestamp": 181351198,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentCastId": {
+          "fid": 2000000006,
+          "hash": "0x1761b0f9416448e90a68f65bc7a7e97bfdb26096"
+        },
+        "text": "Same here. It took me a weekend to get right.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x2cfceee8b77d97d8d153931f97574f826a0cd892",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "wV3TZ+Q/n/q3gmtwQGkG4NrXubwsbXkeJ1rV0J1BBeAdRp6g3UcVE8Y5+biLSq6XdG4S0MwKA1WqMAGy8faHDA==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x61ae844c8e784a83dff21d5ac6d8772bf0be489ce5e2ea5bb51adbfe1501e32d"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000007,
+      "timestamp": 181351798,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentUrl": "https://example.com/~/channel/casty",
+        "text": "Notes from the reading group are up.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x36c4009edce1f3f1a39a9f7c5b2105bf98be0bf8",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "uCTt701kYOe/E/DzvwYsfrgvkyqyqSvbw7xJkNAvvZ0DfN4NLiATFv//5H3v1yWuoDaKA6etifH9996mzCz6Dg==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x61ae844c8e784a83dff21d5ac6d8772bf0be489ce5e2ea5bb51adbfe1501e32d"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000007,
+      "timestamp": 181352398,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [
+          2000000001
+        ],
+        "text": " have you tried the --since flag?",
+        "mentionsPositions": [
+          0
+        ],
+        "embeds": [
+          {
+            "url": "https://example.com/2000000007/2"
+          }
+        ],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xf5001f3af458056ebb255ada5b74fbab58618949",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "vKGF3UI2b6/inplbrCioysXF6gPwVM4BCY9Qzm4pIujf17ceHCXLQBihdpm1COnkTu7fJLAtAzB3DaNl2gqkBw==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x61ae844c8e784a83dff21d5ac6d8772bf0be489ce5e2ea5bb51adbfe1501e32d"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000007,
+      "timestamp": 181352998,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "text": "What is a good first project for someone learning TypeScript?",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x01b4eece33b215b588cb495812db25b6b0b7314a",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "tbuvVcoN7DTkNAuGt0eCT05X1K10l1j0pIMDJIN+2wy8It9PBN0/Mw8Vl+BOALeaOmz6K72m8i+csL+FDovtAg==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x61ae844c8e784a83dff21d5ac6d8772bf0be489ce5e2ea5bb51adbfe1501e32d"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000008,
+      "timestamp": 181351200,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentUrl": "https://example.com/~/channel/casty",
+        "text": "Notes from the reading group are up.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x6ed6823eb4b7bf24fc0bc52e65b5d1e91f7f4ce6",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "ifOf7D0AnSWCUETRLJRDOuR6TSRZAKnczOGVJbPQfjY3BydHrzgTCU8PGhUTOkMjBS+Q4hI0MZAKzMdbcNadCg==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x828129f56b995fe7bd37ce4f5a71aa64e9cde2a16b19342a21dc0df5dfec7450"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000008,
+      "timestamp": 181351800,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [
+          2000000001
+        ],
+        "text": " thanks for the pointer, it worked.",
+        "mentionsPositions": [
+          0
+        ],
+        "embeds": [
+          {
+            "url": "https://example.com/2000000008/1"
+          }
+        ],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x9aa84426b75841b98a42940e4235fe7052857de8",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "38W6rRZaSYugBRZSKbH5qthkccLzGcAcPwlfOnLr2q1P5DVRsCiYbMVsHFRuDkJ/Dg3iCbtgr9ssPmcz/I5XCA==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x828129f56b995fe7bd37ce4f5a71aa64e9cde2a16b19342a21dc0df5dfec7450"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000008,
+      "timestamp": 181352400,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "text": "What is a good first project for someone learning TypeScript?",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x17d45d545378eede101be8e5ad66b5ef3131d009",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "vxVKR57M/EoYretJyTaR54IHo+M1Bsy2SaOC6QZEfG9Qh5TcElMKx51pPvubJkeg9q+dWKrziQn8nAKvSMgMBQ==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x828129f56b995fe7bd37ce4f5a71aa64e9cde2a16b19342a21dc0df5dfec7450"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000008,
+      "timestamp": 181353000,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentCastId": {
+          "fid": 2000000007,
+          "hash": "0x01b4eece33b215b588cb495812db25b6b0b7314a"
+        },
+        "text": "I would start with something you use every day.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xb7f825bcc8785362062e184954e66c9f6b53e87b",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "ZXH1WDwrd2r19c00eBd6xYfjFwJVPU6f31XoQDEvbvTsPC8Yg7EjKl5t7+eAlbTnyjZK1vmGEarWGVKzhMKoBQ==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x828129f56b995fe7bd37ce4f5a71aa64e9cde2a16b19342a21dc0df5dfec7450"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000009,
+      "timestamp": 181351199,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [
+          2000000001
+        ],
+        "text": " have you tried the --since flag?",
+        "mentionsPositions": [
+          0
+        ],
+        "embeds": [
+          {
+            "url": "https://example.com/2000000009/0"
+          }
+        ],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xd956f3a648afa929639e36c0d0b65faed095b889",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "EQ2Elo2bq84YPiJW2HqiermjYnWJl4Lfw6McbggmdbhyqeCtkZlAEgxP0y0DGHzzQ0kdWEi3S1zz4aCJAuXiCw==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xe056e72a55a0c63a58ede9a37639d0935c27a0b51897749e7ad61e881b971d0d"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000009,
+      "timestamp": 181351799,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "text": "What is a good first project for someone learning TypeScript?",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x3bb1597f3ffab53fcaaf98ae78376461cf552858",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "UJ8SAHsifsgPDIhBJs93SZq8foFKDIngGcpieZ/2eeKGCusYR96ym0QMjHmnppZ4d8+C7lshCvw7rbX/u1NpDg==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xe056e72a55a0c63a58ede9a37639d0935c27a0b51897749e7ad61e881b971d0d"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000009,
+      "timestamp": 181352399,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentCastId": {
+          "fid": 2000000008,
+          "hash": "0xb7f825bcc8785362062e184954e66c9f6b53e87b"
+        },
+        "text": "Same here. It took me a weekend to get right.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xa4cb305efc63a5696db9d0513c3f13f02cd8cf41",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "ciPNcBUjWExWvcK+R1+eFjO4yKGNastWoIgfM4KVaEFbFSwh8q0nhHAKjbIssJO+6Pw1cbZAiG9r6N0swoOgBQ==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xe056e72a55a0c63a58ede9a37639d0935c27a0b51897749e7ad61e881b971d0d"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000009,
+      "timestamp": 181352999,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentUrl": "https://example.com/~/channel/casty",
+        "text": "Posting from the command line today.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xb0f45d791edb652174a2bce0791dc775416a8912",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "WF2GDGKRIdL0i2g1OluYYNuejoOdujlSWZjqTWK0GCyDx5TIoVsg3gjJZfaIrKqVszlmRF02lTR9KZvobfVfAQ==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xe056e72a55a0c63a58ede9a37639d0935c27a0b51897749e7ad61e881b971d0d"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000010,
+      "timestamp": 181351198,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "text": "Reading the Snapchain docs on a train. A good way to spend an hour.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xdc91e48417219e580c83ca1e3f0f6ab6b5d81347",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "tdGxWSNuIl+AT34/MViCm/fPygy/MJnuy3BshS//EkT/ur7D7G3ouYmc9AnZLlKlMfx0diWnT0vB2ZCffPIqBw==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x5363daec1f0ec9ea4fcd97d850755fc3daec9cca309a37089dced7b6075aa8c7"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000010,
+      "timestamp": 181351798,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentCastId": {
+          "fid": 2000000009,
+          "hash": "0xb0f45d791edb652174a2bce0791dc775416a8912"
+        },
+        "text": "Same here. It took me a weekend to get right.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xf5751953391305b54c11239f51d78a2560f89f89",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "gvV+srPHbDn65+xnY69+4051xTtIvJO4Ondv8RbBecUTalopzOwJldX6JY/i0/4/6xdhr2ZocHnVok1lu/+4Cw==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x5363daec1f0ec9ea4fcd97d850755fc3daec9cca309a37089dced7b6075aa8c7"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000010,
+      "timestamp": 181352398,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentUrl": "https://example.com/~/channel/casty",
+        "text": "Weekly thread: what are you building?",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x1c845a6c7d3f059d0fc234b02d54835f33e5a6ca",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "iOoi+LH+h6wCKYTB+reZrB78gp7OYLWab3Fz7gmDblNZB9E5pPnBcHBzyAWm3jmaROwed6TXuyeOHL7xa4/DAQ==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x5363daec1f0ec9ea4fcd97d850755fc3daec9cca309a37089dced7b6075aa8c7"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000010,
+      "timestamp": 181352998,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [
+          2000000001
+        ],
+        "text": " thanks for the pointer, it worked.",
+        "mentionsPositions": [
+          0
+        ],
+        "embeds": [
+          {
+            "url": "https://example.com/2000000010/3"
+          }
+        ],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x9d60e3a4989cf4b044cc16c7633ee34c6328f27c",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "5zNplvP6HHU9Q0v14jj1xZOxZW/y410JW7edb+oH0csHHXnDCUu45C9qVp2CrET003uCwg6u7ZP+VR9Wx3FfBw==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x5363daec1f0ec9ea4fcd97d850755fc3daec9cca309a37089dced7b6075aa8c7"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000011,
+      "timestamp": 181351200,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentCastId": {
+          "fid": 2000000010,
+          "hash": "0x9d60e3a4989cf4b044cc16c7633ee34c6328f27c"
+        },
+        "text": "Same here. It took me a weekend to get right.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x40c4db2e8471018609df2b1299b7ce68170a3f92",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "mCAH8W4g9UQYBE0Pgj1ZfAR7Vdsc6q7FpETZ1eAzj8x9AG7RmL9l9HV+4S/8wwo3SECKPm5i3dk6mwbNfjuWDQ==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xc3f8dcdaebb0b1a8b1db9d55de782ac636962ae4e0d7bf1cc9da98f4f111cc3d"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000011,
+      "timestamp": 181351800,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentUrl": "https://example.com/~/channel/casty",
+        "text": "Posting from the command line today.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xe91aae75ceb6f7c355a472bdf88c4d8ea9e92859",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "qWFs8iykCzDiEA4OCz3XpwLY7d9pp5Cayt5kT2WW16+GMTYPX1Qof6B+5DbTENFVo3YoMjWfyFNx+ABykgxpAA==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xc3f8dcdaebb0b1a8b1db9d55de782ac636962ae4e0d7bf1cc9da98f4f111cc3d"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000011,
+      "timestamp": 181352400,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [
+          2000000001
+        ],
+        "text": " the write-up is at the link below.",
+        "mentionsPositions": [
+          0
+        ],
+        "embeds": [
+          {
+            "url": "https://example.com/2000000011/2"
+          }
+        ],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x684aa0569552a1b6424179236d744d89d925d0ef",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "jcF6RAdvhEP0bkhvu8b9/GJv0kxruTsfdfbul8LcfdujPKHJFkyp1cHhQuH/YUOP8AR8O8SaWpJTVlj6zNjzDA==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xc3f8dcdaebb0b1a8b1db9d55de782ac636962ae4e0d7bf1cc9da98f4f111cc3d"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000011,
+      "timestamp": 181353000,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "text": "Reading the Snapchain docs on a train. A good way to spend an hour.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x9d392ea07688c8819b914aae4c8bc13757b2635a",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "IuEMYYsHaUQCqIL5YRgXfJvedPiOlCMkTvUHxQ4HwkEnqjjPXleJK/+jOG63Sp3wsHe5afGTNUxwtVpj6OdiCw==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xc3f8dcdaebb0b1a8b1db9d55de782ac636962ae4e0d7bf1cc9da98f4f111cc3d"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000012,
+      "timestamp": 181351199,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentUrl": "https://example.com/~/channel/casty",
+        "text": "Weekly thread: what are you building?",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x2116009546a18acefbc8116ee1e080428ff2a0bd",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "N3BZe3FlrAjOycvY3m6liB8o/gET8a6M4AbAPTVYGMInumGm3dmIwpujaMOEIwdPSvOwuyKFwxtcmw7+U6mLDw==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xb5095baac9a07f901f55ffbca93e33f16821d27c37d1d4f0b7fac7f5dc3a9fe0"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000012,
+      "timestamp": 181351799,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [
+          2000000001
+        ],
+        "text": " have you tried the --since flag?",
+        "mentionsPositions": [
+          0
+        ],
+        "embeds": [
+          {
+            "url": "https://example.com/2000000012/1"
+          }
+        ],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xf1e56fb4670264131f35845f74c25fab5a0cdced",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "iiPYmGlps6WlnMgwnJpKLyAboNZfdLo8TrMjJkqWjGPiCULgbws7049vSU8Y6Vpyt2K+iu61nRH5KG5qlt2WAw==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xb5095baac9a07f901f55ffbca93e33f16821d27c37d1d4f0b7fac7f5dc3a9fe0"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000012,
+      "timestamp": 181352399,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "text": "Shipped the fix and wrote the changelog.\n\nThe bug was a missing await, as usual.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x77fc475877abea5d018c4d844e24bf1f5ea83649",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "QTDJnpCHImfIKxYkao39LxGj9krWo4McVoPK3vZwsmwTFy6cfMeREdX6Majl/yGa3R+IFLppm4+S8k7LSiYUAQ==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xb5095baac9a07f901f55ffbca93e33f16821d27c37d1d4f0b7fac7f5dc3a9fe0"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000012,
+      "timestamp": 181352999,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentCastId": {
+          "fid": 2000000011,
+          "hash": "0x9d392ea07688c8819b914aae4c8bc13757b2635a"
+        },
+        "text": "Same here. It took me a weekend to get right.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xed52e5cbb0feaa140c4271ddf4476ced5cae9219",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "Ztznj3N52HjQtppHMoBFuuKks+SYaTeNa5XqT4ydHNmlW82h9y/zSDTI7CGyTrNsnY5B1GPJwj4RSj29k4i9CQ==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xb5095baac9a07f901f55ffbca93e33f16821d27c37d1d4f0b7fac7f5dc3a9fe0"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000013,
+      "timestamp": 181351198,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [
+          2000000001
+        ],
+        "text": " have you tried the --since flag?",
+        "mentionsPositions": [
+          0
+        ],
+        "embeds": [
+          {
+            "url": "https://example.com/2000000013/0"
+          }
+        ],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xdfac569ddf7c24eb1fbbdb107fa17930f48cd873",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "ybrYI55SFUOg+7ydYqlro592tLa5OMrlxjGq4T20EIJE00r8WljVfq9GBI16VIcaXT8ytW9R4vFK3mqDWRAXBA==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x9cfdfc13901306660a55477b748d0b9176e424b06beede60e9de354cc47b2d80"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000013,
+      "timestamp": 181351798,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "text": "What is a good first project for someone learning TypeScript?",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0x80c4989deecb4ad76382acf2fa8089d8bf1b0e9a",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "aU41vatmPZRlA0/LROjA+/0BNh/RFhvZVmB64ZUNGU9aWj53y2TcOv5ecL54jnHb3v/HbYaB/DQSFkrXFnhYAg==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x9cfdfc13901306660a55477b748d0b9176e424b06beede60e9de354cc47b2d80"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000013,
+      "timestamp": 181352398,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentCastId": {
+          "fid": 2000000012,
+          "hash": "0xed52e5cbb0feaa140c4271ddf4476ced5cae9219"
+        },
+        "text": "Agreed, and the second part matters more.",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xf8672a529d9df984c64038a994def0d156bc039e",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "p1DsmWP6kYsqSRkMcY43yipFXRltuGAGLLXIHv80fk+KjsvABB8GVv5+RG7Goo8sOsg/RlFr97SZY/+MgVR2CQ==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x9cfdfc13901306660a55477b748d0b9176e424b06beede60e9de354cc47b2d80"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_CAST_ADD",
+      "fid": 2000000013,
+      "timestamp": 181352998,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "castAddBody": {
+        "embedsDeprecated": [],
+        "mentions": [],
+        "parentUrl": "https://example.com/~/channel/casty",
+        "text": "Weekly thread: what are you building?",
+        "mentionsPositions": [],
+        "embeds": [],
+        "type": "CAST"
+      }
+    },
+    "hash": "0xf35c14d766d32ce16fc23262b5b6a5d0a48126a2",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "Pidr4+58NdwkmfTi8zOmMjrIjiDUGkKi6wi1/cgzEJTqfvhXjVspbMBi2o8KzKAGUJHueQ+cVdh8jHwFOESTDg==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x9cfdfc13901306660a55477b748d0b9176e424b06beede60e9de354cc47b2d80"
+  }
+]

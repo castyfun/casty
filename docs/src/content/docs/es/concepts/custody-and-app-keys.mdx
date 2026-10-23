@@ -1,0 +1,83 @@
+---
+title: Dirección de custodia y claves de aplicación
+description: Por qué casty pide tu frase semilla una vez y qué puede hacer la clave de aplicación sin gas que añade.
+sidebar:
+  order: 6
+---
+
+Intervienen dos tipos de claves. La dirección de custodia es dueña de tu fid. Una clave de aplicación
+firma tus mensajes de cada día: casts, reacciones, follows. casty usa la dirección de custodia una vez,
+para añadir una clave de aplicación, y guarda solo la clave de aplicación. La custodia firma o bien en
+una billetera, desde la página ([Billeteras y claves](../../concepts/wallets/)), o bien en una
+terminal, a partir de la frase semilla que pide `casty init`.
+
+## La dirección de custodia
+
+Es una cuenta de Ethereum, derivada de tu frase semilla. Puede añadir y quitar claves de aplicación y
+mover el fid, así que casty nunca la guarda: `casty init` lee la frase, firma una solicitud y pone la
+frase a cero. `casty key revoke` la vuelve a pedir, porque quitar una clave con la dirección de
+custodia requiere una firma nueva.
+
+## La clave de aplicación
+
+Una clave Ed25519 que casty genera en tu máquina. Firma mensajes para tu fid, y los nodos los aceptan
+mientras la clave esté registrada y no haya caducado.
+
+Desde la versión 16 del motor, Snapchain registra estas claves con un mensaje `KEY_ADD` en lugar de una
+transacción en cadena: sin gas, y la clave se puede usar en cuanto el mensaje se fusiona. casty lo
+construye con los helpers de `@farcaster/core` `makeKeyAddBody` y `makeKeyAdd`. Consulta
+[writing messages](https://snapchain.farcaster.xyz/guides/writing-messages) en la documentación de
+Snapchain.
+
+Un `KEY_ADD` lleva tres firmas:
+
+- la firma de la aplicación solicitante sobre una solicitud de clave, hecha por la dirección de custodia
+  del fid de la aplicación (`--app-fid`, tu propio fid por defecto);
+- la firma de la dirección de custodia sobre la clave, sus ámbitos, su duración, un nonce y una fecha
+  límite;
+- el sobre del mensaje, firmado por la propia clave nueva, que demuestra que casty tiene su mitad
+  privada.
+
+El nonce es por fid y debe crecer con cada cambio de clave: casty lee el actual del nodo y le suma 1.
+Si otro cambio llega antes, el nodo rechaza el mensaje, y `casty init` reintenta una vez con un nonce
+nuevo.
+
+## Ámbitos
+
+Una clave sin gas enumera los tipos de mensaje que puede firmar. casty pide estos por defecto:
+
+| Nombre en `--scopes` | Tipos de mensaje |
+| --- | --- |
+| `cast` | `CAST_ADD`, `CAST_REMOVE` |
+| `reaction` | `REACTION_ADD`, `REACTION_REMOVE` |
+| `link` | `LINK_ADD`, `LINK_REMOVE` |
+
+`user-data` (`USER_DATA_ADD`, tu perfil) se añade solo cuando lo pides. `KEY_ADD` y `KEY_REMOVE` nunca
+pueden estar entre los ámbitos de una clave, así que una clave de aplicación no puede añadir claves ni
+quitar otras claves; solo puede quitarse a sí misma.
+
+## Duración
+
+`--ttl` fija cuánto vive la clave sin usarse: 30 días por defecto, como máximo 90. Cada mensaje que la
+clave firma y que se fusiona vuelve a empezar el periodo, así que una clave que usas no caduca.
+`casty init` imprime la fecha en que caducaría si no se usara. Un fid puede tener como máximo 1000
+claves sin gas activas.
+
+## Qué aplicación publicó un cast
+
+Cada clave registra el fid de la aplicación que la solicitó. Un cast lleva la clave pública que lo
+firmó, así que el feed puede decir de qué aplicación vino: casty busca el firmante en la lista de claves
+del autor, toma el fid solicitante y muestra el nombre de usuario de ese fid después de `via`.
+`--only-app` y `--exclude-app` filtran por él, y `casty clients --fid <fid>` enumera las claves de
+cualquier cuenta con sus aplicaciones. Las claves añadidas en cadena llevan la misma solicitud, y casty
+las lee de la misma forma.
+
+## Quitar una clave
+
+| Comando | Firmado por | Necesita |
+| --- | --- | --- |
+| `casty key revoke <key>` | la dirección de custodia | la frase semilla |
+| `casty key revoke <key> --self` | la propia clave de aplicación | la clave en el almacén de casty |
+
+Ambos envían un `KEY_REMOVE` y esperan hasta que el nodo deja de listar la clave. Las claves añadidas
+en cadena se quitan en cadena, en el contrato KeyRegistry; casty no hace eso.

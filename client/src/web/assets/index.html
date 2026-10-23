@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121211" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="casty">
+<title>casty</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="stylesheet" href="/app.css">
+<script src="/theme.js"></script>
+<script type="module" src="/app.js"></script>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <a class="brand" href="#/" title="the feed">casty<span class="dot" id="dot" aria-hidden="true"></span></a>
+    <nav class="tabs" aria-label="Views">
+      <a href="#/" id="tab-feed">feed</a>
+      <a href="#/mentions" id="tab-mentions">mentions<span class="badge" id="mentions-badge" hidden></span></a>
+      <a href="#/you" id="tab-you">you</a>
+    </nav>
+    <button class="word" id="refresh" type="button" title="Refresh (r)" hidden>refresh</button>
+    <button class="word" id="theme" type="button" title="Theme: auto follows the system">auto</button>
+  </div>
+</header>
+
+<div class="notice" id="notice" role="status" hidden></div>
+<div class="pull mono" id="pull" aria-hidden="true" hidden>release to refresh</div>
+
+<section id="pair" class="page pair" hidden>
+  <h1>pair this browser</h1>
+  <p class="warn" id="pair-note" hidden>The saved token was not accepted: casty web may have been restarted with --new-token.</p>
+  <p>casty web printed a link with a token when it started. Open that link here, or paste it below.</p>
+  <form id="pair-form" class="row">
+    <label class="visually-hidden" for="pair-input">Link or token</label>
+    <input id="pair-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="http://.../#token=..." required>
+    <button class="solid" type="submit">pair</button>
+  </form>
+</section>
+
+<main id="home" class="page">
+  <nav class="filters" aria-label="What the feed shows">
+    <button class="toggle" id="replies" type="button" aria-pressed="true">replies</button>
+    <span id="apps" class="apps"></span>
+    <button class="toggle channel" id="channel" type="button" hidden></button>
+  </nav>
+  <button class="new-casts mono" id="new-casts" type="button" hidden></button>
+  <ol class="casts" id="feed"></ol>
+  <button class="more" id="more" type="button" hidden>show more</button>
+</main>
+
+<main id="mentions" class="page" hidden>
+  <ol class="casts" id="mentions-list"></ol>
+</main>
+
+<main id="thread" class="page" hidden>
+  <ol class="casts" id="thread-list"></ol>
+</main>
+
+<main id="profile" class="page" hidden>
+  <header class="head">
+    <h1 id="profile-name">profile</h1>
+    <p class="mono muted" id="profile-fid"></p>
+    <p class="bio" id="profile-bio" hidden></p>
+    <p class="mono small verified" id="profile-verified" hidden></p>
+    <p class="muted" id="profile-apps"></p>
+    <button class="outline" id="profile-follow" type="button" hidden></button>
+  </header>
+  <ol class="casts" id="profile-list"></ol>
+</main>
+
+<main id="you" class="page" hidden>
+  <header class="head">
+    <h1 id="you-name">you</h1>
+    <p class="mono muted" id="you-fid"></p>
+  </header>
+  <form id="find" class="row">
+    <label class="visually-hidden" for="find-input">Open an account by @name or fid</label>
+    <input id="find-input" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="@name or fid, to open and follow" required>
+    <button class="outline" type="submit">open</button>
+  </form>
+  <div id="you-body"></div>
+</main>
+
+<button class="prompt" id="prompt" type="button" hidden>
+  <span class="caret" aria-hidden="true">&#8250;</span><span class="prompt-text">cast something</span><kbd>n</kbd>
+</button>
+
+<dialog id="compose" aria-labelledby="compose-title">
+  <form id="compose-form">
+    <div class="compose-head">
+      <button class="word" id="compose-close" type="button">close</button>
+      <h2 id="compose-title">cast</h2>
+      <span class="count mono" id="count"></span>
+      <button class="solid" id="send" type="submit" disabled>cast</button>
+    </div>
+    <p class="replying" id="replying" hidden></p>
+    <label class="visually-hidden" for="text">Cast text</label>
+    <textarea id="text" rows="5" placeholder="what is on your mind"></textarea>
+    <div class="extras">
+      <label class="field">
+        <span class="mono">channel</span>
+        <input id="channel-input" list="channels" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="optional: /name or url">
+      </label>
+      <datalist id="channels"></datalist>
+      <div id="links"></div>
+      <button class="word" id="add-link" type="button">+ link</button>
+    </div>
+    <p class="compose-status" id="compose-status" role="status"></p>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<template id="cast-tpl">
+  <li class="cast" tabindex="-1">
+    <span class="num mono" aria-hidden="true"></span>
+    <article>
+      <header class="meta">
+        <a class="author" href="#/">author</a>
+        <span class="mono muted small"><a class="age" href="#/"><time>now</time></a><span class="via"></span></span>
+      </header>
+      <p class="context mono small"></p>
+      <p class="text"></p>
+      <ul class="embeds"></ul>
+      <footer class="actions mono">
+        <button class="act reply" type="button">reply</button>
+        <button class="act recast" type="button" aria-pressed="false">recast</button>
+        <button class="act like" type="button" aria-pressed="false">like</button>
+        <details class="menu">
+          <summary class="act">more</summary>
+          <div class="menu-list">
+            <a class="open-link" href="#/" target="_blank" rel="noopener noreferrer">open on farcaster.xyz</a>
+            <button class="copy" type="button">copy link</button>
+            <button class="hide-app" type="button"></button>
+            <button class="delete danger" type="button">delete</button>
+          </div>
+        </details>
+      </footer>
+    </article>
+  </li>
+</template>
+</body>
+</html>

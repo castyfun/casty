@@ -1,0 +1,279 @@
+---
+title: 故障排除
+description: 出错时脚本和 casty 打印的消息，以及每一条该怎么处理。
+sidebar:
+  order: 11
+---
+
+每次失败都会打印一行以 `error:`（脚本）或 `casty:`（客户端）开头的消息。
+casty 经常还会加上一行 `hint:`，给出下一步。下面的消息是从代码中复制的；尖括号中的值会变化。
+
+## 第 0 步：准备主机
+
+### 没有服务商
+
+```text
+error: no provider: set HCLOUD_TOKEN for Hetzner or AWS credentials for AWS, or pass --host user@ip for a host you have (see --help)
+```
+
+导出 `HCLOUD_TOKEN`，配置 AWS CLI，或者为你已有的机器传入 `--host`。如果 Hetzner 和 AWS 的凭据
+都设置了，脚本会改为要求 `--provider hetzner` 或 `--provider aws`。
+
+### 没有 SSH 密钥
+
+```text
+error: no SSH public key at /home/you/.ssh/id_ed25519.pub. Create one with ssh-keygen -t ed25519, or pass --ssh-pubkey.
+```
+
+### 找不到你的 IP
+
+```text
+error: could not learn your public IP from api.ipify.org; pass --allow-ip <cidr>
+```
+
+脚本向 `api.ipify.org` 查询你的地址，以便把 SSH 和节点的 API 限制为只对它开放。请自己传入地址，
+例如 `--allow-ip 198.51.100.4/32`。
+
+### 没有可用的服务器类型
+
+```text
+warning: could not create a cpx41 server in fsn1; trying the next type
+error: none of cpx41 ccx23 cpx51 could be created in fsn1
+```
+
+服务商在该位置没有任何一种默认类型，或者你的账户不能创建它们。换一个 `--region`，或者用 `--type`
+指定一种类型。在 AWS 上，消息中写的是 `instance`，并给出可用区。
+
+### 同名的另一个密钥
+
+```text
+error: the project has a different SSH key named fc-node; pass another --name or --ssh-pubkey
+```
+
+Hetzner 中已经有一个名为 `fc-node` 的密钥，但不是你的。换一个 `--name`，或者使用已有的那个密钥。
+
+### 运行中途停止
+
+```text
+node.env records what was created so far: run the same command again to finish, or add --destroy
+```
+
+再次运行同一条 `0-provision.sh` 命令；它会复用已有的资源。第 1 步拒绝这样的 `node.env`：
+
+```text
+error: node.env has no NODE_IP: provisioning stopped half way; run ./scripts/0-provision.sh again
+```
+
+## 第 1 步：节点
+
+### 没有 SSH 连接
+
+```text
+error: no ssh connection to root@<ip>: <what ssh said>. Check NODE_IP and NODE_SSH_KEY in node.env.
+```
+
+新服务器需要一段时间启动。如果问题持续，请检查 `node.env` 中的 `NODE_SSH_KEY` 是否是你交给第 0 步的
+那个密钥的私钥部分，以及你的 IP 是否仍然是防火墙允许的那个：从当前网络再次运行第 0 步会更新 Hetzner
+的规则。
+
+### 主机不满足要求
+
+```text
+error: root@<ip> does not meet the requirements above
+```
+
+退出码 5。消息上方的表格中，失败的行显示 `no`：`ram`、`disk`、`docker`、`compose` 或 `clock`。
+`docker missing` 表示没有安装 Docker。`docker no server` 表示 `docker` 命令存在，但无法访问
+Docker 守护进程：它已停止（`sudo systemctl start docker`），或者 SSH 用户既不是 root 也不在
+`docker` 组中。
+
+### 节点还没有应答
+
+```text
+warning: the node did not return JSON from http://127.0.0.1:3381/v1/info (still starting?); waiting for it
+```
+
+在节点尚未应答时打印一次，例如刚启动之后。等待会继续。如果等待一直不结束，
+`./scripts/1-node.sh logs` 会显示节点在做什么。
+
+### 未能按时同步
+
+```text
+error: not synced after 43200s
+```
+
+节点仍在继续同步；只是等待放弃了。用 `./scripts/1-node.sh status --wait` 观察它，
+或者用 `--timeout <seconds>` 等待更长时间。
+
+### 隧道没有建立
+
+```text
+error: the tunnel did not come up; is something else using local port 3381 or 3383?
+```
+
+你的机器上有另一个进程占用了其中一个端口，通常是之前运行留下的隧道或一个本地模拟节点。停止它，
+或者运行 `./scripts/1-node.sh tunnel --stop`，然后重试。
+
+### 无法固定某个版本
+
+```text
+error: Snapchain <version>'s docker-compose.yml does not name farcasterxyz/snapchain:latest, so it cannot be pinned
+```
+
+该版本的 compose 文件以其他方式指定镜像，所以 casty 不会改写它。请不带 `--release` 运行。
+
+## 第 2 步：客户端
+
+### 没有适用于这台机器的发布版
+
+```text
+error: no casty binary is built for <os>-<arch>; run this script with --from-source, which needs Node 22.12 or newer
+error: could not download casty-<os>-<arch> and SHA256SUMS from <url>: no release for <os>-<arch> there yet, or no connection. Run this script with --from-source to build casty here.
+```
+
+发布版包含 linux-x64、linux-arm64 和 darwin-arm64。在其他机器上，或者无法连接 GitHub 时，
+`./scripts/2-client.sh --from-source` 会在本机构建客户端。
+
+### 下载的文件与校验和不符
+
+```text
+error: the sha256 of the downloaded casty-<os>-<arch> is <hash>, not the <hash> SHA256SUMS lists; nothing was installed
+```
+
+该文件不是发布版所发布的那个：下载被中断、某个代理修改了它，或者 `CASTY_RELEASE_URL` 指定的镜像
+保存的是别的东西。再次运行脚本；如果问题重复出现，请从源代码构建。
+
+### Node.js 版本过旧
+
+```text
+error: Node <version> is too old; casty needs 22.12 or newer.
+```
+
+只有 `--from-source` 需要 Node。消息接下来会说明如何用 fnm 或 nvm 安装更新的版本。
+在 Node 25 或更高版本上，corepack 不再附带：`npm install -g corepack`。
+
+### casty 无法访问节点
+
+```text
+casty: cannot reach the node at http://127.0.0.1:3381
+hint: start the tunnel with ./scripts/1-node.sh tunnel, or pass --node <url>
+```
+
+退出码 4。隧道断开了，或者节点在别的地方。
+
+### 助记词没有对应的 fid
+
+```text
+casty: no fid is registered to <address>
+hint: check --address-index; if your node is still syncing, pass --op-rpc <OP Mainnet RPC url>
+```
+
+至少就节点所知，助记词索引 0 处的地址没有持有任何 fid。如果你的钱包使用的是同一助记词的另一个账户，
+请传入 `--address-index`。仍在同步的节点可能还没有看到注册。
+
+### 没有存储
+
+```text
+casty: fid <fid> has no storage units, so the network will not accept its messages
+```
+
+请先为该 fid 租用一个 storage unit。见[存储租用](../concepts/storage-rent/)。
+
+### 助记词被拒绝
+
+```text
+casty: a seed phrase has 12, 15, 18, 21 or 24 words, not <n>
+casty: word <n> is not in the BIP-39 English word list
+casty: the seed phrase checksum does not match
+```
+
+这些消息只给出单词的位置，从不给出单词本身。请检查拼写和顺序。
+
+### 节点拒绝了一条消息
+
+casty 打印节点自己的消息，然后根据消息内容给出一条提示：
+
+| 消息包含 | 含义 |
+| --- | --- |
+| `invalid signature` | 助记词不持有该 fid 的托管地址；检查 `--address-index` |
+| `invalid signed key request` | 应用 fid 必须由同一助记词的 `--app-address-index` 托管 |
+| `nonce is not greater than stored nonce` | 另一次密钥变更先到达了；`casty init` 会自动重试一次 |
+| `active key cap exceeded` | 该 fid 持有 1000 个有效的应用密钥；用 `casty key revoke` 撤销一些 |
+| `invalid scope` | 应用密钥不能签署这种消息类型；用 `casty init --scopes` 添加一个 |
+
+这些字符串来自 Snapchain 的
+[写入消息指南](https://snapchain.farcaster.xyz/guides/writing-messages)。退出码 3。
+
+### 口令错误
+
+```text
+casty: cannot decrypt the key store: wrong passphrase or a damaged file
+```
+
+忘记的口令无法恢复。删除 `keys.enc.json` 并运行 `casty init` 添加一个新密钥。旧密钥会一直保持注册，
+直到因未使用而失效；要更早移除它们，用 `casty key list` 找到它们，并用你的助记词运行
+`casty key revoke <key>`。
+
+### 没有可用的应用密钥
+
+```text
+casty: no app key for fid <fid> yet
+hint: add one with your wallet in casty web, under you, or run casty init with the seed phrase
+```
+
+`casty init --fid` 不添加密钥：请先用你的钱包批准一个。
+
+```text
+casty: none of the app keys in <dir> is registered to fid <fid>
+```
+
+你的节点没有列出该密钥。刚刚批准的密钥要等你的节点同步过它之后才算数：`casty doctor` 显示节点落后多少。
+否则，该密钥在超过 TTL 未使用后已失效，或者已被撤销；请在 `casty web` 的“你”页面中，或用
+`casty init` 再添加一个。
+
+### 已接受但未合并
+
+```text
+casty: <hash> was accepted but not merged within 40s
+```
+
+节点接收了消息，但 casty 没有看到它合并
+（[原因](../concepts/read-nodes-vs-validators/)）。在再次发送之前先找一找它，例如用
+`casty feed`：再次运行该命令会发送一条新消息。在 `casty init` 之后，密钥会被保留，再次运行
+`casty init` 会重新发送同一条消息，而不会询问助记词。
+
+### 编号对不上
+
+```text
+casty: no list numbered yet to take cast 2 from
+casty: the last list numbered has no cast 9
+```
+
+`casty like 2` 表示最近一次显示的列表中的第二条 cast，该列表由 `casty feed`、`casty mentions`、
+`casty thread` 或 casty web 显示。请先显示一个列表，或者用 `<fid>:<0x hash>` 指定这条 cast。
+
+### 读取时间线时节点返回 429 或 503
+
+`casty feed` 和 casty web 一次最多向节点请求 64 页，所以一个包含 300 个账户的时间线只需五轮往返，
+而不是十九轮。如果节点对其中一些请求返回 429 或 503，说明一次请求得太多了：在该命令或 `casty web`
+的环境中设置 `CASTY_CONCURRENCY=32`（1 到 256 之间的任意整数），并逐渐调低，直到错误消失。
+
+### 时钟不准
+
+```text
+warning: this clock and the node's differ by over a minute; nodes reject messages from the future
+```
+
+`casty doctor` 把你的时钟与节点的时钟进行比较。时间戳超前 15 分钟以上的消息会被拒绝；
+请在你的机器上开启时间同步。
+
+## 退出码
+
+| 退出码 | 脚本 | casty |
+| --- | --- | --- |
+| 0 | 完成 | 完成 |
+| 1 | 未同步，隧道断开 | 未同步（`node status`），其他任何情况 |
+| 2 | 参数错误 | 参数错误 |
+| 3 | 缺少前置条件 | 节点拒绝了该消息 |
+| 4 | 服务商或主机失败 | 无法访问节点 |
+| 5 | 主机不满足要求 | 配置、密钥库或助记词问题 |

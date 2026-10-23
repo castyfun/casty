@@ -1,0 +1,155 @@
+---
+title: "Своя нода Farcaster и клиент к ней"
+description: Ваша собственная read-нода Farcaster и клиент, который читает из неё и пишет через неё. Три команды, без API-ключей, без газа.
+template: splash
+sidebar:
+  label: Обзор
+  order: 0
+hero:
+  title: casty
+  tagline: Ваша собственная read-нода Farcaster и клиент, который читает из неё и пишет через неё. Три команды, без API-ключей, без газа.
+  actions:
+    - text: Начать руководство
+      link: guide/
+      icon: right-arrow
+    - text: Все команды
+      link: commands/
+      variant: minimal
+    - text: Исходный код на GitHub
+      link: https://github.com/savvax/casty
+      icon: external
+      variant: minimal
+---
+
+## Что такое casty
+
+casty ставит read-ноду [Snapchain](https://snapchain.farcaster.xyz) на хост, которым вы управляете, и
+даёт вам клиент, который ни с чем больше не общается. Нода хранит полную копию Farcaster; клиент
+читает из неё вашу ленту, упоминания и треды и публикует через неё касты, ответы, лайки,
+рекасты и подписки. Ничего не проходит через хостинговый API Farcaster, и ничей чужой
+ключ или лимит запросов не стоит между вами и сетью.
+
+- **Три скрипта.** `0-provision.sh` арендует сервер с томом 2 ТБ и файрволом у
+  Hetzner или AWS либо проверяет машину, которая у вас уже есть. `1-node.sh` ставит Snapchain, ждёт
+  его синхронизации и открывает SSH-туннель. `2-client.sh` ставит `casty`, добавляет ключ приложения и читает
+  вашу ленту. `deploy.sh` запускает все три.
+- **Ключ приложения без газа.** Ключ, который подписывает ваши касты, добавляется одним подписанным сообщением, а не
+  транзакцией: его подписывает ваш кошелёк в браузере или один раз seed-фраза в терминале. Без
+  ETH, без RPC.
+- **Клиент для терминала.** `casty feed`, `casty cast`, `casty like 2`: каждая команда печатает простой
+  текст или, с `--json`, JSON для скриптов.
+- **Страница для браузера и телефона.** `casty web` отдаёт ленту, треды, упоминания и
+  поле для нового каста на этой машине; `casty serve` ставит ту же страницу на хост ноды за
+  HTTPS, с push-уведомлениями об упоминаниях и ответах.
+- **Проверено офлайн.** Mock-нода Snapchain проверяет каждую подпись, так что весь клиент,
+  скрипты и страница работают в CI без настоящей ноды.
+
+## Быстрый старт
+
+```sh
+git clone https://github.com/savvax/casty.git && cd casty
+./scripts/deploy.sh --domain node.example.org   # everything below in order, and the page on the host behind HTTPS
+```
+
+`deploy.sh` выполняет три шага, а с `--domain` или `--tailscale` и четвёртый, [Из любой
+сети](serve/). [Весь путь](guide/) проходит всё это по порядку, а затем рассказывает, как этим пользоваться. Каждый шаг можно безопасно запускать повторно, поэтому та же команда продолжает с того места, где запуск
+остановился. По шагам:
+
+```sh
+./scripts/0-provision.sh   # a VM, 2 TB volume and firewall on Hetzner or AWS, whichever credentials are set; or --host user@ip
+./scripts/1-node.sh        # Snapchain read node, wait for sync, SSH tunnel to 127.0.0.1:3381
+./scripts/2-client.sh      # download casty, add a gasless app key with your wallet (--fid) or seed phrase, read your feed
+```
+
+Seed-фраза управляет всем аккаунтом. Для этого руководства используйте тестовый аккаунт, вставляйте
+seed-фразу только в программы разработчиков, которым доверяете, и предпочитайте ключ, одобренный вашим
+кошельком: `casty init --fid <fid>`, затем `casty web` и в разделе о вас «add a key with your wallet».
+
+Запустите три скрипта по порядку из клона репозитория casty. В конце у вас есть
+read-нода [Snapchain](https://snapchain.farcaster.xyz) на хосте, которым вы управляете, и `./bin/casty`,
+клиент, который читает вашу ленту с этой ноды и публикует через неё.
+
+Клиенту не нужен ни API-ключ хостингового сервиса Farcaster, ни Ethereum RPC на обычном
+пути. Его ключ приложения добавляется подписанным сообщением, а не ончейн-транзакцией, поэтому платить
+за газ не нужно.
+
+## Что нужно
+
+- Тестовый аккаунт Farcaster: fid хотя бы с одним storage unit и кошелёк, в котором есть
+  адрес, на который он зарегистрирован, или seed-фраза этого адреса. casty использует фразу один раз, чтобы
+  подписать запрос ключа, и никогда не записывает её на диск.
+- Хост. Либо учётные данные Hetzner Cloud (`HCLOUD_TOKEN` и CLI `hcloud`) или AWS
+  (AWS CLI v2 и профиль или ключ доступа), либо SSH-доступ к уже имеющейся у вас машине, на которой
+  работает Docker. Для последнего случая см. [Нода дома](home-node/).
+- Пара SSH-ключей, по умолчанию `~/.ssh/id_ed25519` и `~/.ssh/id_ed25519.pub`.
+- На вашей машине: `ssh`, `curl` и `jq`. Node.js 22.12 или новее нужен, только чтобы собрать клиент
+  самому (`2-client.sh --from-source`). Работают macOS и Linux; в Windows запускайте скрипты в
+  WSL2.
+
+Хосту ноды нужно то, что требует Snapchain: 16 ГБ RAM, 4 vCPU, 2 ТБ свободного диска и публичный
+IP ([getting started](https://snapchain.farcaster.xyz/getting-started)). На арендованном хосте шаг 0
+выбирает сервер и том, а шаг 1 проверяет хост, прежде чем что-либо ставить.
+
+## Сколько это занимает
+
+Дольше всего длится шаг 1: при первом запуске нода скачивает снимок в несколько сотен
+ГБ, затем догоняет блоки, вышедшие после этого снимка. Рассчитывайте на часы.
+`1-node.sh` ждёт и после каждой проверки печатает, насколько нода отстаёт. Ctrl-C завершает
+только ожидание; нода продолжает синхронизацию, а `./scripts/1-node.sh status --wait` снова
+начинает ждать.
+
+## Сколько это стоит
+
+casty не знает цен вашего провайдера. Настоящий запуск `0-provision.sh` перечисляет сервер, том
+и файрвол, которые он собирается создать, сообщает, что за них выставляется счёт, пока вы их не удалите, и продолжает
+только после того, как вы введёте имя сервера. `./scripts/0-provision.sh --destroy` удаляет все три.
+
+## Попробовать без ноды
+
+В репозитории есть mock-нода Snapchain, которая отдаёт тот же HTTP API из фикстур и проверяет
+подписи каждого присланного ей сообщения. С ней весь клиент работает офлайн:
+
+```sh
+pnpm install --frozen-lockfile
+pnpm demo
+```
+
+`pnpm demo` запускает mock-ноду на свободном порту, добавляет ключ приложения с тестовой фразой BIP-39
+`test test test test test test test test test test test junk`, читает ленту с кастами одного
+приложения и без них, публикует каст, ставит лайк одному и в конце удаляет свой временный конфиг.
+Fid в фикстурах начинаются с 2000000001 и никому не принадлежат.
+
+`pnpm demo:web` делает ту же подготовку, а затем отдаёт [casty web](web/), страницу для браузера и телефона,
+на свободном порту, пока вы не нажмёте Ctrl-C.
+
+## Одна команда
+
+```text
+Usage: deploy.sh [--domain <name> | --tailscale] [--read-only] [--fid <fid>] [--from-source]
+                 [--env <file>] [--yes] [--dry-run] [-- <0-provision.sh options>]
+
+  Runs, in order: 0-provision.sh (unless --env's file already describes a host; with --domain,
+  again on that host to open 80 and 443), 1-node.sh (the node, the wait for its sync, the
+  tunnel), 2-client.sh (the client, an app key, the feed) and, with a front named, 1-node.sh
+  serve. Every step is safe to run again: the same command picks up where a run stopped.
+
+  --domain <name>   serve the page on the host as https://<name> (Caddy; opens 80 and 443)
+  --tailscale       serve it as the host's name on your tailnet instead
+  --read-only       a page that reads only: no app key or passphrase leaves this machine
+  --fid <fid>       no seed phrase: 2-client.sh --fid; add the key in ./bin/casty web with your
+                    wallet, then run the same command again for the page on the host
+  --from-source     build the client here with Node and pnpm instead of downloading it
+  --env <file>      node.env to write or read (default: node.env)
+  --yes             do not ask before creating anything
+  --dry-run         print what provisioning and the node would run; the client is skipped
+  -- <options>      passed to 0-provision.sh, e.g. -- --provider aws --region eu-west-1
+
+Exit codes: 0 ok, 2 bad arguments, otherwise the code of the step that stopped.
+```
+
+## Что дальше
+
+Начните с [0. Подготовка хоста](0-provision/). Если хотите знать, что скрипты настраивают,
+прежде чем их запускать, прочитайте [Read-ноды и валидаторы](concepts/read-nodes-vs-validators/) и
+[Custody-адрес и ключи приложений](concepts/custody-and-app-keys/). [Безопасность](security/) перечисляет
+каждый задействованный секрет и как отозвать каждый из них.

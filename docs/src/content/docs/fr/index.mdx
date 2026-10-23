@@ -1,0 +1,159 @@
+---
+title: "Votre propre nœud et client Farcaster"
+description: "Votre propre nœud de lecture Farcaster, et un client qui lit depuis ce nœud et écrit à travers lui. Trois commandes, pas de clé d'API, pas de gas."
+template: splash
+sidebar:
+  label: Vue d'ensemble
+  order: 0
+hero:
+  title: casty
+  tagline: "Votre propre nœud de lecture Farcaster, et un client qui lit depuis ce nœud et écrit à travers lui. Trois commandes, pas de clé d'API, pas de gas."
+  actions:
+    - text: Commencer le tutoriel
+      link: guide/
+      icon: right-arrow
+    - text: Toutes les commandes
+      link: commands/
+      variant: minimal
+    - text: Le code source sur GitHub
+      link: https://github.com/savvax/casty
+      icon: external
+      variant: minimal
+---
+
+## Ce qu'est casty
+
+casty installe un nœud de lecture [Snapchain](https://snapchain.farcaster.xyz) sur un hôte que vous
+contrôlez et vous donne un client qui ne parle à rien d'autre. Le nœud détient une copie complète de
+Farcaster ; le client y lit votre fil, vos mentions et vos fils de discussion, et publie à travers lui
+des casts, des réponses, des likes, des recasts et des follows. Rien ne passe par une API Farcaster
+hébergée, et ni la clé ni la limite de débit de quelqu'un d'autre ne se trouve entre vous et le réseau.
+
+- **Trois scripts.** `0-provision.sh` loue un serveur avec un volume de 2 To et un pare-feu chez
+  Hetzner ou AWS, ou vérifie une machine que vous avez déjà. `1-node.sh` installe Snapchain, attend
+  qu'il soit synchronisé et ouvre un tunnel SSH. `2-client.sh` installe `casty`, ajoute une clé
+  d'application et lit votre fil. `deploy.sh` exécute les trois.
+- **Une clé d'application sans gas.** La clé qui signe vos casts est ajoutée avec un seul message
+  signé, pas une transaction : votre portefeuille le signe dans le navigateur, ou la phrase de
+  récupération une seule fois dans un terminal. Pas d'ETH, pas de RPC.
+- **Un client en terminal.** `casty feed`, `casty cast`, `casty like 2` : chaque commande affiche du
+  texte brut ou, avec `--json`, du JSON pour les scripts.
+- **Une page pour le navigateur et le téléphone.** `casty web` sert le fil, les fils de discussion,
+  les mentions et une zone de rédaction sur cette machine ; `casty serve` met la même page sur l'hôte
+  du nœud derrière HTTPS, avec des notifications push pour les mentions et les réponses.
+- **Testé hors ligne.** Un nœud Snapchain factice vérifie chaque signature, si bien que tout le
+  client, les scripts et la page tournent en CI sans nœud réel.
+
+## Démarrage rapide
+
+```sh
+git clone https://github.com/savvax/casty.git && cd casty
+./scripts/deploy.sh --domain node.example.org   # everything below in order, and the page on the host behind HTTPS
+```
+
+`deploy.sh` exécute les trois étapes et, avec `--domain` ou `--tailscale`, une quatrième, [Depuis
+n'importe quel réseau](serve/). [Tout le parcours](guide/) passe en revue l'ensemble, puis son
+utilisation, dans l'ordre. Chaque étape peut être relancée sans risque, si bien que la même commande
+reprend là où une exécution s'est arrêtée. Étape par étape :
+
+```sh
+./scripts/0-provision.sh   # a VM, 2 TB volume and firewall on Hetzner or AWS, whichever credentials are set; or --host user@ip
+./scripts/1-node.sh        # Snapchain read node, wait for sync, SSH tunnel to 127.0.0.1:3381
+./scripts/2-client.sh      # download casty, add a gasless app key with your wallet (--fid) or seed phrase, read your feed
+```
+
+Une phrase de récupération contrôle tout le compte. Utilisez un compte de test pour ce tutoriel, ne
+collez une phrase de récupération que dans un logiciel de développeurs en qui vous avez confiance, et
+préférez une clé autorisée par votre portefeuille : `casty init --fid <fid>`, puis `casty web` et,
+dans votre compte, « add a key with your wallet ».
+
+Exécutez les trois scripts dans l'ordre depuis une copie du dépôt casty. À la fin, vous avez un nœud
+de lecture [Snapchain](https://snapchain.farcaster.xyz) sur un hôte que vous contrôlez, et
+`./bin/casty`, un client qui lit votre fil depuis ce nœud et publie à travers lui.
+
+Le client n'a besoin d'aucune clé d'API d'un service Farcaster hébergé ni d'aucun RPC Ethereum sur le
+chemin normal. Sa clé d'application est ajoutée avec un message signé, pas une transaction on-chain,
+si bien qu'il n'y a pas de gas à payer.
+
+## Ce qu'il vous faut
+
+- Un compte de test Farcaster : un fid avec au moins une storage unit, et un portefeuille qui détient
+  l'adresse à laquelle il est enregistré, ou la phrase de récupération de cette adresse. casty utilise
+  la phrase une seule fois, pour signer la demande de clé, et ne l'écrit jamais sur le disque.
+- Un hôte. Soit des identifiants pour Hetzner Cloud (`HCLOUD_TOKEN` et la CLI `hcloud`) ou AWS (la
+  CLI AWS v2 et un profil ou une clé d'accès), soit un accès SSH à une machine que vous avez déjà et
+  qui peut faire tourner Docker. Voir [Un nœud à la maison](home-node/) pour ce dernier cas.
+- Une paire de clés SSH, par défaut `~/.ssh/id_ed25519` et `~/.ssh/id_ed25519.pub`.
+- Sur votre machine : `ssh`, `curl` et `jq`. Node.js 22.12 ou plus récent uniquement pour compiler le
+  client vous-même (`2-client.sh --from-source`). macOS et Linux fonctionnent ; sous Windows, lancez
+  les scripts dans WSL2.
+
+L'hôte du nœud a besoin de ce que demande Snapchain : 16 Go de RAM, 4 vCPU, 2 To de disque libre et
+une IP publique ([getting started](https://snapchain.farcaster.xyz/getting-started)). Sur un hôte
+loué, l'étape 0 choisit le serveur et le volume, et l'étape 1 vérifie l'hôte avant d'installer quoi
+que ce soit.
+
+## Combien de temps cela prend
+
+L'étape 1 est la plus longue : à son premier démarrage, le nœud télécharge un instantané de plusieurs
+centaines de Go, puis rattrape les blocs produits depuis cet instantané. Comptez des heures.
+`1-node.sh` attend et affiche le retard du nœud après chaque vérification. Ctrl-C ne met fin qu'à
+l'attente ; le nœud continue de se synchroniser, et `./scripts/1-node.sh status --wait` reprend
+l'attente.
+
+## Ce que cela coûte
+
+casty ne connaît pas les prix de votre fournisseur. Une vraie exécution de `0-provision.sh` liste le
+serveur, le volume et le pare-feu qu'elle s'apprête à créer, indique qu'ils sont facturés jusqu'à ce
+que vous les supprimiez, et ne continue qu'une fois que vous avez retapé le nom du serveur.
+`./scripts/0-provision.sh --destroy` supprime les trois.
+
+## Essayer sans nœud
+
+Le dépôt fournit un nœud Snapchain factice qui sert la même API HTTP à partir de fixtures et vérifie
+les signatures de chaque message qui lui est soumis. Avec lui, tout le client fonctionne hors ligne :
+
+```sh
+pnpm install --frozen-lockfile
+pnpm demo
+```
+
+`pnpm demo` démarre le nœud factice sur un port libre, ajoute une clé d'application avec la phrase de
+test BIP-39 `test test test test test test test test test test test junk`, lit le fil avec et sans les
+casts d'une application, publie un cast, en like un, et supprime sa configuration temporaire à la fin.
+Les fids des fixtures commencent à 2000000001 et n'appartiennent à personne.
+
+`pnpm demo:web` fait la même préparation, puis sert [casty web](web/), la page pour le navigateur et
+le téléphone, sur un port libre jusqu'à ce que vous appuyiez sur Ctrl-C.
+
+## Une seule commande
+
+```text
+Usage: deploy.sh [--domain <name> | --tailscale] [--read-only] [--fid <fid>] [--from-source]
+                 [--env <file>] [--yes] [--dry-run] [-- <0-provision.sh options>]
+
+  Runs, in order: 0-provision.sh (unless --env's file already describes a host; with --domain,
+  again on that host to open 80 and 443), 1-node.sh (the node, the wait for its sync, the
+  tunnel), 2-client.sh (the client, an app key, the feed) and, with a front named, 1-node.sh
+  serve. Every step is safe to run again: the same command picks up where a run stopped.
+
+  --domain <name>   serve the page on the host as https://<name> (Caddy; opens 80 and 443)
+  --tailscale       serve it as the host's name on your tailnet instead
+  --read-only       a page that reads only: no app key or passphrase leaves this machine
+  --fid <fid>       no seed phrase: 2-client.sh --fid; add the key in ./bin/casty web with your
+                    wallet, then run the same command again for the page on the host
+  --from-source     build the client here with Node and pnpm instead of downloading it
+  --env <file>      node.env to write or read (default: node.env)
+  --yes             do not ask before creating anything
+  --dry-run         print what provisioning and the node would run; the client is skipped
+  -- <options>      passed to 0-provision.sh, e.g. -- --provider aws --region eu-west-1
+
+Exit codes: 0 ok, 2 bad arguments, otherwise the code of the step that stopped.
+```
+
+## Pour aller plus loin
+
+Commencez par [0. Provisionner un hôte](0-provision/). Si vous voulez savoir ce que les scripts
+mettent en place avant de les exécuter, lisez [Nœuds de lecture et validateurs](concepts/read-nodes-vs-validators/)
+et [Adresse de custody et clés d'application](concepts/custody-and-app-keys/). [Sécurité](security/)
+liste chaque secret concerné et comment révoquer chacun d'eux.

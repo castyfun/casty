@@ -1,0 +1,128 @@
+[
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS",
+      "fid": 2000000002,
+      "timestamp": 181180800,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "verificationAddAddressBody": {
+        "address": "0x15990ed6b136cf41da4434e28d9f96d716d3b21c",
+        "claimSignature": "MC7wG0u6z1MtRL1PAbvL+GUa6vgn682itx98xl6EdoMYNrkKGpL8MITt/MTQyql8i8KEkTCRQ7xjldEugKhHMxs=",
+        "blockHash": "0x382bde931a9eddc87ad17e3b499bd52bea6d3ce5943c42c64dc2289f01391bb4",
+        "verificationType": 0,
+        "chainId": 0,
+        "protocol": "PROTOCOL_ETHEREUM"
+      }
+    },
+    "hash": "0xa2298df86d6765144b169d94c629fd0c6636e2f4",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "nNquSvvRj//HiOsj1pTMkknoHS9vmXcfBswTW9sJuWkz+M5gyxOAcKwrgySn4dKRliy56KUdZBuhUkGQthHwDA==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xd0f6dfa507419ec3531d527f20f37417fc819535714ff3ef6c8c59cf1b6f9fb0"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS",
+      "fid": 2000000004,
+      "timestamp": 181180800,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "verificationAddAddressBody": {
+        "address": "0x64822c5784033bbec9fca8a9b88fbcfbfe1cc67c",
+        "claimSignature": "bltnt79jeoH/+EoMNTBSLuohNziXkHQYx3GgIJ6K0gki5oNgNQBUA0GTdCHqtNHUcELT17WU9w0iqft+ZXvNAhw=",
+        "blockHash": "0xe5b99df649c5cae45f292f479c2aecc79806cf8fd5dea7725bd8ab70747f084b",
+        "verificationType": 0,
+        "chainId": 0,
+        "protocol": "PROTOCOL_ETHEREUM"
+      }
+    },
+    "hash": "0x53ca6f368d43992a764ff3a8935e3c43804b0feb",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "lVoSh5rWv7iG+r3JfJXz9nxqZ4JC4mBm6FdP5gOsw7F8qfiiijTBJG+A06dwabh+l20dyHGR/TWADl74PHpgBA==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x944bab1cdff15c7a364c9303a75ea7e68758ef6426d26ddbe85edddd57606839"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS",
+      "fid": 2000000006,
+      "timestamp": 181180800,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "verificationAddAddressBody": {
+        "address": "0x3c80586514fe0cf37ea8f24c39e0d3308f5df207",
+        "claimSignature": "3qC7MO/rCkpTlZ0fUeYtgAyxEVDWliReFE/+u/MYJ34LuxL3lIlbE9ZeVbYIANTbjaVtBFWbX6nG03YnynkuoRw=",
+        "blockHash": "0xc8287f4ffc0f93c9faed67adf0ff1009131e0e47d0af5d12e62e8c9dbae9f72e",
+        "verificationType": 0,
+        "chainId": 0,
+        "protocol": "PROTOCOL_ETHEREUM"
+      }
+    },
+    "hash": "0x86de7a0047c56254b1798bf53c14456d882736e0",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "McYBPCZX4kjvvBAY2TTYXurui1maAzlJ4J2jYQX4KZNDxMdbG7eaGIHC1T25Jexp7PWgiwuupgxKC1eRx9NVAA==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x8f68b97c1e401ac9c9c96b2dd2ed07cc1c90f26d602b5577ef99cc7b7a09cf43"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS",
+      "fid": 2000000008,
+      "timestamp": 181180800,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "verificationAddAddressBody": {
+        "address": "0x79a7d0affe16513ac9c209e3fcd7e721ea0be954",
+        "claimSignature": "aOZZH+UVkMlr5dtzbfNgOPbhDsSQPIX0EHqRLUnKWstxJXipiIlJU1BkHfE0QHO5uGMraogfDScxMFXhFXoCbxs=",
+        "blockHash": "0xa48da746a2bae2bf0a1e00112e7474502b358f7eb56533af2b1217f205b61490",
+        "verificationType": 0,
+        "chainId": 0,
+        "protocol": "PROTOCOL_ETHEREUM"
+      }
+    },
+    "hash": "0xf4a1bad0952adf50d1f03120463cba8c60ec7166",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "WW1bYG+AUXAYOKne4G4QimQDobQMBJ07/tPqQz3wGuwkdoqXAzCan8ye5jnZ7VJHfbIFx9Q8U77twT7OkGfECw==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x828129f56b995fe7bd37ce4f5a71aa64e9cde2a16b19342a21dc0df5dfec7450"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS",
+      "fid": 2000000010,
+      "timestamp": 181180800,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "verificationAddAddressBody": {
+        "address": "0x802a38a3563701b11e793a7095dfdcf62f04ca54",
+        "claimSignature": "KPm6weSLRep1HUzp3fjVlKnvJXA2c5fzHnb04eOPv6YCTN+aIuLSJbfY3x5cQm24BMDkRlQ+Cv9JzCHYgUyXahw=",
+        "blockHash": "0x2c44ba80d724dd03dbe2b30cbc6cd4504f57e2b5b32d930c47a4aeb13e4ac92b",
+        "verificationType": 0,
+        "chainId": 0,
+        "protocol": "PROTOCOL_ETHEREUM"
+      }
+    },
+    "hash": "0x30ee7939f8f174abca7812ef306bb045ad04b9db",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "/FWB+v0wS1WFRt56V9JZrmPAw0HntlWJHxtMCXv5dPH5ZIaJ4mGNUwbZq62pDeTZ3Zf75Xj9d0KVeEsYrZ/fDA==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0x5363daec1f0ec9ea4fcd97d850755fc3daec9cca309a37089dced7b6075aa8c7"
+  },
+  {
+    "data": {
+      "type": "MESSAGE_TYPE_VERIFICATION_ADD_ETH_ADDRESS",
+      "fid": 2000000012,
+      "timestamp": 181180800,
+      "network": "FARCASTER_NETWORK_MAINNET",
+      "verificationAddAddressBody": {
+        "address": "0x4c20a70e7d1d3797c6ab593e8f0991adace27cce",
+        "claimSignature": "pcDtl7P3Fc/Qnbl9s8mr7Q3zMVoI7N6LfQXIcXgVnz903Xg1CHaooCHwkOv2tGmhcGi8WGPMKKqm7+vCIX5LBxs=",
+        "blockHash": "0x9eb9dde156e23953ce5d56064d3f4cb515beef6bb9360b025ee407f6e14e184e",
+        "verificationType": 0,
+        "chainId": 0,
+        "protocol": "PROTOCOL_ETHEREUM"
+      }
+    },
+    "hash": "0xbd8fc1b182fda9c520fed0e4ad4f144b7cbefd4a",
+    "hashScheme": "HASH_SCHEME_BLAKE3",
+    "signature": "xKz3fQXE/LDO1UpthSDEA/udprDBJsuUEwz6tSGpEWJ389dfpo7Tzh+rQoTok5HVkznxoJo9ErpOzipjkakCAQ==",
+    "signatureScheme": "SIGNATURE_SCHEME_ED25519",
+    "signer": "0xb5095baac9a07f901f55ffbca93e33f16821d27c37d1d4f0b7fac7f5dc3a9fe0"
+  }
+]

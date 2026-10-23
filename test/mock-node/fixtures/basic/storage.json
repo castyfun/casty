@@ -1,0 +1,946 @@
+{
+  "2000000001": {
+    "limits": [
+      {
+        "storeType": "Casts",
+        "name": "CASTS",
+        "limit": 100,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Links",
+        "name": "LINKS",
+        "limit": 200,
+        "used": 12,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Reactions",
+        "name": "REACTIONS",
+        "limit": 200,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "UserData",
+        "name": "USER_DATA",
+        "limit": 25,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Verifications",
+        "name": "VERIFICATIONS",
+        "limit": 5,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      }
+    ],
+    "units": 1,
+    "unit_details": [
+      {
+        "unitType": "UnitTypeLegacy",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2024",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2025",
+        "unitSize": 1
+      }
+    ]
+  },
+  "2000000002": {
+    "limits": [
+      {
+        "storeType": "Casts",
+        "name": "CASTS",
+        "limit": 100,
+        "used": 4,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Links",
+        "name": "LINKS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Reactions",
+        "name": "REACTIONS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "UserData",
+        "name": "USER_DATA",
+        "limit": 25,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Verifications",
+        "name": "VERIFICATIONS",
+        "limit": 5,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      }
+    ],
+    "units": 1,
+    "unit_details": [
+      {
+        "unitType": "UnitTypeLegacy",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2024",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2025",
+        "unitSize": 1
+      }
+    ]
+  },
+  "2000000003": {
+    "limits": [
+      {
+        "storeType": "Casts",
+        "name": "CASTS",
+        "limit": 100,
+        "used": 4,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Links",
+        "name": "LINKS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Reactions",
+        "name": "REACTIONS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "UserData",
+        "name": "USER_DATA",
+        "limit": 25,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Verifications",
+        "name": "VERIFICATIONS",
+        "limit": 5,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      }
+    ],
+    "units": 1,
+    "unit_details": [
+      {
+        "unitType": "UnitTypeLegacy",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2024",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2025",
+        "unitSize": 1
+      }
+    ]
+  },
+  "2000000004": {
+    "limits": [
+      {
+        "storeType": "Casts",
+        "name": "CASTS",
+        "limit": 100,
+        "used": 4,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Links",
+        "name": "LINKS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Reactions",
+        "name": "REACTIONS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "UserData",
+        "name": "USER_DATA",
+        "limit": 25,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Verifications",
+        "name": "VERIFICATIONS",
+        "limit": 5,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      }
+    ],
+    "units": 1,
+    "unit_details": [
+      {
+        "unitType": "UnitTypeLegacy",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2024",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2025",
+        "unitSize": 1
+      }
+    ]
+  },
+  "2000000005": {
+    "limits": [
+      {
+        "storeType": "Casts",
+        "name": "CASTS",
+        "limit": 100,
+        "used": 4,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Links",
+        "name": "LINKS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Reactions",
+        "name": "REACTIONS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "UserData",
+        "name": "USER_DATA",
+        "limit": 25,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Verifications",
+        "name": "VERIFICATIONS",
+        "limit": 5,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      }
+    ],
+    "units": 1,
+    "unit_details": [
+      {
+        "unitType": "UnitTypeLegacy",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2024",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2025",
+        "unitSize": 1
+      }
+    ]
+  },
+  "2000000006": {
+    "limits": [
+      {
+        "storeType": "Casts",
+        "name": "CASTS",
+        "limit": 100,
+        "used": 4,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Links",
+        "name": "LINKS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Reactions",
+        "name": "REACTIONS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "UserData",
+        "name": "USER_DATA",
+        "limit": 25,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Verifications",
+        "name": "VERIFICATIONS",
+        "limit": 5,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      }
+    ],
+    "units": 1,
+    "unit_details": [
+      {
+        "unitType": "UnitTypeLegacy",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2024",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2025",
+        "unitSize": 1
+      }
+    ]
+  },
+  "2000000007": {
+    "limits": [
+      {
+        "storeType": "Casts",
+        "name": "CASTS",
+        "limit": 100,
+        "used": 4,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Links",
+        "name": "LINKS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Reactions",
+        "name": "REACTIONS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "UserData",
+        "name": "USER_DATA",
+        "limit": 25,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Verifications",
+        "name": "VERIFICATIONS",
+        "limit": 5,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      }
+    ],
+    "units": 1,
+    "unit_details": [
+      {
+        "unitType": "UnitTypeLegacy",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2024",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2025",
+        "unitSize": 1
+      }
+    ]
+  },
+  "2000000008": {
+    "limits": [
+      {
+        "storeType": "Casts",
+        "name": "CASTS",
+        "limit": 100,
+        "used": 4,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Links",
+        "name": "LINKS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Reactions",
+        "name": "REACTIONS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "UserData",
+        "name": "USER_DATA",
+        "limit": 25,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Verifications",
+        "name": "VERIFICATIONS",
+        "limit": 5,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      }
+    ],
+    "units": 1,
+    "unit_details": [
+      {
+        "unitType": "UnitTypeLegacy",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2024",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2025",
+        "unitSize": 1
+      }
+    ]
+  },
+  "2000000009": {
+    "limits": [
+      {
+        "storeType": "Casts",
+        "name": "CASTS",
+        "limit": 100,
+        "used": 4,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Links",
+        "name": "LINKS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Reactions",
+        "name": "REACTIONS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "UserData",
+        "name": "USER_DATA",
+        "limit": 25,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Verifications",
+        "name": "VERIFICATIONS",
+        "limit": 5,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      }
+    ],
+    "units": 1,
+    "unit_details": [
+      {
+        "unitType": "UnitTypeLegacy",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2024",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2025",
+        "unitSize": 1
+      }
+    ]
+  },
+  "2000000010": {
+    "limits": [
+      {
+        "storeType": "Casts",
+        "name": "CASTS",
+        "limit": 100,
+        "used": 4,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Links",
+        "name": "LINKS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Reactions",
+        "name": "REACTIONS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "UserData",
+        "name": "USER_DATA",
+        "limit": 25,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Verifications",
+        "name": "VERIFICATIONS",
+        "limit": 5,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      }
+    ],
+    "units": 1,
+    "unit_details": [
+      {
+        "unitType": "UnitTypeLegacy",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2024",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2025",
+        "unitSize": 1
+      }
+    ]
+  },
+  "2000000011": {
+    "limits": [
+      {
+        "storeType": "Casts",
+        "name": "CASTS",
+        "limit": 100,
+        "used": 4,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Links",
+        "name": "LINKS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Reactions",
+        "name": "REACTIONS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "UserData",
+        "name": "USER_DATA",
+        "limit": 25,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Verifications",
+        "name": "VERIFICATIONS",
+        "limit": 5,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      }
+    ],
+    "units": 1,
+    "unit_details": [
+      {
+        "unitType": "UnitTypeLegacy",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2024",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2025",
+        "unitSize": 1
+      }
+    ]
+  },
+  "2000000012": {
+    "limits": [
+      {
+        "storeType": "Casts",
+        "name": "CASTS",
+        "limit": 100,
+        "used": 4,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Links",
+        "name": "LINKS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Reactions",
+        "name": "REACTIONS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "UserData",
+        "name": "USER_DATA",
+        "limit": 25,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Verifications",
+        "name": "VERIFICATIONS",
+        "limit": 5,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      }
+    ],
+    "units": 1,
+    "unit_details": [
+      {
+        "unitType": "UnitTypeLegacy",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2024",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2025",
+        "unitSize": 1
+      }
+    ]
+  },
+  "2000000013": {
+    "limits": [
+      {
+        "storeType": "Casts",
+        "name": "CASTS",
+        "limit": 100,
+        "used": 4,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Links",
+        "name": "LINKS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Reactions",
+        "name": "REACTIONS",
+        "limit": 200,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "UserData",
+        "name": "USER_DATA",
+        "limit": 25,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Verifications",
+        "name": "VERIFICATIONS",
+        "limit": 5,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      }
+    ],
+    "units": 1,
+    "unit_details": [
+      {
+        "unitType": "UnitTypeLegacy",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2024",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2025",
+        "unitSize": 1
+      }
+    ]
+  },
+  "2000009001": {
+    "limits": [
+      {
+        "storeType": "Casts",
+        "name": "CASTS",
+        "limit": 100,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Links",
+        "name": "LINKS",
+        "limit": 200,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Reactions",
+        "name": "REACTIONS",
+        "limit": 200,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "UserData",
+        "name": "USER_DATA",
+        "limit": 25,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Verifications",
+        "name": "VERIFICATIONS",
+        "limit": 5,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      }
+    ],
+    "units": 1,
+    "unit_details": [
+      {
+        "unitType": "UnitTypeLegacy",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2024",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2025",
+        "unitSize": 1
+      }
+    ]
+  },
+  "2000009002": {
+    "limits": [
+      {
+        "storeType": "Casts",
+        "name": "CASTS",
+        "limit": 100,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Links",
+        "name": "LINKS",
+        "limit": 200,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Reactions",
+        "name": "REACTIONS",
+        "limit": 200,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "UserData",
+        "name": "USER_DATA",
+        "limit": 25,
+        "used": 1,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Verifications",
+        "name": "VERIFICATIONS",
+        "limit": 5,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      }
+    ],
+    "units": 1,
+    "unit_details": [
+      {
+        "unitType": "UnitTypeLegacy",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2024",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2025",
+        "unitSize": 1
+      }
+    ]
+  },
+  "2000009100": {
+    "limits": [
+      {
+        "storeType": "Casts",
+        "name": "CASTS",
+        "limit": 0,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Links",
+        "name": "LINKS",
+        "limit": 0,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Reactions",
+        "name": "REACTIONS",
+        "limit": 0,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "UserData",
+        "name": "USER_DATA",
+        "limit": 0,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      },
+      {
+        "storeType": "Verifications",
+        "name": "VERIFICATIONS",
+        "limit": 0,
+        "used": 0,
+        "earliestTimestamp": 0,
+        "earliestHash": []
+      }
+    ],
+    "units": 0,
+    "unit_details": [
+      {
+        "unitType": "UnitTypeLegacy",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2024",
+        "unitSize": 0
+      },
+      {
+        "unitType": "UnitType2025",
+        "unitSize": 0
+      }
+    ]
+  }
+}

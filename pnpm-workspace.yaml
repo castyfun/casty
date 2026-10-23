@@ -1,0 +1,7 @@
+packages:
+  - client
+  - test/mock-node
+  - docs
+# A release is installed only once it is two weeks old (in minutes), so a compromised version
+# has time to be found and pulled first.
+minimumReleaseAge: 20160

@@ -1,0 +1,47 @@
+---
+title: FIDs
+description: The number that identifies a Farcaster account, who owns it, and how casty finds yours.
+sidebar:
+  order: 5
+---
+
+An fid is the number that identifies a Farcaster account. Every message carries the fid it
+speaks for, and every message must be signed by a key registered to that fid.
+
+## Who owns an fid
+
+fids are registered in the IdRegistry contract on OP Mainnet. The Ethereum address an fid is
+registered to is its custody address, and whoever holds that address's private key controls the
+account: they can add and remove the keys that sign messages, and move the fid to another
+address. A seed phrase holds such keys; casty derives the custody address from it at
+`--address-index`, 0 by default.
+
+casty takes the contract's address and interface from `@farcaster/core`; none of it is
+typed into casty itself.
+
+## How casty finds yours
+
+Snapchain nodes index the IdRegistry's events. `casty init` asks your node for the latest
+registration event of your custody address (`/v1/onChainIdRegistryEventByAddress`) and takes the
+fid from it, so no Ethereum RPC is needed.
+
+A node that is still syncing may not have that event yet. `casty init --op-rpc <url>` then calls
+`IdRegistry.idOf(address)` over an OP Mainnet RPC of your choice. An fid that was moved to another
+address is not found under the old one.
+
+## Names
+
+A username, or fname, is separate from the fid: the node stores proofs that link a name to an fid.
+`casty follow @name` asks your node for the proof first and asks the public registry at
+`fnames.farcaster.xyz` only if the node does not know the name. In the feed, an fid without a
+known name is shown as `!<fid>`.
+
+## Storage
+
+An fid can only publish while it has storage. `casty init` refuses an fid with no storage units;
+see [Storage rent](../../concepts/storage-rent/).
+
+## The fids in these docs
+
+Examples come from the mock node in the repository. Its fids start at 2000000001 and belong to
+no one; the test seed phrase holds 2000000001.

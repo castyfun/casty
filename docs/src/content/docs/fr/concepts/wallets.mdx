@@ -1,0 +1,77 @@
+---
+title: Portefeuilles et clés
+description: "Ce que casty fait de votre adresse de custody et de votre clé d'application, et comment un portefeuille ajoute une clé sans phrase de récupération."
+sidebar:
+  order: 9
+---
+
+casty touche à deux clés. L'adresse de custody, un compte Ethereum qui possède votre fid, signe une
+seule chose : la demande d'une clé d'application. La clé d'application, une clé Ed25519 que casty
+crée, signe tout le reste : casts, réactions, follows. Cette page explique comment cela fonctionne.
+
+## Les deux clés
+
+| Quoi | Où elle se trouve | Quand elle sert |
+| --- | --- | --- |
+| Phrase de récupération | Nulle part : saisie une fois dans `casty init` ou `casty key revoke`, mise à zéro après usage | Pour dériver l'adresse de custody et signer la demande de clé, ou une révocation |
+| Clé d'application | `~/.config/casty/keys.enc.json`, scrypt et XChaCha20-Poly1305, mode 0600 ; aussi sur l'hôte du nœud avec `1-node.sh serve` | Chaque message ; expire après son TTL sans utilisation (30 jours par défaut, au plus 90), et chaque message la renouvelle |
+| Phrase de passe du magasin de clés | Saisie à une invite masquée, ou un secret Docker sur l'hôte | Pour ouvrir le magasin |
+
+`casty init` dérive le compte de custody de la phrase (`--address-index` choisit un autre compte de
+la même phrase), demande au nœud quel fid il détient, crée la clé d'application, fait signer la
+demande de clé par le compte de custody (des données typées EIP-712, telles que `@farcaster/core`
+les construit) et envoie le message `KEY_ADD` à travers le nœud. Pas de transaction, pas de gas, pas
+de clé d'API. `casty key list` montre chaque clé que le nœud liste pour votre fid ;
+`casty key revoke` en supprime une, avec la phrase ou, avec `--self`, avec la clé elle-même. La page,
+dans « you », montre les clés, avertit une semaine avant que la clé de ce casty n'expire, et ajoute
+une clé avec le portefeuille dans le navigateur (ci-dessous).
+
+## Ajouter une clé avec un portefeuille
+
+La signature de custody est une donnée typée EIP-712 ordinaire, si bien que tout ce qui signe des
+données typées pour l'adresse de custody peut autoriser une clé d'application : une application de
+portefeuille, un portefeuille matériel derrière une telle application, une extension de navigateur.
+
+Dans votre compte, « add a key with your wallet » : casty crée la clé Ed25519 et les deux messages de
+données typées, la page les transmet au portefeuille dans le navigateur (`eth_signTypedData_v4` via
+EIP-1193 : MetaMask, Rabby, Rainbow et les autres, un Ledger derrière n'importe lequel d'entre eux),
+le portefeuille signe avec l'adresse de custody, casty vérifie les deux signatures par rapport à
+cette adresse, envoie le `KEY_ADD` à travers le nœud et stocke la clé. La phrase de récupération ne
+quitte jamais le portefeuille, et casty ne la voit jamais. `casty init --fid <fid>` configure sans
+phrase ni clé, pour que la page ajoute la première. Le parcours en terminal reste pour un compte dont
+la custody est une simple phrase de récupération et rien d'autre.
+[Dans un navigateur et sur un téléphone](../../web/) donne les étapes.
+
+- Sur un téléphone sans portefeuille dans le navigateur, la page propose de s'ouvrir dans MetaMask,
+  Coinbase Wallet ou Trust Wallet, appairage compris ; les portefeuilles qui s'annoncent (EIP-6963)
+  sont trouvés côte à côte ; un portefeuille sur le mauvais compte est invité à vous laisser choisir.
+  WalletConnect, une dépendance et un relais exploité par quelqu'un d'autre, a été laissé de côté
+  volontairement.
+- Un compte dont la custody est la phrase de récupération que farcaster.xyz lui a donnée importe
+  cette phrase une fois dans l'un de ces portefeuilles ; à partir de là, le portefeuille signe et la
+  phrase n'est saisie dans rien qui appartienne à casty.
+
+## Adresses vérifiées
+
+Le protocole transporte des messages `VerificationAddAddress`, la preuve qu'un compte possède une
+adresse Ethereum ou Solana, et le nœud répond à `verificationsByFid`. Un profil sur la page les
+liste, chacune avec un lien vers son explorateur et une copie ; les vôtres sont aussi dans votre
+compte. Les lire ne coûte rien et ne sollicite aucun tiers ; rien n'est lu sur une chaîne.
+
+## Combien de temps vit une clé
+
+Une clé sans gas expire après son TTL sans utilisation, et chaque message qu'elle signe la
+renouvelle. casty ne publie jamais en votre nom pour garder une clé en vie ; la page avertit une
+semaine à l'avance, et `casty init --ttl 90d` est la durée la plus longue que permet le protocole.
+
+## Ce que casty laisse de côté
+
+- Les paiements, les pourboires et les échanges. Chacun exige un RPC de chaîne, un portefeuille
+  approvisionné et l'état de la chaîne, que casty garde volontairement hors de son chemin (voir
+  [Sécurité](../../security/)). Une adresse vérifiée sur un profil peut être copiée dans un
+  portefeuille en qui vous avez confiance.
+- WalletConnect. Il ajouterait une dépendance et un relais exploité par quelqu'un d'autre ; les
+  portefeuilles dans le navigateur et les navigateurs intégrés des applications de portefeuille
+  couvrent le même terrain.
+- L'appairage par passkey et le trousseau du système. La page s'appaire avec un jeton de 256 bits qui
+  voyage dans le fragment du lien, et `casty web` demande la phrase de passe une fois par démarrage.

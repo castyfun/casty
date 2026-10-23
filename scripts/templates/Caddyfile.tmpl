@@ -1,0 +1,5 @@
+# Written by casty scripts/1-node.sh serve. Caddy gets and renews the certificate for
+# {{DOMAIN}} itself; it needs 80 and 443 reachable from the internet, and the name pointed here.
+{{DOMAIN}} {
+	reverse_proxy casty:3390
+}

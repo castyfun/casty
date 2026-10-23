@@ -1,0 +1,65 @@
+---
+title: Read nodes and validators
+description: What the node casty sets up does, what it does not, and why a write is checked twice.
+sidebar:
+  order: 8
+---
+
+Snapchain has two kinds of nodes. Validators agree on the order of messages and produce blocks.
+Read nodes download those blocks, keep the full state, and serve it over the HTTP and gRPC APIs.
+casty sets up a read node. The Snapchain docs compare the two in
+[node types](https://snapchain.farcaster.xyz/node-types).
+
+## What a read node gives you
+
+- Every account's casts, reactions, follows, profiles and keys, read from your own disk, through
+  `http://127.0.0.1:3381` once the tunnel is up. The HTTP API is documented in the
+  [reference](https://snapchain.farcaster.xyz/reference/httpapi/httpapi).
+- A way in for writes: `POST /v1/submitMessage` works on a read node.
+- No API key: the data comes from your own host.
+
+Running one earns no rewards: Snapchain's `.env` has to say `AGREE_NO_REWARDS_FOR_ME=true`,
+which `1-node.sh` writes for you.
+
+## What it costs to run
+
+Snapchain asks for 16 GB RAM, 4 vCPU, 2 TB of free disk and a public IP. The first start
+downloads a snapshot of several hundred GB, then syncs the blocks since. The database lives in
+`~/snapchain/.rocks`; while a snapshot is being restored, `.rocks.snapshot` exists next to it and
+needs room too.
+
+Ports, from the Snapchain docs:
+
+| Port | What | Open to |
+| --- | --- | --- |
+| 3381/tcp | HTTP API | your address only, on hosts casty rents |
+| 3382/udp | gossip with other nodes (casty also opens TCP) | everyone |
+| 3383/tcp | gRPC API | your address only, on hosts casty rents |
+
+Grafana (3000) and statsd (8125/udp, 8126/tcp) are published on the host's loopback only:
+`1-node.sh` sets `STATSD_PUBLISH` and `STATSD_ADMIN_PUBLISH` in Snapchain's `.env` to
+`127.0.0.1`, on any host it runs on.
+
+## Writes go through, but are not kept
+
+When you submit a message to a read node, it checks the message, passes it on over gossip and
+keeps nothing. An HTTP `200` means "accepted for relay", not "in a block". If the message is lost
+on the way it is gone, and has to be sent again. The Snapchain docs say the same of
+[read nodes](https://snapchain.farcaster.xyz/node-types): one validates a message, relays it to
+the validators over gossip and keeps no copy, so a message lost on the way needs resubmitting,
+which is likelier when the network is under heavy load.
+
+So casty confirms every write by reading it back from the node until it shows up as merged. It
+waits 20 seconds, sends the same bytes once more, waits another 20, and then stops with:
+
+```text
+casty: <hash> was accepted but not merged within 40s
+```
+
+The message may still merge after that. Look for it before you send it again, since running the
+command again builds a new message.
+
+## Pruning
+
+A read node keeps every block by default. `1-node.sh --block-retention <days>` turns on block
+pruning, which Snapchain offers on read nodes only. Events are kept for 3 days by default.

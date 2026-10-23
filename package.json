@@ -1,0 +1,48 @@
+{
+  "name": "casty-workspace",
+  "private": true,
+  "license": "MIT",
+  "repository": "github:savvax/casty",
+  "type": "module",
+  "packageManager": "pnpm@10.34.7",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "demo": "scripts/demo.sh",
+    "demo:web": "scripts/demo.sh --web",
+    "mock-node": "node test/mock-node/bin/mock-snapchain.mjs",
+    "docs:build": "pnpm --filter @casty/docs build",
+    "docs:versions": "node docs/tools/versions.mjs"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.15",
+    "@types/node": "22.20.5",
+    "bats": "1.13.0",
+    "bats-assert": "2.2.4",
+    "bats-support": "0.3.0",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vitest": "4.1.11"
+  },
+  "pnpm": {
+    "overrides": {
+      "postcss-selector-parser": "7.1.6",
+      "@types/node": "22.20.5",
+      "sharp": "-"
+    },
+    "auditConfig": {
+      "ignoreGhsas": [
+        "GHSA-qxc2-j82w-r537",
+        "GHSA-g7r4-m6w7-qqqr"
+      ]
+    },
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ],
+    "ignoredBuiltDependencies": [
+      "protobufjs",
+      "sharp"
+    ]
+  }
+}

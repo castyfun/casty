@@ -1,0 +1,155 @@
+---
+title: "Your own Farcaster node and client"
+description: Your own Farcaster read node, and a client that reads from it and writes through it. Three commands, no API keys, no gas.
+template: splash
+sidebar:
+  label: Overview
+  order: 0
+hero:
+  title: casty
+  tagline: Your own Farcaster read node, and a client that reads from it and writes through it. Three commands, no API keys, no gas.
+  actions:
+    - text: Start the tutorial
+      link: guide/
+      icon: right-arrow
+    - text: All commands
+      link: commands/
+      variant: minimal
+    - text: Source on GitHub
+      link: https://github.com/savvax/casty
+      icon: external
+      variant: minimal
+---
+
+## What casty is
+
+casty puts a [Snapchain](https://snapchain.farcaster.xyz) read node on a host you control and
+gives you a client that talks to nothing else. The node holds a full copy of Farcaster; the
+client reads your feed, mentions and threads from it and publishes casts, replies, likes,
+recasts and follows through it. Nothing goes through a hosted Farcaster API, and nobody else's
+key or rate limit stands between you and the network.
+
+- **Three scripts.** `0-provision.sh` rents a server with a 2 TB volume and a firewall on
+  Hetzner or AWS, or checks a machine you already have. `1-node.sh` installs Snapchain, waits for
+  it to sync and opens an SSH tunnel. `2-client.sh` installs `casty`, adds an app key and reads
+  your feed. `deploy.sh` runs all three.
+- **A gasless app key.** The key that signs your casts is added with one signed message, not a
+  transaction: your wallet signs it in the browser, or the seed phrase once in a terminal. No
+  ETH, no RPC.
+- **A terminal client.** `casty feed`, `casty cast`, `casty like 2`: every command prints plain
+  text or, with `--json`, JSON for scripts.
+- **A page for the browser and the phone.** `casty web` serves the feed, threads, mentions and
+  a compose box on this machine; `casty serve` puts the same page on the node's host behind
+  HTTPS, with push notifications for mentions and replies.
+- **Tested offline.** A mock Snapchain node checks every signature, so the whole client, the
+  scripts and the page run in CI without a real node.
+
+## Quick start
+
+```sh
+git clone https://github.com/savvax/casty.git && cd casty
+./scripts/deploy.sh --domain node.example.org   # everything below in order, and the page on the host behind HTTPS
+```
+
+`deploy.sh` runs the three steps, and with `--domain` or `--tailscale` a fourth, [From any
+network](serve/). [The whole way](guide/) walks through all of it, then running it, in order. Each step is safe to run again, so the same command picks up where a run
+stopped. Step by step:
+
+```sh
+./scripts/0-provision.sh   # a VM, 2 TB volume and firewall on Hetzner or AWS, whichever credentials are set; or --host user@ip
+./scripts/1-node.sh        # Snapchain read node, wait for sync, SSH tunnel to 127.0.0.1:3381
+./scripts/2-client.sh      # download casty, add a gasless app key with your wallet (--fid) or seed phrase, read your feed
+```
+
+A seed phrase controls the whole account. Use a test account for this tutorial, paste a seed
+phrase only into software from developers you trust, and prefer a key authorised by your
+wallet: `casty init --fid <fid>`, then `casty web` and, under you, "add a key with your wallet".
+
+Run the three scripts in order from a checkout of the casty repository. At the end you have a
+[Snapchain](https://snapchain.farcaster.xyz) read node on a host you control, and `./bin/casty`,
+a client that reads your feed from that node and publishes through it.
+
+The client needs no API key from a hosted Farcaster service and no Ethereum RPC on the normal
+path. Its app key is added with a signed message, not an onchain transaction, so there is no gas
+to pay.
+
+## What you need
+
+- A Farcaster test account: an fid with at least one storage unit, and a wallet that holds the
+  address it is registered to, or that address's seed phrase. casty uses the phrase once, to
+  sign the key request, and never writes it to disk.
+- A host. Either credentials for Hetzner Cloud (`HCLOUD_TOKEN` and the `hcloud` CLI) or AWS (the
+  AWS CLI v2 and a profile or access key), or SSH access to a machine you already have that can
+  run Docker. See [A node at home](home-node/) for the last case.
+- An SSH key pair, by default `~/.ssh/id_ed25519` and `~/.ssh/id_ed25519.pub`.
+- On your machine: `ssh`, `curl` and `jq`. Node.js 22.12 or newer only to build the client
+  yourself (`2-client.sh --from-source`). macOS and Linux work; on Windows, run the scripts in
+  WSL2.
+
+The node host needs what Snapchain asks for: 16 GB RAM, 4 vCPU, 2 TB of free disk and a public
+IP ([getting started](https://snapchain.farcaster.xyz/getting-started)). On a rented host, step 0
+picks the server and the volume, and step 1 checks the host before it installs anything.
+
+## How long it takes
+
+Step 1 takes the longest: on its first start the node downloads a snapshot of several hundred
+GB, then catches up on the blocks since that snapshot. Expect hours.
+`1-node.sh` waits and prints how far behind the node is after each check. Pressing Ctrl-C ends
+only the wait; the node keeps syncing, and `./scripts/1-node.sh status --wait` picks the wait up
+again.
+
+## What it costs
+
+casty does not know your provider's prices. A real `0-provision.sh` run lists the server, volume
+and firewall it is about to create, says they are billed until you delete them, and goes ahead
+only once you type the server name back. `./scripts/0-provision.sh --destroy` deletes all three.
+
+## Try it without a node
+
+The repository ships a mock Snapchain node that serves the same HTTP API from fixtures and checks
+the signatures on every message submitted to it. With it, the whole client runs offline:
+
+```sh
+pnpm install --frozen-lockfile
+pnpm demo
+```
+
+`pnpm demo` starts the mock on a free port, adds an app key with the BIP-39 test phrase
+`test test test test test test test test test test test junk`, reads the feed with and without
+one app's casts, publishes a cast, likes one, and deletes its throwaway config at the end. The
+fids in the fixtures start at 2000000001 and belong to no one.
+
+`pnpm demo:web` does the same setup, then serves [casty web](web/), the browser and phone page,
+on a free port until you press Ctrl-C.
+
+## One command
+
+```text
+Usage: deploy.sh [--domain <name> | --tailscale] [--read-only] [--fid <fid>] [--from-source]
+                 [--env <file>] [--yes] [--dry-run] [-- <0-provision.sh options>]
+
+  Runs, in order: 0-provision.sh (unless --env's file already describes a host; with --domain,
+  again on that host to open 80 and 443), 1-node.sh (the node, the wait for its sync, the
+  tunnel), 2-client.sh (the client, an app key, the feed) and, with a front named, 1-node.sh
+  serve. Every step is safe to run again: the same command picks up where a run stopped.
+
+  --domain <name>   serve the page on the host as https://<name> (Caddy; opens 80 and 443)
+  --tailscale       serve it as the host's name on your tailnet instead
+  --read-only       a page that reads only: no app key or passphrase leaves this machine
+  --fid <fid>       no seed phrase: 2-client.sh --fid; add the key in ./bin/casty web with your
+                    wallet, then run the same command again for the page on the host
+  --from-source     build the client here with Node and pnpm instead of downloading it
+  --env <file>      node.env to write or read (default: node.env)
+  --yes             do not ask before creating anything
+  --dry-run         print what provisioning and the node would run; the client is skipped
+  -- <options>      passed to 0-provision.sh, e.g. -- --provider aws --region eu-west-1
+
+Exit codes: 0 ok, 2 bad arguments, otherwise the code of the step that stopped.
+```
+
+## Where to go next
+
+Start with [0. Provision a host](0-provision/). If you want to know what the scripts set up
+before you run them, read [Read nodes and validators](concepts/read-nodes-vs-validators/) and
+[Custody address and app keys](concepts/custody-and-app-keys/). [Security](security/) lists
+every secret involved and how to revoke each one.

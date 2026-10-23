@@ -1,0 +1,80 @@
+---
+title: Custody address and app keys
+description: Why casty asks for your seed phrase once, and what the gasless app key it adds may do.
+sidebar:
+  order: 6
+---
+
+Two kinds of keys are involved. The custody address owns your fid. An app key signs your
+everyday messages: casts, reactions, follows. casty uses the custody address once, to add an app
+key, and keeps only the app key. The custody signs either in a wallet, from the page
+([Wallets and keys](../../concepts/wallets/)), or in a terminal, from the seed phrase `casty init`
+asks for.
+
+## The custody address
+
+It is an Ethereum account, derived from your seed phrase. It can add and remove app keys and
+move the fid, so casty never stores it: `casty init` reads the phrase, signs one request, and
+zeroes the phrase. `casty key revoke` asks for it again, because removing a key with the custody
+address needs a new signature.
+
+## The app key
+
+An Ed25519 key that casty generates on your machine. It signs messages for your fid, and nodes
+accept them as long as the key is registered and has not lapsed.
+
+Since engine version 16, Snapchain registers such keys with a `KEY_ADD` message instead of an
+onchain transaction: no gas, and the key is usable as soon as the message merges. casty builds
+it with the `@farcaster/core` helpers `makeKeyAddBody` and `makeKeyAdd`. See
+[writing messages](https://snapchain.farcaster.xyz/guides/writing-messages) in the Snapchain
+docs.
+
+A `KEY_ADD` carries three signatures:
+
+- the requesting app's signature over a key request, made by the custody address of the app fid
+  (`--app-fid`, your own fid by default);
+- the custody address's signature over the key, its scopes, its lifetime, a nonce and a
+  deadline;
+- the message envelope, signed by the new key itself, which proves casty holds its private half.
+
+The nonce is per fid and must grow with every key change: casty reads the current one from the
+node and adds 1. If another change lands first, the node refuses the message, and `casty init`
+retries once with a fresh nonce.
+
+## Scopes
+
+A gasless key lists the message types it may sign. casty asks for these by default:
+
+| `--scopes` name | Message types |
+| --- | --- |
+| `cast` | `CAST_ADD`, `CAST_REMOVE` |
+| `reaction` | `REACTION_ADD`, `REACTION_REMOVE` |
+| `link` | `LINK_ADD`, `LINK_REMOVE` |
+
+`user-data` (`USER_DATA_ADD`, your profile) is added only when you ask for it. `KEY_ADD` and
+`KEY_REMOVE` can never be among a key's scopes, so an app key cannot add keys or remove other
+keys; it can only remove itself.
+
+## Lifetime
+
+`--ttl` sets how long the key lives without use: 30 days by default, at most 90. Every message
+the key signs that merges starts the period again, so a key you use does not lapse. `casty init`
+prints the date it would lapse if left unused. An fid may hold at most 1000 active gasless keys.
+
+## Which app posted a cast
+
+Every key records the fid of the app that requested it. A cast carries the public key that signed
+it, so the feed can say which app it came from: casty looks the signer up in the author's list of
+keys, takes the requesting fid and shows that fid's username after `via`. `--only-app` and
+`--exclude-app` filter on it, and `casty clients --fid <fid>` lists any account's keys with their
+apps. Keys added onchain carry the same request, and casty reads them the same way.
+
+## Removing a key
+
+| Command | Signed by | Needs |
+| --- | --- | --- |
+| `casty key revoke <key>` | the custody address | the seed phrase |
+| `casty key revoke <key> --self` | the app key itself | the key in casty's store |
+
+Both send a `KEY_REMOVE` and wait until the node no longer lists the key. Keys added onchain are
+removed onchain, in the KeyRegistry contract; casty does not do that.

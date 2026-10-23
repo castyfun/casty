@@ -1,0 +1,23 @@
+{
+  "name": "@casty/mock-node",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "mock-snapchain": "bin/mock-snapchain.mjs"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "sh -c '[ \"$1\" = -- ] && shift; exec vitest run \"$@\"' vitest",
+    "typecheck": "tsc --noEmit",
+    "fixtures:basic": "node bin/mock-snapchain.mjs gen --fids 12 --casts 4 --seed 42 --out fixtures/basic"
+  },
+  "dependencies": {
+    "@farcaster/core": "0.20.0",
+    "tsx": "4.23.15",
+    "viem": "2.57.7"
+  }
+}

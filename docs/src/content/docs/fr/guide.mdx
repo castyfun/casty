@@ -1,0 +1,281 @@
+---
+title: Tout le parcours
+description: "De rien jusqu'à votre propre nœud, un client avec une clé d'application et la page sur un téléphone, puis son utilisation, étape par étape."
+sidebar:
+  order: 0.5
+---
+
+Cette page parcourt tout le chemin une fois, dans l'ordre où vous le faites, et renvoie vers la page
+qui détaille chaque étape. Les commandes s'exécutent depuis une copie du dépôt casty, sauf mention
+« sur l'hôte ».
+
+## 0. Avant de commencer
+
+Une phrase de récupération contrôle tout le compte. Utilisez un compte de test pour ce tutoriel, ne
+collez une phrase de récupération que dans un logiciel de développeurs en qui vous avez confiance, et
+préférez une clé autorisée par votre portefeuille : `casty init --fid <fid>`, puis `casty web` et,
+dans votre compte, « add a key with your wallet ».
+
+Il vous faut :
+
+- **Un compte de test Farcaster** : son fid, au moins une storage unit
+  ([Location de stockage](../concepts/storage-rent/)), et un portefeuille qui détient l'adresse à
+  laquelle le fid est enregistré (ou, à défaut, la phrase de récupération de cette adresse).
+  `casty whoami` et `casty storage` affichent les deux une fois casty configuré.
+- **Un hôte pour le nœud** : un compte chez Hetzner Cloud ou AWS, auprès duquel casty loue un
+  serveur, ou une machine à vous avec 16 Go de RAM, 4 cœurs, 2 To de disque libre et Docker
+  ([Un nœud à la maison](../home-node/)). Un serveur loué et son volume de 2 To sont facturés jusqu'à
+  ce que vous les supprimiez (étape 9).
+- **Sur votre machine** : `ssh`, `curl` et `jq`, et une paire de clés SSH, par défaut
+  `~/.ssh/id_ed25519`. Tant que le projet n'a pas de version publiée, Node.js 22.12 ou plus récent
+  aussi, puisque l'étape 2 compile alors le client ici. Sous Windows, utilisez WSL2.
+- **Du temps** : la première synchronisation du nœud télécharge un instantané de plusieurs centaines
+  de Go et prend des heures. Rien n'est perdu si vous arrêtez d'attendre ; chaque étape peut être
+  relancée et reprend là où elle en était.
+
+```sh
+git clone https://github.com/savvax/casty.git && cd casty
+ls ~/.ssh/id_ed25519.pub || ssh-keygen -t ed25519   # a key to log in to the node with
+```
+
+## 1. Donner à casty un cloud, ou un hôte
+
+Définissez les identifiants d'un fournisseur ; les scripts les lisent dans votre environnement et ne
+les écrivent jamais nulle part ([0. Provisionner un hôte](../0-provision/)).
+
+```sh
+export HCLOUD_TOKEN=<token>        # Hetzner: Cloud console, your project, Security, API tokens (read/write)
+# or, for AWS: aws configure       # or AWS_PROFILE, or AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+```
+
+Pour une machine que vous avez déjà, sautez ceci et passez `--host user@ip` à l'étape 2.
+
+Lisez ce que ferait une exécution avant que quoi que ce soit ne soit créé ; un essai à blanc ne
+demande aucun identifiant :
+
+```sh
+./scripts/deploy.sh --dry-run -- --provider hetzner
+```
+
+Il affiche chaque commande du fournisseur et chaque commande SSH sous forme de ligne `DRY:` et ne crée
+rien.
+
+## 2. Lancer l'ensemble
+
+### En une seule commande
+
+```sh
+./scripts/deploy.sh --fid <fid>
+```
+
+Cela exécute les trois étapes ci-dessous dans l'ordre et s'arrête à la première qui échoue, avec le
+code de sortie de cette étape. Relancez la même commande pour continuer : la première synchronisation
+prend des heures, et un Ctrl-C pendant celle-ci ne fait rien perdre. Ajoutez `--domain <name>` (ou
+`--tailscale`) pour mettre aussi la page sur l'hôte, étape 6. Sans `--fid`, l'étape 2c demande la
+phrase de récupération à la place.
+
+Ce que chaque étape vous demande :
+
+- **Un hôte** (`0-provision.sh`) : il affiche ce qu'il va créer et facturer, et ne continue qu'une
+  fois que vous avez retapé le nom du serveur (`--yes` saute la question). Il écrit `node.env`, que
+  chaque étape suivante lit et dont la suppression du nœud a besoin : conservez-le. Avec
+  `--host user@ip`, rien n'est créé ; l'hôte est vérifié par SSH.
+- **Le nœud** (`1-node.sh`) : rien à répondre. Il vérifie l'hôte (RAM, disque, Docker, l'horloge),
+  démarre Snapchain, affiche la synchronisation et ouvre un tunnel SSH vers `127.0.0.1:3381` une fois
+  que le nœud a rattrapé son retard.
+- **Le client** (`2-client.sh`) : avec `--fid`, rien ; casty est configuré pour votre fid sans clé
+  pour l'instant, et le fil est lu. Sans lui, une phrase de passe pour le magasin de clés (deux fois),
+  puis la phrase de récupération, à une invite masquée.
+
+### Ou étape par étape
+
+La même chose, une étape à la fois :
+
+```sh
+./scripts/0-provision.sh             # a: a server, a 2 TB volume and a firewall; or --host user@ip
+./scripts/1-node.sh                  # b: the read node, the wait for its sync, the tunnel
+./scripts/2-client.sh --fid <fid>    # c: ./bin/casty, set up for your fid; the seed phrase path without --fid
+```
+
+Pendant que le nœud se synchronise, `./scripts/1-node.sh status` montre le retard de chaque shard, et
+`./scripts/1-node.sh status --wait` attend qu'il soit synchronisé. Détails :
+[1. Lancer le nœud de lecture](../1-node/), [2. Installer le client](../2-client/).
+
+## 3. Ajouter une clé d'application
+
+casty écrit avec une clé d'application : une clé Ed25519 que l'adresse de custody de votre fid
+autorise, ajoutée avec un message `KEY_ADD` sans gas à travers votre nœud, sans transaction ni gas
+([Adresse de custody et clés d'application](../concepts/custody-and-app-keys/)).
+
+### Avec votre portefeuille
+
+```sh
+./bin/casty web
+```
+
+1. `casty web` demande deux fois une phrase de passe pour le magasin de clés qu'il s'apprête à créer,
+   et affiche un lien avec un jeton. Ouvrez-le dans un navigateur qui a votre portefeuille (une
+   extension comme MetaMask).
+2. Dans votre compte, choisissez « add a key with your wallet ».
+3. Le portefeuille est invité à donner son compte ; choisissez celui auquel le fid est enregistré.
+   S'il se trouve sur une autre chaîne, il est invité à passer sur Ethereum mainnet, ce qui ne coûte
+   rien.
+4. Signez les deux demandes que le portefeuille affiche : la demande de clé, puis l'ajout de clé.
+5. La page vérifie les deux signatures, envoie le `KEY_ADD` à travers votre nœud, attend que le nœud
+   liste la clé, et la stocke chiffrée dans `~/.config/casty/keys.enc.json`.
+
+Sur un téléphone dont le portefeuille est une application, démarrez
+`./bin/casty web --listen 0.0.0.0:3390` (ou utilisez la page sur l'hôte, étape 6), ouvrez la page sur
+le téléphone et, dans votre compte, utilisez le lien qui l'ouvre dans le navigateur de votre
+portefeuille ; le bouton à côté copie le lien d'appairage à y coller.
+
+### Avec la phrase de récupération, à défaut
+
+```sh
+./bin/casty init
+```
+
+Il demande la phrase de passe, puis la phrase de récupération à une invite masquée ; la phrase sert
+une seule fois pour signer la demande de clé et n'est jamais écrite sur le disque. `--address-index`
+choisit une autre adresse de la phrase.
+
+Dans les deux cas, la clé peut signer des casts, des réactions et des follows (`--scopes` ajoute les
+modifications de profil), et elle expire après 30 jours sans utilisation (`--ttl`, au plus `90d`) ;
+chaque message qu'elle signe la renouvelle. `./bin/casty whoami` affiche la clé, l'adresse de custody
+et votre stockage.
+
+## 4. L'utiliser dans un terminal
+
+`./bin/casty --help` liste chaque commande ; `<command> --help` ses options. Pour taper `casty` à la
+place, créez une fois un lien : `ln -s "$PWD/bin/casty" ~/.local/bin/casty`.
+
+| Pour | Exécutez |
+| --- | --- |
+| lire votre fil | `casty feed`, `casty feed --since 24h --no-replies --limit 20` |
+| lire ce que les autres vous ont dit | `casty mentions` |
+| ouvrir un cast avec ce à quoi il répond et ses réponses | `casty thread 2` |
+| publier | `casty cast "hello from my own node"`, `--channel /name`, `--embed <url>` |
+| répondre, liker, recaster | `casty reply 1 "agreed"`, `casty like 1`, `casty recast 1` |
+| annuler | `casty unlike 1`, `casty unrecast 1`, `casty delete 1` |
+| suivre | `casty follow @name`, `casty unfollow @name` |
+| voir les applications derrière les clés d'un fid | `casty clients --fid <fid>` |
+| vérifier votre stockage | `casty storage` |
+| vérifier le nœud, l'horloge et la configuration | `casty doctor`, `casty node status` |
+
+Le numéro devant un cast dans la dernière liste affichée est ce que prennent `like`, `reply`,
+`recast`, `delete` et `thread` ; tout comme `<fid>:<hash>` et le lien farcaster.xyz d'un cast. `via`
+nomme l'application à travers laquelle un cast a été publié ; `--only-app` et `--exclude-app` filtrent
+dessus. Chaque écriture attend que le nœud ait le message, et le signale quand ce n'est pas le cas.
+
+## 5. L'utiliser dans un navigateur
+
+`./bin/casty web` sert les mêmes commandes sous forme de page sur `http://127.0.0.1:3390` et affiche
+un lien qui appaire un navigateur ([Dans un navigateur et sur un téléphone](../web/)).
+
+- **Sur un téléphone à la maison** : `./bin/casty web --listen 0.0.0.0:3390` affiche un lien par
+  adresse réseau et un code QR ; scannez-le sur le même réseau. La connexion est en HTTP simple,
+  utilisez donc un réseau en qui vous avez confiance. Ajoutez la page à l'écran d'accueil pour l'ouvrir
+  en plein écran.
+- **Lecture seule** : `--read-only` ne demande aucune phrase de passe, et la page ne peut pas écrire.
+- **Un nouveau jeton** : `--new-token` fait cesser de fonctionner tous les liens affichés auparavant.
+
+Ctrl-C arrête `casty web` ; la machine doit rester allumée tant qu'un téléphone l'utilise.
+
+## 6. La page depuis n'importe quel réseau
+
+Pour atteindre la page depuis un réseau mobile, faites-la tourner sur l'hôte du nœud derrière HTTPS
+([Depuis n'importe quel réseau](../serve/)). Il lui faut d'abord une clé d'application ici
+(étape 3) : le magasin de clés et sa phrase de passe vont sur l'hôte comme secret Docker, sauf avec
+`--read-only`.
+
+Avec un domaine :
+
+1. Faites pointer un enregistrement DNS `A` d'un nom que vous possédez, disons `node.example.org`,
+   vers l'IP du nœud (`NODE_IP` dans `node.env`).
+2. Exécutez :
+
+   ```sh
+   ./scripts/deploy.sh --fid <fid> --domain node.example.org
+   ```
+
+   Sur un nœud que casty a loué, cela ouvre 80 et 443 sur son pare-feu ; sur un hôte à vous,
+   ouvrez-les vous-même. Ensuite, il compile casty sur l'hôte, le démarre derrière Caddy, qui obtient
+   le certificat, demande la phrase de passe du magasin de clés et affiche
+   `https://node.example.org/#token=...`. Le code QR de ce lien se trouve dans
+   `./scripts/1-node.sh logs casty`.
+
+Avec Tailscale à la place, installez-le sur l'hôte et connectez-le, mettez le téléphone sur le même
+tailnet, et exécutez `./scripts/deploy.sh --fid <fid> --tailscale` ; aucun port ne s'ouvre sur
+internet.
+
+Sur l'hôte, le fil vient d'un index qui suit les événements du nœud. Dans votre compte,
+« notifications » active une notification push pour chaque mention ou réponse, qui nomme l'expéditeur
+et rien d'autre ; sur un iPhone, ajoutez d'abord la page à l'écran d'accueil (iOS 16.4 et plus
+récent).
+
+Après une modification de casty, relancez `./scripts/1-node.sh serve --domain <name>` : il recompile
+et redémarre la page.
+
+## 7. Faire tourner le nœud
+
+| Pour | Exécutez |
+| --- | --- |
+| voir la synchronisation | `./scripts/1-node.sh status` (code de sortie 1 tant qu'il est en retard) |
+| suivre ses journaux, ou ceux de la page | `./scripts/1-node.sh logs`, `./scripts/1-node.sh logs casty` |
+| rouvrir le tunnel après un redémarrage de votre machine | `./scripts/1-node.sh tunnel` (`--stop` le ferme) |
+| passer à la dernière version de Snapchain | `./scripts/1-node.sh upgrade` |
+| rester sur une version | `./scripts/1-node.sh upgrade --release 0.14.3` |
+| mettre à jour chaque semaine automatiquement | `./scripts/1-node.sh --autoupgrade --fid <fid>` : il exécute `docker system prune --volumes -f` sur tout l'hôte |
+| conserver moins de blocs | `./scripts/1-node.sh --block-retention 30` (jours) |
+| voir Grafana | sur l'hôte, `docker compose up -d grafana` dans `~/snapchain` ; ici, `ssh -L 3000:127.0.0.1:3000 <user>@<ip>` et `http://127.0.0.1:3000` |
+| arrêter le nœud, et la page | `./scripts/1-node.sh down` ; la base de données reste sur le volume |
+
+Depuis un autre réseau, le pare-feu n'autorise toujours que l'adresse que vous aviez : relancez
+`./scripts/0-provision.sh`, et il déplace les règles vers votre adresse actuelle, sur le même nœud.
+
+## 8. Clés et sécurité
+
+| Pour | Exécutez |
+| --- | --- |
+| lister les clés de votre fid | `casty key list` |
+| supprimer la clé de ce casty avec la clé elle-même | `casty key revoke --self` |
+| supprimer n'importe quelle clé | `casty key revoke <key>`, avec la phrase de récupération |
+| désappairer tous les navigateurs | `casty web --new-token` ; sur l'hôte, supprimez `~/snapchain/casty/config/web-token` et `docker compose restart casty` |
+
+Une clé qui a expiré, ou qui a été supprimée ailleurs, est ignorée ; ajoutez-en une autre comme à
+l'étape 3. [Sécurité](../security/) liste chaque secret concerné, où il se trouve et que faire en cas
+de fuite.
+
+## 9. Tout supprimer
+
+```sh
+./bin/casty key revoke --self        # first, while the node runs: the key stops working everywhere
+./scripts/1-node.sh down             # stops the node and the page; nothing is deleted
+./scripts/0-provision.sh --destroy   # deletes the server, its volume and its firewall, after you type the name
+rm -rf ~/.config/casty               # the config and the encrypted key store here
+```
+
+`--destroy` lit `node.env` pour savoir quoi supprimer et le retire ensuite ; un nouveau nœud se
+synchronise depuis le début. Sur un hôte à vous, il n'y a rien à détruire : supprimez `~/snapchain`
+là-bas.
+
+## Sans nœud
+
+`pnpm install`, puis `pnpm demo`, fait tourner le client contre un nœud factice avec la phrase de
+test et supprime ce qu'il a créé ; `pnpm demo:web` sert la page de la même façon jusqu'à Ctrl-C.
+
+## Quand une étape s'arrête
+
+Chaque script affiche ce qui a échoué et ce qu'il faut faire, et se termine avec un code qui indique
+le type de problème :
+
+| Code | `0-provision.sh` | `1-node.sh` | `2-client.sh` |
+| --- | --- | --- | --- |
+| 1 | | pas synchronisé, ou le nœud n'a pas répondu | |
+| 2 | arguments invalides | arguments invalides | arguments invalides |
+| 3 | un outil ou un identifiant manquant | un outil manquant | un outil manquant, ou Node trop ancien |
+| 4 | le fournisseur a refusé | pas de connexion SSH, ou un téléchargement a échoué | le nœud injoignable (ouvrez le tunnel), ou aucun téléchargement valide |
+| 5 | l'hôte ne suffit pas | l'hôte ne suffit pas | un problème de clé : phrase de passe, phrase de récupération, stockage |
+
+[Dépannage](../troubleshooting/) donne chaque message avec sa correction. `deploy.sh` s'arrête avec
+le code de l'étape qui s'est arrêtée, et la même commande reprend à partir de là.

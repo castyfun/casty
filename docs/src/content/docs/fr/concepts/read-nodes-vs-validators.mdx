@@ -1,0 +1,67 @@
+---
+title: Nœuds de lecture et validateurs
+description: "Ce que fait le nœud que casty met en place, ce qu'il ne fait pas, et pourquoi une écriture est vérifiée deux fois."
+sidebar:
+  order: 8
+---
+
+Snapchain a deux sortes de nœuds. Les validateurs s'accordent sur l'ordre des messages et produisent
+les blocs. Les nœuds de lecture téléchargent ces blocs, gardent l'état complet, et le servent via les
+API HTTP et gRPC. casty met en place un nœud de lecture. La documentation de Snapchain compare les
+deux dans [node types](https://snapchain.farcaster.xyz/node-types).
+
+## Ce que vous apporte un nœud de lecture
+
+- Les casts, réactions, follows, profils et clés de chaque compte, lus sur votre propre disque, via
+  `http://127.0.0.1:3381` une fois le tunnel établi. L'API HTTP est documentée dans la
+  [référence](https://snapchain.farcaster.xyz/reference/httpapi/httpapi).
+- Une porte d'entrée pour les écritures : `POST /v1/submitMessage` fonctionne sur un nœud de lecture.
+- Pas de clé d'API : les données viennent de votre propre hôte.
+
+En faire tourner un ne rapporte aucune récompense : le `.env` de Snapchain doit indiquer
+`AGREE_NO_REWARDS_FOR_ME=true`, ce que `1-node.sh` écrit pour vous.
+
+## Ce que coûte son fonctionnement
+
+Snapchain demande 16 Go de RAM, 4 vCPU, 2 To de disque libre et une IP publique. Le premier démarrage
+télécharge un instantané de plusieurs centaines de Go, puis synchronise les blocs produits depuis. La
+base de données se trouve dans `~/snapchain/.rocks` ; pendant la restauration d'un instantané,
+`.rocks.snapshot` existe à côté et a besoin de place lui aussi.
+
+Les ports, d'après la documentation de Snapchain :
+
+| Port | Rôle | Ouvert à |
+| --- | --- | --- |
+| 3381/tcp | API HTTP | votre adresse uniquement, sur les hôtes que casty loue |
+| 3382/udp | gossip avec les autres nœuds (casty ouvre aussi TCP) | tout le monde |
+| 3383/tcp | API gRPC | votre adresse uniquement, sur les hôtes que casty loue |
+
+Grafana (3000) et statsd (8125/udp, 8126/tcp) ne sont publiés que sur la boucle locale de l'hôte :
+`1-node.sh` fixe `STATSD_PUBLISH` et `STATSD_ADMIN_PUBLISH` dans le `.env` de Snapchain à
+`127.0.0.1`, sur tout hôte où il tourne.
+
+## Les écritures passent, mais ne sont pas conservées
+
+Quand vous soumettez un message à un nœud de lecture, il vérifie le message, le transmet par gossip
+et ne garde rien. Un `200` HTTP signifie « accepté pour relais », pas « dans un bloc ». Si le message
+se perd en route, il a disparu et doit être renvoyé. La documentation de Snapchain dit la même chose
+des [nœuds de lecture](https://snapchain.farcaster.xyz/node-types) : un tel nœud valide un message,
+le relaie aux validateurs par gossip et n'en garde aucune copie, si bien qu'un message perdu en route
+doit être soumis de nouveau, ce qui est plus probable quand le réseau est très chargé.
+
+casty confirme donc chaque écriture en la relisant sur le nœud jusqu'à ce qu'elle apparaisse comme
+fusionnée. Il attend 20 secondes, renvoie les mêmes octets une fois, attend encore 20 secondes, puis
+s'arrête avec :
+
+```text
+casty: <hash> was accepted but not merged within 40s
+```
+
+Le message peut encore être fusionné après cela. Cherchez-le avant de l'envoyer de nouveau, puisque
+relancer la commande construit un nouveau message.
+
+## Élagage
+
+Un nœud de lecture garde tous les blocs par défaut. `1-node.sh --block-retention <days>` active
+l'élagage des blocs, que Snapchain ne propose que sur les nœuds de lecture. Les événements sont
+conservés 3 jours par défaut.

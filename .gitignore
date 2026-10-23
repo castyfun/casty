@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.astro/
+coverage/
+/bin/
+node.env
+*.known_hosts
+.env
+*.enc.json
+test/mock-node/fixtures/generated/
+*.cloud-init.yaml
+*.firewall.json
+.DS_Store
+/client/release/

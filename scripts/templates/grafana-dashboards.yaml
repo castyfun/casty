@@ -1,0 +1,8 @@
+# Written by casty scripts/1-node.sh: Grafana loads every dashboard in this directory, which
+# holds the Snapchain dashboard from the Snapchain repository.
+apiVersion: 1
+providers:
+  - name: snapchain
+    type: file
+    options:
+      path: /etc/grafana/provisioning/dashboards

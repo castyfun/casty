@@ -1,0 +1,29 @@
+{
+  "name": "@casty/client",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "casty": "dist/casty.js"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "build:binary": "node binary.mjs",
+    "test": "sh -c '[ \"$1\" = -- ] && shift; exec vitest run \"$@\"' vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@farcaster/core": "0.20.0",
+    "@noble/ciphers": "2.4.0",
+    "commander": "14.0.3",
+    "esbuild": "0.28.2",
+    "uqr": "0.1.2",
+    "viem": "2.57.7"
+  },
+  "devDependencies": {
+    "@casty/mock-node": "workspace:*",
+    "@vitest/coverage-v8": "4.1.11",
+    "happy-dom": "20.14.5"
+  }
+}

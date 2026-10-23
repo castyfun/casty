@@ -1,0 +1,65 @@
+---
+title: Snapchain messages
+description: What a Farcaster message is made of, how it travels through your node, and what casty checks before sending one.
+sidebar:
+  order: 7
+---
+
+Everything an account does on Farcaster is a signed message: a cast, a like, a follow, a profile
+change, a key change. Nodes check each message and store the ones they accept. The protocol is
+described in [Messages](https://docs.farcaster.xyz/learn/what-is-farcaster/messages) in the
+Farcaster docs.
+
+## What is in one
+
+| Field | What |
+| --- | --- |
+| `data` | the content: type, fid, timestamp, network, and a body for the type |
+| `hash` | BLAKE3 hash of `data`, 20 bytes |
+| `signature` | Ed25519 signature over the hash |
+| `signer` | the public key that signed, which must be registered to the fid |
+
+casty never assembles these by hand; it calls the `@farcaster/core` builders
+(`makeCastAdd`, `makeReactionAdd`, `makeLinkAdd` and the others) with your app key.
+
+Timestamps count seconds since the Farcaster epoch, 2021-01-01 00:00:00 UTC. Nodes reject a
+message stamped more than 15 minutes in the future, which is why `casty doctor` and step 1 check
+your clock.
+
+## Casts
+
+A cast holds up to 320 bytes of UTF-8 text, or up to 1024 bytes as a long cast; casty picks the
+type from the length. Text is counted in bytes, not characters, so a cast in Cyrillic or with
+emoji fits fewer characters.
+
+Mentions are not part of the text. A cast stores the mentioned fids and the byte offsets where
+they belong, and the feed puts `@name` back in place. A reply points at its parent by fid and
+hash; a channel post points at the channel's URL instead. Links go in embeds, `--embed <url>` on
+the command line.
+
+Deleting a cast publishes a `CAST_REMOVE`. Likes and recasts are reactions, follows are links, and
+each has a remove message too.
+
+## Shards
+
+Snapchain splits the network into shards. An account's casts, reactions, follows and profile live
+on one message shard, chosen from the first 4 bytes of SHA-256 of its fid. Key changes and a few
+other account-wide messages go to shard 0. That is why `status` and `casty doctor` print one line
+per shard: the node is synced only when every shard is.
+
+## Sending one through your node
+
+1. casty builds and signs the message and posts its bytes to `POST /v1/submitMessage`.
+2. The node checks it and answers `200`, or an error with the reason.
+3. A read node keeps nothing: it passes the message on over gossip and forgets it. `200` means
+   accepted for relay, not stored.
+4. Once a validator includes the message in a block, every node, yours included, has it.
+
+casty therefore reads the message back, for example with `castById` after a cast, until it shows
+up; [Read nodes and validators](../../concepts/read-nodes-vs-validators/) has the timings. The same
+bytes have the same hash, so a message sent twice is stored once.
+
+## Storage
+
+Every message an account keeps counts against its storage, removes included: a `CAST_REMOVE`
+stays as a record that the cast is gone. See [Storage rent](../../concepts/storage-rent/).

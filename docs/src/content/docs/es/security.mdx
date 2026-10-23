@@ -1,0 +1,79 @@
+---
+title: Seguridad
+description: Cada secreto que toca casty, dónde se guarda, qué puede hacer y cómo revocarlo.
+sidebar:
+  order: 10
+---
+
+casty no ha sido auditado. Esta página enumera lo que guarda y lo que puede hacer cada pieza.
+
+## Secretos
+
+| Secreto | Dónde está | Qué puede hacer | Cómo revocarlo |
+| --- | --- | --- | --- |
+| Frase semilla | En memoria mientras se ejecuta `casty init` o `casty key revoke`; nunca se escribe en disco ni se envía a ningún sitio. Con `casty init --fid` y una clave añadida desde la página por una billetera, casty no la ve en absoluto | Todo: tiene la custodia de tu fid | casty no puede. Guárdala sin conexión |
+| Clave de aplicación (Ed25519) | `~/.config/casty/keys.enc.json`, cifrada con scrypt y XChaCha20-Poly1305, modo 0600 | Firmar casts, reacciones y follows para tu fid hasta que caduque sin uso (30 días por defecto, como máximo 90) | `casty key revoke <key>` con la frase semilla, o `--self` con la propia clave |
+| `KEY_ADD` firmado aún no confirmado | En el mismo almacén cifrado, hasta que `casty init` ve la clave listada o el nodo rechaza el mensaje | Añadir esa única clave, una vez | `casty key revoke` si alguna vez se fusiona |
+| Contraseña del almacén de claves | Tecleada en un prompt oculto | Descifrar las claves de aplicación en esta máquina | Revocar las claves, borrar `keys.enc.json`, ejecutar `casty init` |
+| Token de casty web | `~/.config/casty/web-token`, modo 0600; en el almacenamiento del navegador emparejado | Mientras se ejecuta `casty web`: leer el feed y escribir con tu clave de aplicación, desde dondequiera que se pueda llegar a la página | Detener `casty web` y luego arrancarlo con `--new-token` |
+| Lo mismo, en el host del nodo (`1-node.sh serve`) | `~/snapchain/casty/config/keys.enc.json` (0600), la contraseña en `~/snapchain/casty/passphrase` (0600, un secreto de Docker), el token en `~/snapchain/casty/config/web-token`; la clave descifrada en la memoria del servicio mientras se ejecuta | Leer y escribir como tú desde cualquier red, mientras se ejecuta el servicio; root en el host tiene la clave | `casty key revoke <key>` con la frase semilla; `docker compose stop casty` en el host; `--read-only` mantiene la clave en casa |
+| Par de claves push y suscripciones (`casty serve`) | `~/snapchain/casty/config/vapid.json` (0600) y `cache/push.json` en el host | Enviar una notificación push, "new mention from @name", a los navegadores suscritos; el servicio push solo ve texto cifrado | Borrar ambos archivos y reiniciar `casty`; desactivar las notificaciones en el navegador |
+| Token de la nube (`HCLOUD_TOKEN`, credenciales de AWS) | Tu entorno; los scripts nunca lo escriben | Crear y borrar servidores en esa cuenta | Revocarlo en la consola del proveedor |
+| Clave SSH | Tuya; solo se sube la mitad pública | Iniciar sesión en el host del nodo con permisos de root | Quitarla del host y del proveedor |
+
+Una frase semilla controla toda la cuenta. Usa una cuenta de prueba para este tutorial, pega una
+frase semilla solo en software de desarrolladores en los que confíes y prefiere una clave autorizada
+por tu billetera: `casty init --fid <fid>`, luego `casty web` y, en tu cuenta, "add a key with your wallet".
+
+El prompt de la frase semilla lee de la terminal sin eco. Con `--mnemonic-stdin` la frase llega en su
+lugar desde una tubería, y el prompt de la contraseña sigue leyendo de la terminal. casty pone a cero
+los bytes de la frase tras usarla; la cadena que se entrega a la biblioteca de derivación de claves, y
+la clave que deriva, no se pueden borrar de la memoria en JavaScript.
+
+`CASTY_PASSPHRASE` sustituye al prompt de la contraseña. Existe para las pruebas y `pnpm demo`; no la
+uses para un almacén de claves que guarde una clave real.
+
+## Qué es accesible
+
+- En un host alquilado, el firewall abre SSH (22), la API HTTP (3381) y gRPC (3383) solo a
+  `--allow-ip`, tu propia dirección por defecto. Gossip (3382) está abierto a todos para que otros
+  nodos puedan conectarse. Un host que ya tienes no recibe ningún firewall de casty.
+- statsd (8125/udp, 8126/tcp) y Grafana (3000) se publican solo en el loopback del host, statsd a
+  través de las propias variables `STATSD_PUBLISH` del archivo compose en `.env`, Grafana a través del
+  override. La contraseña de `admin` de Grafana es la aleatoria que registra `.env`; ver no requiere
+  iniciar sesión, tal como lo tiene el `grafana.ini` de Snapchain.
+- casty habla con tu nodo a través del túnel SSH en `127.0.0.1:3381`. No llama a ninguna API de
+  Farcaster alojada. Al registro público de fnames en `fnames.farcaster.xyz` solo se le pregunta por
+  un nombre que el nodo no conoce: un `@name` al que sigues o que mencionas en un cast
+  (`--no-allow-fname-server` lo desactiva), que lees con `feed --fids` o que buscas en `casty web`, y
+  el autor de un cast que nombras por su enlace de farcaster.xyz. A un RPC de OP Mainnet solo se le
+  pregunta cuando pasas `--op-rpc`.
+- `casty web` escucha en 127.0.0.1 salvo que `--listen` nombre otra dirección, y cada petición a su
+  API necesita su token. [En un navegador y en un teléfono](../web/) enumera cómo se protege la
+  página, y qué cambia cuando un teléfono llega a ella por la red local.
+- `1-node.sh serve --domain` abre la página a internet por HTTPS (80 y 443, abiertos con
+  `0-provision.sh --https`); `--tailscale`, solo a tu tailnet. La página necesita entonces su token,
+  envía HSTS y responde a una misma dirección como máximo 120 peticiones a la API por minuto.
+  [Desde cualquier red](../serve/) enumera lo que guarda el host.
+- Los casts de otras personas pueden contener secuencias de escape de terminal. casty quita los
+  caracteres de control y las anulaciones bidireccionales antes de imprimirlos, y la página web
+  inserta el texto de los casts como texto.
+
+## Si algo se filtra
+
+- Una clave de aplicación: `casty key list` muestra lo que está registrado para tu fid. Revoca la clave
+  con `casty key revoke <key> --self` desde una máquina que todavía la tenga, o con la frase semilla
+  desde cualquier sitio.
+- La frase semilla: mueve el fid a una nueva dirección de custodia con una billetera en la que confíes
+  y luego revoca todas las claves de aplicación.
+- Un token de la nube: revócalo y luego busca en la cuenta servidores que no hayas creado tú.
+- El token de casty web: detén `casty web` y arráncalo de nuevo con `--new-token`. Todos los enlaces
+  impresos antes dejan de funcionar. En el host del nodo: borra `~/snapchain/casty/config/web-token` y
+  ejecuta `docker compose restart casty`.
+- El host del nodo: revoca la clave de aplicación con la frase semilla, borra `~/snapchain/casty` y
+  considera el host comprometido también para el nodo.
+
+## Cómo informar de un problema
+
+Informa de las vulnerabilidades en privado a través de los avisos de seguridad del repositorio, no en
+un issue público. El `SECURITY.md` del repositorio contiene la misma tabla.

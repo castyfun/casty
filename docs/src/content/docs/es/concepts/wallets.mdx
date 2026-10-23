@@ -1,0 +1,72 @@
+---
+title: Billeteras y claves
+description: Qué hace casty con tu dirección de custodia y tu clave de aplicación, y cómo una billetera añade una clave sin frase semilla.
+sidebar:
+  order: 9
+---
+
+casty toca dos claves. La dirección de custodia, una cuenta de Ethereum que es dueña de tu fid, firma una
+sola cosa: la solicitud de una clave de aplicación. La clave de aplicación, una clave Ed25519 que crea
+casty, firma todo lo demás: casts, reacciones, follows. Esta página explica cómo funciona.
+
+## Las dos claves
+
+| Qué | Dónde vive | Cuándo se usa |
+| --- | --- | --- |
+| Frase semilla | En ningún sitio: se teclea una vez en `casty init` o `casty key revoke` y se pone a cero tras usarla | Para derivar la dirección de custodia y firmar la solicitud de clave, o una revocación |
+| Clave de aplicación | `~/.config/casty/keys.enc.json`, scrypt y XChaCha20-Poly1305, modo 0600; también en el host del nodo con `1-node.sh serve` | Cada mensaje; caduca tras su TTL sin uso (30 días por defecto, como máximo 90), y cada mensaje la renueva |
+| Contraseña del almacén de claves | Se teclea en un prompt oculto, o un secreto de Docker en el host | Para abrir el almacén |
+
+`casty init` deriva la cuenta de custodia de la frase (`--address-index` elige otra cuenta de la misma
+frase), pregunta al nodo qué fid tiene, crea la clave de aplicación, hace que la cuenta de custodia firme
+la solicitud de clave (datos tipados EIP-712, tal como los construye `@farcaster/core`) y envía el
+mensaje `KEY_ADD` a través del nodo. Sin transacción, sin gas, sin clave de API. `casty key list` muestra
+cada clave que el nodo lista para tu fid; `casty key revoke` quita una, con la frase o, con `--self`, con
+la propia clave. La página, en tu cuenta, muestra las claves, avisa una semana antes de que caduque la
+clave de este casty y añade una clave con la billetera del navegador (más abajo).
+
+## Añadir una clave con una billetera
+
+La firma de custodia son datos tipados EIP-712 corrientes, así que cualquier cosa que firme datos tipados
+para la dirección de custodia puede autorizar una clave de aplicación: una aplicación de billetera, una
+billetera de hardware detrás de una, una extensión del navegador.
+
+En tu cuenta, "add a key with your wallet": casty crea la clave Ed25519 y los dos mensajes de datos
+tipados, la página se los pasa a la billetera del navegador (`eth_signTypedData_v4` sobre EIP-1193:
+MetaMask, Rabby, Rainbow y las demás, un Ledger detrás de cualquiera de ellas), la billetera firma con la
+dirección de custodia, casty comprueba ambas firmas contra esa dirección, envía el `KEY_ADD` a través del
+nodo y guarda la clave. La frase semilla nunca sale de la billetera, y casty nunca la ve.
+`casty init --fid <fid>` configura sin frase y sin clave, para que la página añada la primera. El flujo
+de la terminal se mantiene para una cuenta cuya custodia es una simple frase de recuperación y nada más.
+[En un navegador y en un teléfono](../../web/) tiene los pasos.
+
+- En un teléfono sin billetera en el navegador, la página ofrece abrirse dentro de MetaMask, Coinbase
+  Wallet o Trust Wallet, emparejamiento incluido; las billeteras que se anuncian (EIP-6963) se encuentran
+  una junto a otra; a una billetera en la cuenta equivocada se le pide que te deje elegir. WalletConnect,
+  una dependencia y un relay gestionado por otra persona, se dejó fuera a propósito.
+- Una cuenta cuya custodia es la frase de recuperación que le dio farcaster.xyz importa esa frase una vez
+  en una de esas billeteras; a partir de entonces firma la billetera y la frase no se teclea en nada de
+  casty.
+
+## Direcciones verificadas
+
+El protocolo lleva mensajes `VerificationAddAddress`, la prueba de una cuenta de que es dueña de una
+dirección de Ethereum o Solana, y el nodo responde `verificationsByFid`. Un perfil en la página las
+enumera, cada una con un enlace a su explorador y para copiarla; las tuyas también están en tu cuenta.
+Leerlas no cuesta nada y no consulta a terceros; no se lee nada de ninguna cadena.
+
+## Cuánto vive una clave
+
+Una clave sin gas caduca tras su TTL sin uso, y cada mensaje que firma la renueva. casty nunca publica en
+tu nombre para mantener viva una clave; la página avisa con una semana de antelación, y
+`casty init --ttl 90d` es lo máximo que permite el protocolo.
+
+## Lo que casty deja fuera
+
+- Pagos, propinas e intercambios. Cada uno necesita un RPC de cadena, una billetera con fondos y estado
+  de la cadena, que casty mantiene fuera de su camino a propósito (consulta [Seguridad](../../security/)).
+  Una dirección verificada en un perfil se puede copiar en una billetera en la que confíes.
+- WalletConnect. Añadiría una dependencia y un relay gestionado por otra persona; las billeteras del
+  navegador y los navegadores propios de las aplicaciones de billetera cubren lo mismo.
+- El emparejamiento con passkey y el llavero del sistema operativo. La página se empareja con un token de
+  256 bits que viaja en el fragmento del enlace, y `casty web` pide la contraseña una vez por arranque.

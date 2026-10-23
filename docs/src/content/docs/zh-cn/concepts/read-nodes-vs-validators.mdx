@@ -1,0 +1,60 @@
+---
+title: 只读节点与验证者
+description: casty 搭建的节点做什么、不做什么，以及为什么每次写入都要检查两次。
+sidebar:
+  order: 8
+---
+
+Snapchain 有两种节点。验证者就消息的顺序达成一致并产生区块。只读节点下载这些区块，保存完整状态，
+并通过 HTTP 和 gRPC API 提供它。casty 搭建的是只读节点。Snapchain 文档在
+[节点类型](https://snapchain.farcaster.xyz/node-types)中比较了这两者。
+
+## 只读节点给你什么
+
+- 每个账户的 cast、反应、关注、个人资料和密钥，从你自己的磁盘读取，隧道建立后通过
+  `http://127.0.0.1:3381` 访问。HTTP API 的文档在
+  [参考](https://snapchain.farcaster.xyz/reference/httpapi/httpapi)中。
+- 一个写入的入口：`POST /v1/submitMessage` 在只读节点上可用。
+- 不需要 API 密钥：数据来自你自己的主机。
+
+运行只读节点不会获得任何奖励：Snapchain 的 `.env` 中必须写明 `AGREE_NO_REWARDS_FOR_ME=true`，
+`1-node.sh` 会替你写入。
+
+## 运行它需要什么
+
+Snapchain 要求 16 GB 内存、4 个 vCPU、2 TB 可用磁盘和一个公网 IP。首次启动会下载几百 GB 的快照，
+然后同步此后的区块。数据库位于 `~/snapchain/.rocks`；恢复快照期间，旁边会存在 `.rocks.snapshot`，
+它也需要空间。
+
+端口，取自 Snapchain 文档：
+
+| 端口 | 用途 | 开放给 |
+| --- | --- | --- |
+| 3381/tcp | HTTP API | 在 casty 租用的主机上，只开放给你的地址 |
+| 3382/udp | 与其他节点的 gossip（casty 也开放 TCP） | 所有人 |
+| 3383/tcp | gRPC API | 在 casty 租用的主机上，只开放给你的地址 |
+
+Grafana（3000）和 statsd（8125/udp、8126/tcp）只发布在主机的回环地址上：
+`1-node.sh` 在它运行的每台主机上，把 Snapchain 的 `.env` 中的 `STATSD_PUBLISH` 和
+`STATSD_ADMIN_PUBLISH` 设为 `127.0.0.1`。
+
+## 写入会被转发，但不会被保存
+
+当你向只读节点提交一条消息时，它检查该消息，通过 gossip 把它传出去，什么也不保存。HTTP `200` 表示
+“已接受并转发”，而不是“已进入区块”。如果消息在途中丢失，它就没了，必须重新发送。Snapchain 文档对
+[只读节点](https://snapchain.farcaster.xyz/node-types)也是这样说的：它验证一条消息，通过 gossip
+把它转发给验证者，不保留副本，所以途中丢失的消息需要重新提交，而在网络负载很重时这更有可能发生。
+
+因此 casty 通过从节点读回每次写入来确认它，直到它显示为已合并。它等待 20 秒，再发送一次同样的字节，
+再等待 20 秒，然后以如下消息停止：
+
+```text
+casty: <hash> was accepted but not merged within 40s
+```
+
+在那之后，消息仍可能合并。再次发送之前先找一找它，因为再次运行命令会构建一条新消息。
+
+## 裁剪
+
+只读节点默认保留每一个区块。`1-node.sh --block-retention <days>` 开启区块裁剪，Snapchain
+只在只读节点上提供这一功能。事件默认保留 3 天。

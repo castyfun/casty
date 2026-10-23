@@ -1,0 +1,48 @@
+---
+title: FIDs
+description: "Le numéro qui identifie un compte Farcaster, à qui il appartient, et comment casty trouve le vôtre."
+sidebar:
+  order: 5
+---
+
+Un fid est le numéro qui identifie un compte Farcaster. Chaque message porte le fid au nom duquel il
+parle, et chaque message doit être signé par une clé enregistrée pour ce fid.
+
+## À qui appartient un fid
+
+Les fids sont enregistrés dans le contrat IdRegistry sur OP Mainnet. L'adresse Ethereum à laquelle
+un fid est enregistré est son adresse de custody, et quiconque détient la clé privée de cette adresse
+contrôle le compte : il peut ajouter et supprimer les clés qui signent les messages, et déplacer le
+fid vers une autre adresse. Une phrase de récupération détient de telles clés ; casty en dérive
+l'adresse de custody à `--address-index`, 0 par défaut.
+
+casty prend l'adresse et l'interface du contrat dans `@farcaster/core` ; rien de tout cela n'est
+saisi en dur dans casty lui-même.
+
+## Comment casty trouve le vôtre
+
+Les nœuds Snapchain indexent les événements de l'IdRegistry. `casty init` demande à votre nœud le
+dernier événement d'enregistrement de votre adresse de custody
+(`/v1/onChainIdRegistryEventByAddress`) et en tire le fid, si bien qu'aucun RPC Ethereum n'est
+nécessaire.
+
+Un nœud encore en cours de synchronisation n'a peut-être pas encore cet événement.
+`casty init --op-rpc <url>` appelle alors `IdRegistry.idOf(address)` via un RPC OP Mainnet de votre
+choix. Un fid déplacé vers une autre adresse n'est pas trouvé sous l'ancienne.
+
+## Noms
+
+Un nom d'utilisateur, ou fname, est distinct du fid : le nœud stocke des preuves qui relient un nom à
+un fid. `casty follow @name` demande d'abord la preuve à votre nœud et n'interroge le registre public
+sur `fnames.farcaster.xyz` que si le nœud ne connaît pas le nom. Dans le fil, un fid sans nom connu
+s'affiche `!<fid>`.
+
+## Stockage
+
+Un fid ne peut publier que tant qu'il a du stockage. `casty init` refuse un fid sans storage unit ;
+voir [Location de stockage](../../concepts/storage-rent/).
+
+## Les fids de cette documentation
+
+Les exemples viennent du nœud factice du dépôt. Ses fids commencent à 2000000001 et n'appartiennent
+à personne ; la phrase de récupération de test détient 2000000001.

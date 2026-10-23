@@ -1,0 +1,83 @@
+---
+title: Adresse de custody et clés d'application
+description: "Pourquoi casty demande votre phrase de récupération une seule fois, et ce que peut faire la clé d'application sans gas qu'il ajoute."
+sidebar:
+  order: 6
+---
+
+Deux sortes de clés interviennent. L'adresse de custody possède votre fid. Une clé d'application
+signe vos messages de tous les jours : casts, réactions, follows. casty utilise l'adresse de custody
+une seule fois, pour ajouter une clé d'application, et ne garde que la clé d'application. La custody
+signe soit dans un portefeuille, depuis la page ([Portefeuilles et clés](../../concepts/wallets/)),
+soit dans un terminal, à partir de la phrase de récupération que demande `casty init`.
+
+## L'adresse de custody
+
+C'est un compte Ethereum, dérivé de votre phrase de récupération. Elle peut ajouter et supprimer des
+clés d'application et déplacer le fid, si bien que casty ne la stocke jamais : `casty init` lit la
+phrase, signe une demande, et met la phrase à zéro. `casty key revoke` la demande de nouveau, parce
+que supprimer une clé avec l'adresse de custody exige une nouvelle signature.
+
+## La clé d'application
+
+Une clé Ed25519 que casty génère sur votre machine. Elle signe des messages pour votre fid, et les
+nœuds les acceptent tant que la clé est enregistrée et n'a pas expiré.
+
+Depuis la version 16 du moteur, Snapchain enregistre ces clés avec un message `KEY_ADD` au lieu d'une
+transaction on-chain : pas de gas, et la clé est utilisable dès que le message est fusionné. casty le
+construit avec les fonctions utilitaires `makeKeyAddBody` et `makeKeyAdd` de `@farcaster/core`. Voir
+[writing messages](https://snapchain.farcaster.xyz/guides/writing-messages) dans la documentation de
+Snapchain.
+
+Un `KEY_ADD` porte trois signatures :
+
+- la signature de l'application demandeuse sur une demande de clé, faite par l'adresse de custody du
+  fid de l'application (`--app-fid`, votre propre fid par défaut) ;
+- la signature de l'adresse de custody sur la clé, ses scopes, sa durée de vie, un nonce et une date
+  limite ;
+- l'enveloppe du message, signée par la nouvelle clé elle-même, ce qui prouve que casty détient sa
+  moitié privée.
+
+Le nonce est propre à chaque fid et doit augmenter à chaque changement de clé : casty lit le nonce
+actuel sur le nœud et ajoute 1. Si un autre changement arrive en premier, le nœud refuse le message,
+et `casty init` réessaie une fois avec un nouveau nonce.
+
+## Scopes
+
+Une clé sans gas liste les types de messages qu'elle peut signer. casty demande ceux-ci par défaut :
+
+| Nom pour `--scopes` | Types de messages |
+| --- | --- |
+| `cast` | `CAST_ADD`, `CAST_REMOVE` |
+| `reaction` | `REACTION_ADD`, `REACTION_REMOVE` |
+| `link` | `LINK_ADD`, `LINK_REMOVE` |
+
+`user-data` (`USER_DATA_ADD`, votre profil) n'est ajouté que si vous le demandez. `KEY_ADD` et
+`KEY_REMOVE` ne peuvent jamais faire partie des scopes d'une clé, si bien qu'une clé d'application ne
+peut ni ajouter de clés ni supprimer d'autres clés ; elle ne peut que se supprimer elle-même.
+
+## Durée de vie
+
+`--ttl` fixe combien de temps la clé vit sans utilisation : 30 jours par défaut, au plus 90. Chaque
+message signé par la clé et fusionné fait repartir la période, si bien qu'une clé que vous utilisez
+n'expire pas. `casty init` affiche la date à laquelle elle expirerait si elle restait inutilisée. Un
+fid peut détenir au plus 1000 clés sans gas actives.
+
+## Quelle application a publié un cast
+
+Chaque clé enregistre le fid de l'application qui l'a demandée. Un cast porte la clé publique qui l'a
+signé, si bien que le fil peut dire de quelle application il vient : casty cherche le signataire dans
+la liste des clés de l'auteur, prend le fid demandeur et affiche le nom d'utilisateur de ce fid après
+`via`. `--only-app` et `--exclude-app` filtrent dessus, et `casty clients --fid <fid>` liste les clés
+de n'importe quel compte avec leurs applications. Les clés ajoutées on-chain portent la même demande,
+et casty les lit de la même façon.
+
+## Supprimer une clé
+
+| Commande | Signée par | Exige |
+| --- | --- | --- |
+| `casty key revoke <key>` | l'adresse de custody | la phrase de récupération |
+| `casty key revoke <key> --self` | la clé d'application elle-même | la clé dans le magasin de casty |
+
+Les deux envoient un `KEY_REMOVE` et attendent que le nœud ne liste plus la clé. Les clés ajoutées
+on-chain se suppriment on-chain, dans le contrat KeyRegistry ; casty ne le fait pas.

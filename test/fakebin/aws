@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Fake aws for bats. Records each call in $FAKE_LOG. With FAKE_AWS_EXISTING=1 every lookup by
+# name or tag finds the resource; otherwise lookups print nothing and creates print fixed ids.
+# The key pair exists when FAKE_AWS_KEY_PAIR holds its public key, which describe-key-pairs
+# prints only with --include-public-key, as EC2 does. FAKE_AWS_NO_CAPACITY=1 makes run-instances
+# fail, FAKE_AWS_WAIT_FAIL=1 makes `ec2 wait` fail, FAKE_AWS_NO_IP=1 gives the instance no public IP,
+# and FAKE_AWS_INSTANCE_STATE is the state an instance found by its tag is in (default running).
+printf 'aws %s\n' "$*" >>"${FAKE_LOG:-/dev/null}"
+existing=${FAKE_AWS_EXISTING:-0}
+case "$1 $2" in
+  "ssm get-parameter") echo ami-0fake0000000000001 ;;
+  "ec2 wait") [ -z "${FAKE_AWS_WAIT_FAIL:-}" ] || exit 255 ;;
+  "ec2 describe-key-pairs")
+    [ -n "${FAKE_AWS_KEY_PAIR:-}" ] || exit 0
+    case "$*" in
+      *--include-public-key*) echo "$FAKE_AWS_KEY_PAIR" ;;
+      *KeyName*) echo fc-node ;;
+    esac
+    ;;
+  "ec2 describe-security-groups")
+    case "$*" in
+      *IpPermissions*) echo '[{"IpProtocol": "tcp", "FromPort": 22, "ToPort": 22, "IpRanges": [{"CidrIp": "203.0.113.9/32"}]}]' ;;
+      *) [ "$existing" = 1 ] && echo sg-0fake0000000000001 ;;
+    esac
+    ;;
+  "ec2 create-security-group") echo sg-0fake0000000000001 ;;
+  "ec2 create-volume") echo vol-0fake0000000000001 ;;
+  "ec2 run-instances")
+    [ -z "${FAKE_AWS_NO_CAPACITY:-}" ] || { echo "InsufficientInstanceCapacity" >&2 && exit 1; }
+    echo i-0fake0000000000001
+    ;;
+  "ec2 describe-volumes")
+    case "$*" in
+      *State*) if [ "$existing" = 1 ]; then echo in-use; else echo available; fi ;;
+      *) [ "$existing" = 1 ] && echo vol-0fake0000000000001 ;;
+    esac
+    ;;
+  "ec2 describe-instances")
+    case "$*" in
+      *PublicIpAddress*) if [ -n "${FAKE_AWS_NO_IP:-}" ]; then echo None; else echo 198.51.100.8; fi ;;
+      *State.Name*) echo "${FAKE_AWS_INSTANCE_STATE:-running}" ;;
+      *) [ "$existing" = 1 ] && echo i-0fake0000000000001 ;;
+    esac
+    ;;
+esac
+exit 0

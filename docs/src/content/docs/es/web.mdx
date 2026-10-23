@@ -1,0 +1,193 @@
+---
+title: En un navegador y en un teléfono
+description: casty web sirve el feed, los hilos, los perfiles, tu cuenta y un cuadro de redacción desde tu propia máquina, y empareja un teléfono en la misma red.
+sidebar:
+  order: 3.5
+---
+
+```sh
+./bin/casty web
+```
+
+`casty web` pide la contraseña del almacén de claves y luego sirve una página en `http://127.0.0.1:3390`
+que lee del mismo nodo que los demás comandos y escribe a través de él. Imprime un enlace con un
+token; ábrelo para emparejar el navegador.
+
+```text
+casty web on http://127.0.0.1:3390
+open to pair a browser: http://127.0.0.1:3390/#token=<43 characters>
+Ctrl-C stops it; until then the app key stays unlocked in memory
+```
+
+Para verla sin un nodo, `pnpm demo:web` arranca el nodo simulado, añade una clave con la frase de
+prueba, publica un cast y sirve la página en un puerto libre hasta que pulses Ctrl-C.
+
+![El feed en un teléfono con el tema claro: casts numerados, la aplicación por la que llegó cada uno, reply, recast y like como palabras, y la barra para un cast nuevo abajo](../../../assets/web-phone-light.png)
+
+## Qué hace la página
+
+La página tiene los comandos de la CLI, con los mismos nombres.
+
+| En la página | En una terminal |
+| --- | --- |
+| El feed, numerado: tus casts y los de las cuentas que sigues, los más recientes primero | `casty feed` |
+| mentions: casts que te mencionan y respuestas a tus 25 casts más recientes | `casty mentions` |
+| Los interruptores de encima: respuestas sí o no, y uno por aplicación | `--no-replies`, `--exclude-app` |
+| Tocar el nombre de un canal: solo ese canal; tocar el filtro otra vez: todos | `--channel` |
+| Tocar un cast: el cast al que responde, el cast, sus respuestas | `casty thread` |
+| reply, recast, like, y en more: delete, abrir en farcaster.xyz, copiar enlace | `reply`, `recast`, `like`, `delete` |
+| `› cast something` abajo: texto con @nombres como menciones, un canal opcional, hasta dos enlaces | `cast --channel --embed` |
+| Tocar un nombre: los casts de esa cuenta, las aplicaciones a través de las que publica, follow | `clients --fid`, `follow`, `unfollow` |
+| you: tu fid, dirección de custodia, claves de aplicación, almacenamiento, nodo y reloj | `whoami`, `key list`, `storage`, `doctor` |
+| En you, "add a key with your wallet" (plegado bajo "add another key" cuando este casty ya tiene una): una clave de aplicación nueva, autorizada por la billetera en el navegador | `casty init` con la frase semilla |
+| Las direcciones verificadas de un perfil, Ethereum o Solana, con copiar | |
+| El cuadro de búsqueda en you: una cuenta por @nombre o fid | `follow @name` |
+
+Un borrador en el cuadro de redacción sobrevive a una recarga, guardado en el navegador según a qué
+responde, hasta que el cast sale. El feed carga su página siguiente cuando su final entra en vista, y
+el botón "show more" se mantiene para los teclados. En un teléfono, tirar del feed hacia abajo desde
+arriba y soltar lo actualiza, ya que una página instalada no tiene barra del navegador de la que tirar.
+
+Cada vez que la página dibuja el feed o las menciones, guarda su orden como lo hace `casty feed`, de
+modo que `casty like 3` en una terminal actúa sobre el cast numerado 3 en pantalla. Gana la última
+lista mostrada: otro navegador, o `casty feed`, `casty mentions` o `casty thread` en una terminal,
+vuelve a numerar.
+
+## Una clave de aplicación desde tu billetera
+
+La dirección de custodia autoriza una clave de aplicación con dos firmas EIP-712, la solicitud de
+clave y la adición de clave; `casty init` hace que la frase semilla las firme. La página puede hacer
+que las firme una billetera en su lugar: en you, "add a key with your wallet" pide a `casty web` una
+clave nueva y los dos mensajes, se los entrega a la billetera en el navegador (una extensión de
+billetera, o la página abierta en el navegador propio de una aplicación de billetera,
+`eth_signTypedData_v4` sobre EIP-1193), comprueba que la cuenta de la billetera es la dirección de
+custodia y devuelve las firmas; `casty web` las comprueba, envía el `KEY_ADD` a través de tu nodo y
+guarda la clave, cifrada, como la más reciente. La frase semilla nunca sale de la billetera, y una
+billetera de hardware detrás de la extensión funciona igual.
+
+Para empezar sin ninguna frase, `casty init --fid <fid>` escribe la configuración a partir del nodo,
+incluida la dirección de custodia, y no crea ninguna clave; `casty web` pide entonces una contraseña
+para el almacén que va a crear, y la página añade la primera clave. Quitar una clave sigue siendo
+cosa de la terminal (`casty key revoke`, con la frase o con la propia clave).
+
+La página encuentra una billetera del modo en que las billeteras se anuncian (EIP-6963), así que
+varias extensiones a la vez no son problema, y `window.ethereum` como alternativa. Si la billetera
+ofrece una cuenta distinta de la de custodia, la página le pide que te deje elegir la correcta. Los
+mensajes de clave nombran Ethereum mainnet, así que a una billetera en Base u OP Mainnet se le pide
+cambiar primero (MetaMask se niega a firmar para una cadena distinta de la activa); el cambio no
+cuesta nada. En un teléfono sin billetera en el navegador, la página ofrece enlaces que la abren
+dentro de MetaMask, Coinbase Wallet o Trust Wallet, y un botón que copia el enlace de emparejamiento
+para pegarlo en la página allí, de modo que firme el navegador propio de la billetera. Los enlaces no
+llevan token: cada uno pasa primero por el servidor del fabricante de la billetera. Una cuenta cuya
+custodia es la frase de recuperación de Farcaster de farcaster.xyz puede importar esa frase en
+cualquiera de esas billeteras una vez, y no teclearla nunca en una terminal.
+
+Un perfil muestra las direcciones que su cuenta ha verificado como propias, Ethereum o Solana,
+tomadas del nodo: cada una enlaza a su explorador (que solo se abre al tocarla) y se copia. Las tuyas
+también aparecen en you. No se lee nada de ninguna cadena.
+
+Para ir rápida, la página reutiliza lo que leyó de tu nodo en los últimos 30 segundos cuando cambias
+un filtro, muestras más o vuelves a una vista. Cualquier cosa que escribas desde la página lo borra,
+y también lo hacen refresh, recargar la página y tocar feed, mentions o you mientras está abierta; un
+cast hecho en una terminal aparece en el siguiente refresh, o en una carga más de 30 segundos
+después. Recargar la página vuelve a leer los casts pero toma tu lista de seguidos de los últimos
+diez minutos; refresh también la lee, así que una cuenta seguida en otra aplicación aparece al
+instante.
+
+Mientras la página está abierta, pregunta a tu nodo cada dos minutos, y otra vez cada vez que vuelves
+a ella, si alguien te ha mencionado o ha respondido a tus 25 casts más recientes desde la última vez
+que miraste. La respuesta aparece como un número junto a mentions, en el título de la pestaña y en el
+icono de la página si la instalaste como aplicación y el navegador lo permite. Abrir mentions lo
+borra. También lo hace `casty mentions` en una terminal, o mentions abierto en otro navegador: casty
+recuerda la mención más reciente que se te mostró, en su directorio de configuración, no en el
+navegador. El primer recuento empieza en el momento en que la página pregunta por primera vez, así
+que las menciones de antes nunca cuentan como nuevas.
+
+Una semana antes de que caduque la clave de aplicación de este casty, el aviso bajo la barra lo
+dice; cualquier cast, like o follow la renueva. El cuadro de redacción cuenta bytes. Pasados 320, el
+cast sale como un cast largo, de hasta 1024. Una escritura espera hasta que el nodo tiene el mensaje,
+como hace la CLI; si falla, la página muestra el mismo mensaje y la misma pista que imprimiría la
+CLI. El punto junto a casty es tu nodo: verde cuando está sincronizado, ámbar cuando va retrasado,
+rojo cuando no responde.
+
+Con teclado: `n` cast nuevo, `r` actualizar, `j` y `k` se mueven entre casts, `l` like, `o` o Enter
+abrir, Esc cerrar, Ctrl-Enter o Cmd-Enter enviar.
+
+La palabra de arriba a la derecha fija el tema: auto sigue al sistema, light y dark se quedan como
+se eligieron en ese navegador. En un teléfono la barra no tiene sitio para ella, ni para refresh: el
+tema está en you, y tocar feed, mentions o you mientras está abierta la recarga.
+
+![Un cast con el tema oscuro, con el cast al que responde encima y su respuesta debajo](../../../assets/web-phone-dark.png)
+
+La página no carga nada de otros sitios. No muestra imágenes ni avatares, y un enlace en un cast solo
+se abre cuando lo sigues.
+
+## En un teléfono
+
+```sh
+./bin/casty web --listen 0.0.0.0:3390
+```
+
+Esto imprime un enlace por cada dirección IPv4 que la máquina tiene en una red, y un código QR de la
+primera. Escanéalo con un teléfono en la misma red. La página se puede añadir a la pantalla de inicio
+y entonces se abre a pantalla completa; si allí muestra la pantalla de emparejamiento, pega el enlace
+en ella. La máquina tiene que seguir encendida con `casty web` en marcha.
+
+La conexión es HTTP sin cifrar. Cualquiera que pueda observar el tráfico en esa red puede leer el
+token y publicar como tú hasta que detengas `casty web`. Usa una red en la que confíes, o une el
+teléfono y la máquina a una VPN como WireGuard y escucha solo en la dirección de la VPN. Para que
+todos los enlaces impresos antes dejen de funcionar, detén `casty web` y vuelve a arrancarlo con
+`--new-token`.
+
+Un navegador emparejado guarda el token para esa dirección y ese puerto, por ejemplo
+`http://192.168.1.20:3390`. En otra red, la misma dirección puede pertenecer a la máquina de otra
+persona, y una página abierta allí desde la pantalla de inicio le entregaría el token. Si eso ha
+podido pasar, arranca `casty web` con `--new-token`.
+
+Abrir el enlace lo deja, token incluido, en el historial del navegador, y en su historial
+sincronizado si el navegador sincroniza. Borra esa entrada en un navegador que compartas.
+
+`--read-only` se salta la contraseña. La página entonces lee y no puede escribir.
+
+Ctrl-C detiene `casty web`. A una escritura (un cast, like, recast, delete o follow) que aún espera
+su mensaje se le deja terminar primero, y la terminal lo dice; un segundo Ctrl-C detiene al instante.
+
+Para llegar a la página desde cualquier red, no solo desde aquella en la que está la máquina,
+ejecútala en el host del nodo detrás de HTTPS, donde una mención o una respuesta también puede llegar
+al teléfono como notificación push: [Desde cualquier red](../serve/).
+
+## Cómo está protegida la página
+
+- Escucha en 127.0.0.1 salvo que `--listen` diga otra cosa.
+- Cada solicitud a la API lleva el token. El enlace lo contiene después de `#`, que un navegador
+  nunca envía a un servidor; la página lo mueve al almacenamiento del navegador y lo quita de la
+  barra de direcciones, también cuando el enlace se abre en una pestaña que ya muestra la página.
+- El token vive en `~/.config/casty/web-token`, con modo 0600, así que un teléfono emparejado sigue
+  emparejado entre reinicios.
+- Las escrituras solo se aceptan como JSON, así que un formulario en otro sitio no puede enviar
+  datos a la página.
+- Una solicitud cuyo Host no es una dirección IP, `localhost` ni el host de `--listen` se rechaza,
+  así que un sitio que apunte su propio dominio a tu máquina no puede llegar a la página.
+- La página solo ejecuta su propio script y su propio estilo, e inserta el texto de los casts como
+  texto, nunca como HTML.
+- Mientras `casty web` está en marcha, la clave de aplicación está descifrada en memoria, igual que
+  durante lo que dura un único `casty cast`.
+
+## Opciones
+
+```text
+Usage: casty web [options]
+
+the feed, threads and a compose box in a browser, on this machine or a phone
+
+Options:
+  --listen <host:port>     where to serve; 0.0.0.0:3390 lets a phone on the same
+                           network in (default: "127.0.0.1:3390")
+  --new-token              pair again; links printed before stop working
+  --read-only              do not unlock the app key; the page reads but cannot
+                           write
+  --no-allow-fname-server  look @names up with your node only; by default names
+                           it does not know are looked up on
+                           fnames.farcaster.xyz (public, no key)
+  -h, --help               display help for command
+```

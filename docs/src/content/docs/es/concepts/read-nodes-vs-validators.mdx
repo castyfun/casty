@@ -1,0 +1,65 @@
+---
+title: Nodos de lectura y validadores
+description: Qué hace el nodo que casty configura, qué no hace y por qué una escritura se comprueba dos veces.
+sidebar:
+  order: 8
+---
+
+Snapchain tiene dos tipos de nodos. Los validadores acuerdan el orden de los mensajes y producen bloques.
+Los nodos de lectura descargan esos bloques, mantienen el estado completo y lo sirven a través de las API
+HTTP y gRPC. casty configura un nodo de lectura. La documentación de Snapchain compara los dos en
+[node types](https://snapchain.farcaster.xyz/node-types).
+
+## Qué te da un nodo de lectura
+
+- Los casts, reacciones, follows, perfiles y claves de cada cuenta, leídos de tu propio disco, a través
+  de `http://127.0.0.1:3381` una vez que el túnel está activo. La API HTTP está documentada en la
+  [referencia](https://snapchain.farcaster.xyz/reference/httpapi/httpapi).
+- Una vía de entrada para las escrituras: `POST /v1/submitMessage` funciona en un nodo de lectura.
+- Sin clave de API: los datos vienen de tu propio host.
+
+Ejecutar uno no da recompensas: el `.env` de Snapchain tiene que decir `AGREE_NO_REWARDS_FOR_ME=true`,
+que `1-node.sh` escribe por ti.
+
+## Lo que cuesta ejecutarlo
+
+Snapchain pide 16 GB de RAM, 4 vCPU, 2 TB de disco libre y una IP pública. El primer arranque descarga
+una instantánea de varios cientos de GB y luego sincroniza los bloques posteriores. La base de datos vive
+en `~/snapchain/.rocks`; mientras se restaura una instantánea, `.rocks.snapshot` existe a su lado y
+también necesita espacio.
+
+Puertos, según la documentación de Snapchain:
+
+| Puerto | Qué | Abierto a |
+| --- | --- | --- |
+| 3381/tcp | API HTTP | solo tu dirección, en los hosts que casty alquila |
+| 3382/udp | gossip con otros nodos (casty también abre TCP) | todos |
+| 3383/tcp | API gRPC | solo tu dirección, en los hosts que casty alquila |
+
+Grafana (3000) y statsd (8125/udp, 8126/tcp) se publican solo en el loopback del host: `1-node.sh` fija
+`STATSD_PUBLISH` y `STATSD_ADMIN_PUBLISH` en el `.env` de Snapchain a `127.0.0.1`, en cualquier host en
+el que se ejecute.
+
+## Las escrituras pasan, pero no se guardan
+
+Cuando envías un mensaje a un nodo de lectura, este comprueba el mensaje, lo pasa por gossip y no guarda
+nada. Un `200` de HTTP significa "aceptado para retransmitir", no "en un bloque". Si el mensaje se pierde
+por el camino, desaparece y hay que enviarlo de nuevo. La documentación de Snapchain dice lo mismo de los
+[nodos de lectura](https://snapchain.farcaster.xyz/node-types): uno valida un mensaje, lo retransmite a
+los validadores por gossip y no guarda copia, así que un mensaje perdido por el camino necesita volver a
+enviarse, lo que es más probable cuando la red está muy cargada.
+
+Por eso casty confirma cada escritura leyéndola de vuelta del nodo hasta que aparece como fusionada.
+Espera 20 segundos, envía los mismos bytes una vez más, espera otros 20 y luego se detiene con:
+
+```text
+casty: <hash> was accepted but not merged within 40s
+```
+
+El mensaje aún puede fusionarse después de eso. Búscalo antes de enviarlo de nuevo, ya que volver a
+ejecutar el comando construye un mensaje nuevo.
+
+## Poda
+
+Un nodo de lectura guarda cada bloque por defecto. `1-node.sh --block-retention <days>` activa la poda de
+bloques, que Snapchain ofrece solo en nodos de lectura. Los eventos se guardan 3 días por defecto.

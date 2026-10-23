@@ -1,0 +1,8 @@
+version: 2
+updates:
+  # The workflow's actions are pinned to commits; this proposes the next one, version in the
+  # comment. Dependencies stay with pnpm-lock.yaml and the two-week rule in pnpm-workspace.yaml.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

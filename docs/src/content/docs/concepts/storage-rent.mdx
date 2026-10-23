@@ -1,0 +1,49 @@
+---
+title: Storage rent
+description: How much an account may keep, what happens when it is full, and what casty shows about it.
+sidebar:
+  order: 9
+---
+
+Nodes keep an account's messages only while the account has storage. Storage is rented in units,
+and each unit allows a number of messages of each kind. The Farcaster docs describe it under
+[Messages](https://docs.farcaster.xyz/learn/what-is-farcaster/messages).
+
+## What a unit holds
+
+The limits per unit depend on the unit's type. `@farcaster/core` 0.20.0 defines three:
+
+| Unit type | Casts | Reactions | Links | User data | Verifications |
+| --- | --- | --- | --- | --- | --- |
+| `UNIT_TYPE_LEGACY` | 5000 | 2500 | 2500 | 50 | 25 |
+| `UNIT_TYPE_2024` | 2000 | 1000 | 1000 | 50 | 25 |
+| `UNIT_TYPE_2025` | 100 | 200 | 200 | 25 | 5 |
+
+casty does not compute limits itself; it shows what your node reports for your fid.
+
+## When a store fills up
+
+When an account goes over the limit for one kind, the oldest message of that kind is pruned to
+make room. Removes count too: a deleted cast leaves a `CAST_REMOVE` behind, and that takes a slot
+like a cast does.
+
+When the storage expires, nodes keep the messages for a 30-day grace period, then drop them.
+
+## What casty shows
+
+```sh
+./bin/casty storage
+```
+
+prints your units and, for each store, how many messages it holds, its limit and how full it is.
+It warns at 90 percent:
+
+```text
+warning: <store> is <percent>% full; when it fills, the oldest messages of that kind are pruned
+```
+
+`casty whoami` shows the same numbers on one line, and `casty storage --fid <fid>` shows any
+account's. `casty init` refuses an fid with no units at all, because the network would not accept
+its messages.
+
+casty does not rent storage.

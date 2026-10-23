@@ -1,0 +1,82 @@
+---
+title: Sécurité
+description: "Chaque secret que casty manipule, où il est conservé, ce qu'il permet et comment le révoquer."
+sidebar:
+  order: 10
+---
+
+casty n'a pas été audité. Cette page liste ce qu'il détient et ce que chaque élément permet.
+
+## Secrets
+
+| Secret | Où il se trouve | Ce qu'il permet | Comment le révoquer |
+| --- | --- | --- | --- |
+| Phrase de récupération | En mémoire pendant que `casty init` ou `casty key revoke` s'exécute ; jamais écrite sur le disque ni envoyée nulle part. Avec `casty init --fid` et une clé ajoutée depuis la page par un portefeuille, casty ne la voit jamais | Tout : elle détient la custody de votre fid | casty ne le peut pas. Gardez-la hors ligne |
+| Clé d'application (Ed25519) | `~/.config/casty/keys.enc.json`, chiffrée avec scrypt et XChaCha20-Poly1305, mode 0600 | Signer des casts, des réactions et des follows pour votre fid jusqu'à ce qu'elle expire faute d'utilisation (30 jours par défaut, au plus 90) | `casty key revoke <key>` avec la phrase de récupération, ou `--self` avec la clé elle-même |
+| `KEY_ADD` signé pas encore confirmé | Dans le même magasin chiffré, jusqu'à ce que `casty init` voie la clé listée ou que le nœud refuse le message | Ajouter cette seule clé, une fois | `casty key revoke` s'il est un jour fusionné |
+| Phrase de passe du magasin de clés | Saisie à une invite masquée | Déchiffrer les clés d'application sur cette machine | Révoquer les clés, supprimer `keys.enc.json`, exécuter `casty init` |
+| Jeton de casty web | `~/.config/casty/web-token`, mode 0600 ; dans le stockage du navigateur appairé | Tant que `casty web` tourne : lire le fil et écrire avec votre clé d'application, depuis tout endroit d'où la page est accessible | Arrêter `casty web`, puis le démarrer avec `--new-token` |
+| La même chose, sur l'hôte du nœud (`1-node.sh serve`) | `~/snapchain/casty/config/keys.enc.json` (0600), la phrase de passe dans `~/snapchain/casty/passphrase` (0600, un secret Docker), le jeton dans `~/snapchain/casty/config/web-token` ; la clé déchiffrée dans la mémoire du service tant qu'il tourne | Lire et écrire en votre nom depuis n'importe quel réseau, tant que le service tourne ; root sur l'hôte a la clé | `casty key revoke <key>` avec la phrase de récupération ; `docker compose stop casty` sur l'hôte ; `--read-only` garde la clé à la maison |
+| Paire de clés de push et abonnements (`casty serve`) | `~/snapchain/casty/config/vapid.json` (0600) et `cache/push.json` sur l'hôte | Envoyer un push, « new mention from @name », aux navigateurs abonnés ; le service de push ne voit que du texte chiffré | Supprimer les deux fichiers et redémarrer `casty` ; désactiver les notifications dans le navigateur |
+| Jeton du cloud (`HCLOUD_TOKEN`, identifiants AWS) | Votre environnement ; les scripts ne l'écrivent jamais | Créer et supprimer des serveurs dans ce compte | Le révoquer dans la console du fournisseur |
+| Clé SSH | La vôtre ; seule la moitié publique est téléversée | Se connecter à l'hôte du nœud avec les droits root | La retirer de l'hôte et du fournisseur |
+
+Une phrase de récupération contrôle tout le compte. Utilisez un compte de test pour ce tutoriel, ne
+collez une phrase de récupération que dans un logiciel de développeurs en qui vous avez confiance, et
+préférez une clé autorisée par votre portefeuille : `casty init --fid <fid>`, puis `casty web` et,
+dans votre compte, « add a key with your wallet ».
+
+L'invite de la phrase de récupération lit le terminal avec l'écho désactivé. Avec `--mnemonic-stdin`,
+la phrase vient d'un pipe à la place, et l'invite de la phrase de passe lit toujours le terminal.
+casty met à zéro les octets de la phrase après usage ; la chaîne remise à la bibliothèque de
+dérivation de clé, et la clé qu'elle dérive, ne peuvent pas être effacées de la mémoire en
+JavaScript.
+
+`CASTY_PASSPHRASE` remplace l'invite de la phrase de passe. Elle existe pour les tests et
+`pnpm demo` ; ne l'utilisez pas pour un magasin de clés qui contient une vraie clé.
+
+## Ce qui est accessible
+
+- Sur un hôte loué, le pare-feu ouvre SSH (22), l'API HTTP (3381) et gRPC (3383) à `--allow-ip`
+  uniquement, votre propre adresse par défaut. Le gossip (3382) est ouvert à tous pour que les autres
+  nœuds puissent se connecter. Un hôte que vous avez déjà ne reçoit aucun pare-feu de casty.
+- statsd (8125/udp, 8126/tcp) et Grafana (3000) ne sont publiés que sur la boucle locale de l'hôte,
+  statsd par les variables `STATSD_PUBLISH` propres au fichier compose dans `.env`, Grafana par
+  l'override. Le mot de passe `admin` de Grafana est celui, aléatoire, qu'enregistre `.env` ; la
+  consultation ne demande pas de connexion, comme le prévoit le `grafana.ini` de Snapchain.
+- casty parle à votre nœud par le tunnel SSH sur `127.0.0.1:3381`. Il n'appelle aucune API Farcaster
+  hébergée. Le registre public des fnames sur `fnames.farcaster.xyz` n'est interrogé que pour un nom
+  que le nœud ne connaît pas : un `@name` que vous suivez ou mentionnez dans un cast
+  (`--no-allow-fname-server` désactive cela), lu avec `feed --fids` ou recherché dans `casty web`, et
+  l'auteur d'un cast que vous désignez par son lien farcaster.xyz. Un RPC OP Mainnet n'est interrogé
+  que lorsque vous passez `--op-rpc`.
+- `casty web` écoute sur 127.0.0.1 sauf si `--listen` nomme une autre adresse, et chaque requête à
+  son API demande son jeton. [Dans un navigateur et sur un téléphone](../web/) liste comment la page
+  est protégée, et ce qui change quand un téléphone l'atteint par le réseau local.
+- `1-node.sh serve --domain` ouvre la page à internet en HTTPS (80 et 443, ouverts avec
+  `0-provision.sh --https`) ; `--tailscale` seulement à votre tailnet. La page demande alors son
+  jeton, envoie HSTS, et répond à une même adresse au plus 120 requêtes d'API par minute.
+  [Depuis n'importe quel réseau](../serve/) liste ce que contient l'hôte.
+- Les casts d'autres personnes peuvent contenir des séquences d'échappement de terminal. casty
+  supprime les caractères de contrôle et les forçages bidirectionnels avant de les afficher, et la
+  page web insère le texte des casts comme du texte.
+
+## En cas de fuite
+
+- Une clé d'application : `casty key list` montre ce qui est enregistré pour votre fid. Révoquez la
+  clé avec `casty key revoke <key> --self` depuis une machine qui l'a encore, ou avec la phrase de
+  récupération depuis n'importe où.
+- La phrase de récupération : déplacez le fid vers une nouvelle adresse de custody avec un
+  portefeuille en qui vous avez confiance, puis révoquez chaque clé d'application.
+- Un jeton du cloud : révoquez-le, puis cherchez dans le compte des serveurs que vous n'avez pas
+  créés.
+- Le jeton de casty web : arrêtez `casty web` et redémarrez-le avec `--new-token`. Chaque lien affiché
+  auparavant cesse de fonctionner. Sur l'hôte du nœud : supprimez `~/snapchain/casty/config/web-token`
+  et `docker compose restart casty`.
+- L'hôte du nœud : révoquez la clé d'application avec la phrase de récupération, supprimez
+  `~/snapchain/casty`, et considérez l'hôte comme compromis pour le nœud aussi.
+
+## Signaler un problème
+
+Signalez les vulnérabilités en privé via les security advisories du dépôt, pas dans une issue
+publique. Le `SECURITY.md` du dépôt contient le même tableau.

@@ -1,0 +1,290 @@
+---
+title: Устранение неполадок
+description: Сообщения, которые печатают скрипты и casty, когда что-то не удаётся, и что делать с каждым из них.
+sidebar:
+  order: 11
+---
+
+Каждый сбой печатает одну строку, начинающуюся с `error:` (скрипты) или `casty:` (клиент).
+casty часто добавляет строку `hint:` со следующим шагом. Сообщения ниже скопированы из кода;
+значения в угловых скобках меняются.
+
+## Шаг 0: подготовка
+
+### Нет провайдера
+
+```text
+error: no provider: set HCLOUD_TOKEN for Hetzner or AWS credentials for AWS, or pass --host user@ip for a host you have (see --help)
+```
+
+Экспортируйте `HCLOUD_TOKEN`, настройте AWS CLI или передайте `--host` для машины, которая у вас есть. Когда заданы
+учётные данные и Hetzner, и AWS, скрипт вместо этого просит `--provider hetzner` или
+`--provider aws`.
+
+### Нет SSH-ключа
+
+```text
+error: no SSH public key at /home/you/.ssh/id_ed25519.pub. Create one with ssh-keygen -t ed25519, or pass --ssh-pubkey.
+```
+
+### Не удалось определить ваш IP
+
+```text
+error: could not learn your public IP from api.ipify.org; pass --allow-ip <cidr>
+```
+
+Скрипт спрашивает у `api.ipify.org` ваш адрес, чтобы ограничить им SSH и API ноды. Передайте
+адрес сами, например `--allow-ip 198.51.100.4/32`.
+
+### Нет доступного типа сервера
+
+```text
+warning: could not create a cpx41 server in fsn1; trying the next type
+error: none of cpx41 ccx23 cpx51 could be created in fsn1
+```
+
+У провайдера в этой локации не было ни одного из типов по умолчанию, или вашему аккаунту нельзя их
+создавать. Попробуйте другой `--region` или укажите тип через `--type`. В AWS сообщение говорит `instance`
+и называет зону.
+
+### Другой ключ под тем же именем
+
+```text
+error: the project has a different SSH key named fc-node; pass another --name or --ssh-pubkey
+```
+
+В Hetzner уже есть ключ под названием `fc-node`, который не ваш. Выберите другое `--name` или используйте
+ключ, который там есть.
+
+### Запуск остановился на полпути
+
+```text
+node.env records what was created so far: run the same command again to finish, or add --destroy
+```
+
+Запустите ту же команду `0-provision.sh` снова; она переиспользует то, что существует. Шаг 1 отказывается от такого
+`node.env`:
+
+```text
+error: node.env has no NODE_IP: provisioning stopped half way; run ./scripts/0-provision.sh again
+```
+
+## Шаг 1: нода
+
+### Нет SSH-соединения
+
+```text
+error: no ssh connection to root@<ip>: <what ssh said>. Check NODE_IP and NODE_SSH_KEY in node.env.
+```
+
+Новый сервер загружается не сразу. Если ошибка не проходит, проверьте, что `NODE_SSH_KEY` в `node.env` — это
+приватная половина ключа, который вы дали шагу 0, и что ваш IP по-прежнему тот, который пропускает файрвол:
+повторный запуск шага 0 из вашей текущей сети обновляет правила Hetzner.
+
+### Хост не дотягивает
+
+```text
+error: root@<ip> does not meet the requirements above
+```
+
+Код выхода 5. В таблице над сообщением стоит `no` в строках, которые не прошли: `ram`, `disk`,
+`docker`, `compose` или `clock`. `docker missing` значит, что Docker не установлен. `docker no server`
+значит, что команда `docker` есть, но не может достучаться до демона Docker: он остановлен
+(`sudo systemctl start docker`) или пользователь SSH не root и не входит в группу `docker`.
+
+### Нода ещё не отвечает
+
+```text
+warning: the node did not return JSON from http://127.0.0.1:3381/v1/info (still starting?); waiting for it
+```
+
+Печатается один раз, пока нода ещё не отвечает, например сразу после запуска. Ожидание
+продолжается. Если оно никогда
+не заканчивается, `./scripts/1-node.sh logs` показывает, что делает нода.
+
+### Не синхронизировалась вовремя
+
+```text
+error: not synced after 43200s
+```
+
+Нода продолжает синхронизацию; сдалось только ожидание. Следите за ней через `./scripts/1-node.sh status --wait`
+или ждите дольше с `--timeout <seconds>`.
+
+### Туннель не поднимается
+
+```text
+error: the tunnel did not come up; is something else using local port 3381 or 3383?
+```
+
+Другой процесс занимает один из этих портов на вашей машине, часто туннель от прошлого запуска или
+локальная mock-нода. Остановите его или выполните `./scripts/1-node.sh tunnel --stop`, затем попробуйте снова.
+
+### Релиз нельзя закрепить
+
+```text
+error: Snapchain <version>'s docker-compose.yml does not name farcasterxyz/snapchain:latest, so it cannot be pinned
+```
+
+Compose-файл релиза называет свой образ иначе, поэтому casty не будет его переписывать. Запускайте
+без `--release`.
+
+## Шаг 2: клиент
+
+### Нет релиза для этой машины
+
+```text
+error: no casty binary is built for <os>-<arch>; run this script with --from-source, which needs Node 22.12 or newer
+error: could not download casty-<os>-<arch> and SHA256SUMS from <url>: no release for <os>-<arch> there yet, or no connection. Run this script with --from-source to build casty here.
+```
+
+Релизы содержат linux-x64, linux-arm64 и darwin-arm64. На другой машине или без
+соединения с GitHub `./scripts/2-client.sh --from-source` собирает клиент здесь.
+
+### Загрузка не совпадает с контрольной суммой
+
+```text
+error: the sha256 of the downloaded casty-<os>-<arch> is <hash>, not the <hash> SHA256SUMS lists; nothing was installed
+```
+
+Файл не тот, что опубликовал релиз: оборванная загрузка, прокси, который его изменил, или
+зеркало, указанное в `CASTY_RELEASE_URL`, на котором лежит что-то другое. Запустите скрипт снова; если это
+повторяется, соберите из исходников.
+
+### Node.js слишком старый
+
+```text
+error: Node <version> is too old; casty needs 22.12 or newer.
+```
+
+Node нужен только для `--from-source`. Дальше сообщение говорит, как поставить более новый через fnm
+или nvm. В Node 25 и новее corepack больше не входит в комплект: `npm install -g corepack`.
+
+### casty не может достучаться до ноды
+
+```text
+casty: cannot reach the node at http://127.0.0.1:3381
+hint: start the tunnel with ./scripts/1-node.sh tunnel, or pass --node <url>
+```
+
+Код выхода 4. Туннель не работает, или нода находится в другом месте.
+
+### Нет fid для seed-фразы
+
+```text
+casty: no fid is registered to <address>
+hint: check --address-index; if your node is still syncing, pass --op-rpc <OP Mainnet RPC url>
+```
+
+Адрес с индексом 0 из seed-фразы не владеет fid, по крайней мере насколько знает нода. Если
+ваш кошелёк использует другой аккаунт той же фразы, передайте `--address-index`. Нода, которая
+ещё синхронизируется, могла ещё не увидеть регистрацию.
+
+### Нет хранилища
+
+```text
+casty: fid <fid> has no storage units, so the network will not accept its messages
+```
+
+Сначала арендуйте storage unit для fid. См. [Аренда хранилища](../concepts/storage-rent/).
+
+### Seed-фраза отвергнута
+
+```text
+casty: a seed phrase has 12, 15, 18, 21 or 24 words, not <n>
+casty: word <n> is not in the BIP-39 English word list
+casty: the seed phrase checksum does not match
+```
+
+Сообщения называют позиции слов, но никогда сами слова. Проверьте написание и порядок.
+
+### Нода отвергает сообщение
+
+casty печатает собственное сообщение ноды, затем подсказку, выбранную по содержимому сообщения:
+
+| Сообщение содержит | Что это значит |
+| --- | --- |
+| `invalid signature` | seed-фраза не содержит custody-адрес fid; проверьте `--address-index` |
+| `invalid signed key request` | fid приложения должен находиться в custody у `--app-address-index` той же seed-фразы |
+| `nonce is not greater than stored nonce` | первым прошло другое изменение ключей; `casty init` сам повторяет попытку один раз |
+| `active key cap exceeded` | у fid 1000 активных ключей приложений; отзовите часть через `casty key revoke` |
+| `invalid scope` | ключу приложения нельзя подписывать сообщения этого типа; добавьте такой ключ через `casty init --scopes` |
+
+Эти строки взяты из
+[руководства по записи сообщений](https://snapchain.farcaster.xyz/guides/writing-messages) Snapchain. Код выхода 3.
+
+### Неверный пароль
+
+```text
+casty: cannot decrypt the key store: wrong passphrase or a damaged file
+```
+
+Забытый пароль нельзя восстановить. Удалите `keys.enc.json` и запустите `casty init`, чтобы добавить
+новый ключ. Старые ключи остаются зарегистрированными, пока не истекут без использования; чтобы удалить их раньше, найдите их
+через `casty key list` и выполните `casty key revoke <key>` с вашей seed-фразой.
+
+### Нет пригодного ключа приложения
+
+```text
+casty: no app key for fid <fid> yet
+hint: add one with your wallet in casty web, under you, or run casty init with the seed phrase
+```
+
+`casty init --fid` не добавляет ключа: сначала одобрите ключ своим кошельком.
+
+```text
+casty: none of the app keys in <dir> is registered to fid <fid>
+```
+
+Ваша нода не показывает этот ключ. Ключ, одобренный только что, засчитывается, когда ваша нода синхронизируется дальше
+него: `casty doctor` показывает, насколько она отстаёт. Иначе ключ истёк после своего TTL без использования
+или был отозван; добавьте другой в `casty web`, в разделе о вас, или через `casty init`.
+
+### Принято, но не слито
+
+```text
+casty: <hash> was accepted but not merged within 40s
+```
+
+Нода приняла сообщение, но casty не увидел, как оно слилось
+([почему](../concepts/read-nodes-vs-validators/)). Поищите его, например
+через `casty feed`, прежде чем отправлять снова: повторный запуск команды отправляет новое
+сообщение. После `casty init` ключ сохраняется, и повторный запуск `casty init` отправляет то же
+сообщение заново, не спрашивая seed-фразу.
+
+### Номера не совпадают
+
+```text
+casty: no list numbered yet to take cast 2 from
+casty: the last list numbered has no cast 9
+```
+
+`casty like 2` означает второй каст последнего показанного списка, от `casty feed`, `casty mentions`,
+`casty thread` или casty web. Сначала покажите список или укажите каст как `<fid>:<0x hash>`.
+
+### Нода отвечает 429 или 503 на ленту
+
+`casty feed` и casty web запрашивают у ноды до 64 страниц сразу, так что лента из 300 аккаунтов
+занимает пять обходов, а не девятнадцать. Нода, которая отвечает на часть из них 429 или 503,
+получает слишком много запросов за раз: задайте `CASTY_CONCURRENCY=32` (любое целое число от 1 до 256)
+в окружении команды или `casty web` и уменьшайте его, пока ошибки не прекратятся.
+
+### Часы сбиты
+
+```text
+warning: this clock and the node's differ by over a minute; nodes reject messages from the future
+```
+
+`casty doctor` сравнивает ваши часы с часами ноды. Сообщения с отметкой времени больше чем на 15 минут вперёд
+отвергаются; включите синхронизацию времени на своей машине.
+
+## Коды выхода
+
+| Код | Скрипты | casty |
+| --- | --- | --- |
+| 0 | готово | готово |
+| 1 | не синхронизирована, туннель не работает | не синхронизирована (`node status`), всё остальное |
+| 2 | неверные аргументы | неверные аргументы |
+| 3 | не хватает необходимого | нода отвергла сообщение |
+| 4 | сбой провайдера или хоста | нода недоступна |
+| 5 | хост не дотягивает | проблема с конфигом, хранилищем ключей или seed-фразой |

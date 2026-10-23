@@ -1,0 +1,267 @@
+---
+title: The whole way
+description: From nothing to your own node, a client with an app key, and the page on a phone, then running it, step by step.
+sidebar:
+  order: 0.5
+---
+
+This page walks the whole way once, in the order you do it, and links to the page with the
+details of each step. Commands run from a checkout of the casty repository unless they say
+"on the host".
+
+## 0. Before you start
+
+A seed phrase controls the whole account. Use a test account for this tutorial, paste a seed
+phrase only into software from developers you trust, and prefer a key authorised by your
+wallet: `casty init --fid <fid>`, then `casty web` and, under you, "add a key with your wallet".
+
+You need:
+
+- **A Farcaster test account**: its fid, at least one storage unit
+  ([Storage rent](../concepts/storage-rent/)), and a wallet that holds the address the fid is
+  registered to (or, as the fallback, that address's seed phrase). `casty whoami` and
+  `casty storage` show both once casty is set up.
+- **A host for the node**: an account at Hetzner Cloud or AWS, which casty rents a server from,
+  or a machine of your own with 16 GB RAM, 4 cores, 2 TB of free disk and Docker
+  ([A node at home](../home-node/)). A rented server and its 2 TB volume are billed until you
+  delete them (step 9).
+- **On your machine**: `ssh`, `curl` and `jq`, and an SSH key pair, by default
+  `~/.ssh/id_ed25519`. Until the project has a release, Node.js 22.12 or newer too, since step 2
+  then builds the client here. On Windows, use WSL2.
+- **Time**: the node's first sync downloads a snapshot of several hundred GB and takes hours.
+  Nothing is lost if you stop waiting; every step can be run again and picks up where it was.
+
+```sh
+git clone https://github.com/savvax/casty.git && cd casty
+ls ~/.ssh/id_ed25519.pub || ssh-keygen -t ed25519   # a key to log in to the node with
+```
+
+## 1. Give casty a cloud, or a host
+
+Set the credentials of one provider; the scripts read them from your environment and never
+write them anywhere ([0. Provision a host](../0-provision/)).
+
+```sh
+export HCLOUD_TOKEN=<token>        # Hetzner: Cloud console, your project, Security, API tokens (read/write)
+# or, for AWS: aws configure       # or AWS_PROFILE, or AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+```
+
+For a machine you already have, skip this and pass `--host user@ip` in step 2.
+
+Read what a run would do before anything is created; a dry run needs no credentials:
+
+```sh
+./scripts/deploy.sh --dry-run -- --provider hetzner
+```
+
+It prints every provider and SSH command as a `DRY:` line and creates nothing.
+
+## 2. Run it
+
+### In one command
+
+```sh
+./scripts/deploy.sh --fid <fid>
+```
+
+This runs the three steps below in order and stops at the first that fails, with that step's
+exit code. Run the same command again to go on: the first sync takes hours, and Ctrl-C during
+it loses nothing. Add `--domain <name>` (or `--tailscale`) to also put the page on the host,
+step 6. Without `--fid`, step 2c asks for the seed phrase instead.
+
+What each step asks of you:
+
+- **A host** (`0-provision.sh`): it prints what it will create and bill, and goes ahead only
+  once you type the server name back (`--yes` skips the question). It writes `node.env`, which
+  every later step reads and which deleting the node needs: keep it. With `--host user@ip`
+  nothing is created; the host is checked over SSH.
+- **The node** (`1-node.sh`): nothing to answer. It checks the host (RAM, disk, Docker, the
+  clock), starts Snapchain, prints the sync, and opens an SSH tunnel to `127.0.0.1:3381` once the
+  node has caught up.
+- **The client** (`2-client.sh`): with `--fid`, nothing; casty is set up for your fid with no
+  key yet, and the feed is read. Without it, a passphrase for the key store (twice), then the
+  seed phrase, at a hidden prompt.
+
+### Or step by step
+
+The same thing, a step at a time:
+
+```sh
+./scripts/0-provision.sh             # a: a server, a 2 TB volume and a firewall; or --host user@ip
+./scripts/1-node.sh                  # b: the read node, the wait for its sync, the tunnel
+./scripts/2-client.sh --fid <fid>    # c: ./bin/casty, set up for your fid; the seed phrase path without --fid
+```
+
+While the node syncs, `./scripts/1-node.sh status` shows how far each shard is behind, and
+`./scripts/1-node.sh status --wait` waits until it is synced. Details:
+[1. Run the read node](../1-node/), [2. Install the client](../2-client/).
+
+## 3. Add an app key
+
+casty writes with an app key: an Ed25519 key your fid's custody address authorises, added with
+a gasless `KEY_ADD` message through your node, with no transaction and no gas
+([Custody address and app keys](../concepts/custody-and-app-keys/)).
+
+### With your wallet
+
+```sh
+./bin/casty web
+```
+
+1. `casty web` asks for a passphrase for the key store it is about to make, twice, and prints a
+   link with a token. Open it in a browser that has your wallet (an extension such as MetaMask).
+2. Under you, choose "add a key with your wallet".
+3. The wallet is asked for its account; pick the one the fid is registered to. If it sits on
+   another chain, it is asked to switch to Ethereum mainnet, which costs nothing.
+4. Sign the two requests the wallet shows: the key request, then the key add.
+5. The page checks both signatures, sends the `KEY_ADD` through your node, waits until the node
+   lists the key, and stores it encrypted in `~/.config/casty/keys.enc.json`.
+
+On a phone whose wallet is an app, start `./bin/casty web --listen 0.0.0.0:3390` (or use the page
+on the host, step 6), open the page on the phone, and under you use the link that opens it in
+your wallet's browser; the button next to it copies the pairing link to paste there.
+
+### With the seed phrase, as the fallback
+
+```sh
+./bin/casty init
+```
+
+It asks for the passphrase, then for the phrase at a hidden prompt; the phrase is used once to
+sign the key request and is never written to disk. `--address-index` picks another address of
+the phrase.
+
+Either way, the key may sign casts, reactions and follows (`--scopes` adds profile changes),
+and it lapses after 30 days without use (`--ttl`, at most `90d`); every message it signs renews
+it. `./bin/casty whoami` shows the key, the custody address and your storage.
+
+## 4. Use it in a terminal
+
+`./bin/casty --help` lists every command; `<command> --help` its flags. To type `casty` instead,
+link it once: `ln -s "$PWD/bin/casty" ~/.local/bin/casty`.
+
+| To | Run |
+| --- | --- |
+| read your feed | `casty feed`, `casty feed --since 24h --no-replies --limit 20` |
+| read what others said to you | `casty mentions` |
+| open a cast with what it answers and its replies | `casty thread 2` |
+| post | `casty cast "hello from my own node"`, `--channel /name`, `--embed <url>` |
+| answer, like, recast | `casty reply 1 "agreed"`, `casty like 1`, `casty recast 1` |
+| undo | `casty unlike 1`, `casty unrecast 1`, `casty delete 1` |
+| follow | `casty follow @name`, `casty unfollow @name` |
+| see the apps behind a fid's keys | `casty clients --fid <fid>` |
+| check your storage | `casty storage` |
+| check the node, the clock and the setup | `casty doctor`, `casty node status` |
+
+The number in front of a cast in the last list is what `like`, `reply`, `recast`, `delete` and
+`thread` take; so do `<fid>:<hash>` and a cast's farcaster.xyz link. `via` names the app a cast
+was posted through; `--only-app` and `--exclude-app` filter on it. Every write waits until the
+node has the message, and says so when it does not.
+
+## 5. Use it in a browser
+
+`./bin/casty web` serves the same commands as a page on `http://127.0.0.1:3390` and prints a link
+that pairs a browser ([In a browser and on a phone](../web/)).
+
+- **On a phone at home**: `./bin/casty web --listen 0.0.0.0:3390` prints a link per network
+  address and a QR code; scan it on the same network. The connection is plain HTTP, so use a
+  network you trust. Add the page to the home screen to open it full screen.
+- **Read only**: `--read-only` asks for no passphrase, and the page cannot write.
+- **A new token**: `--new-token` makes every link printed before stop working.
+
+Ctrl-C stops `casty web`; the machine has to stay on while a phone uses it.
+
+## 6. The page from any network
+
+To reach the page from a mobile network, run it on the node's host behind HTTPS
+([From any network](../serve/)). It needs an app key here first (step 3): the key store and its
+passphrase go to the host as a Docker secret, unless `--read-only`.
+
+With a domain:
+
+1. Point a DNS `A` record of a name you own, `node.example.org` say, at the node's IP
+   (`NODE_IP` in `node.env`).
+2. Run:
+
+   ```sh
+   ./scripts/deploy.sh --fid <fid> --domain node.example.org
+   ```
+
+   On a node casty rented, this opens 80 and 443 on its firewall; on a host of your own, open
+   them yourself. Then it builds casty on the host, starts it behind Caddy, which gets the
+   certificate, asks for the key store passphrase, and prints `https://node.example.org/#token=...`.
+   The QR code of that link is in `./scripts/1-node.sh logs casty`.
+
+With Tailscale instead, install it on the host and log it in, put the phone on the same
+tailnet, and run `./scripts/deploy.sh --fid <fid> --tailscale`; no port opens to the internet.
+
+On the host the feed comes from an index that follows the node's events. Under you,
+"notifications" turns on a push for each mention or reply, naming the sender and nothing else;
+on an iPhone, add the page to the home screen first (iOS 16.4 and later).
+
+After a change to casty, run `./scripts/1-node.sh serve --domain <name>` again: it rebuilds and
+restarts the page.
+
+## 7. Run the node
+
+| To | Run |
+| --- | --- |
+| see the sync | `./scripts/1-node.sh status` (exit code 1 while behind) |
+| follow its logs, or the page's | `./scripts/1-node.sh logs`, `./scripts/1-node.sh logs casty` |
+| reopen the tunnel after a restart of your machine | `./scripts/1-node.sh tunnel` (`--stop` closes it) |
+| move to the newest Snapchain release | `./scripts/1-node.sh upgrade` |
+| stay on one release | `./scripts/1-node.sh upgrade --release 0.14.3` |
+| upgrade every week by itself | `./scripts/1-node.sh --autoupgrade --fid <fid>`: it runs `docker system prune --volumes -f` on the whole host |
+| keep fewer blocks | `./scripts/1-node.sh --block-retention 30` (days) |
+| see Grafana | on the host, `docker compose up -d grafana` in `~/snapchain`; here, `ssh -L 3000:127.0.0.1:3000 <user>@<ip>` and `http://127.0.0.1:3000` |
+| stop the node, and the page | `./scripts/1-node.sh down`; the database stays on the volume |
+
+From another network, the firewall still allows only the address you had: run
+`./scripts/0-provision.sh` again, and it moves the rules to your current address, on the same
+node.
+
+## 8. Keys and safety
+
+| To | Run |
+| --- | --- |
+| list the keys of your fid | `casty key list` |
+| remove this casty's key with the key itself | `casty key revoke --self` |
+| remove any key | `casty key revoke <key>`, with the seed phrase |
+| unpair every browser | `casty web --new-token`; on the host, delete `~/snapchain/casty/config/web-token` and `docker compose restart casty` |
+
+A key that lapsed, or was removed elsewhere, is skipped; add another as in step 3.
+[Security](../security/) lists every secret involved, where it lives and what to do if one leaks.
+
+## 9. Delete everything
+
+```sh
+./bin/casty key revoke --self        # first, while the node runs: the key stops working everywhere
+./scripts/1-node.sh down             # stops the node and the page; nothing is deleted
+./scripts/0-provision.sh --destroy   # deletes the server, its volume and its firewall, after you type the name
+rm -rf ~/.config/casty               # the config and the encrypted key store here
+```
+
+`--destroy` reads `node.env` to know what to delete and removes it afterwards; a new node syncs
+from the beginning. On a host of your own there is nothing to destroy: delete `~/snapchain`
+there.
+
+## Without a node
+
+`pnpm install`, then `pnpm demo`, runs the client against a mock node with the test phrase and
+removes what it made; `pnpm demo:web` serves the page the same way until Ctrl-C.
+
+## When a step stops
+
+Every script prints what failed and what to do, and exits with a code that says what kind of
+problem it was:
+
+| Code | `0-provision.sh` | `1-node.sh` | `2-client.sh` |
+| --- | --- | --- | --- |
+| 1 | | not synced, or the node did not answer | |
+| 2 | bad arguments | bad arguments | bad arguments |
+| 3 | a missing tool or credential | a missing tool | a missing tool, or Node too old |
+| 4 | the provider refused | no SSH connection, or a download failed | the node unreachable (open the tunnel), or no good download |
+| 5 | the host falls short | the host falls short | a key problem: passphrase, seed phrase, storage |
+
+[Troubleshooting](../troubleshooting/) has each message with its fix. `deploy.sh` stops with the
+code of the step that stopped, and the same command goes on from there.

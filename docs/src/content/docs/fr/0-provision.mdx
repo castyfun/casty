@@ -1,0 +1,211 @@
+---
+title: 0. Provisionner un hôte
+description: "Louer un serveur, un volume de 2 To et un pare-feu, ou vérifier un hôte que vous avez déjà, et écrire node.env."
+sidebar:
+  order: 1
+---
+
+L'étape 0 vous fournit un hôte capable de faire tourner un nœud de lecture Snapchain et écrit
+`node.env`, le fichier que l'étape 1 lit pour le trouver.
+
+```sh
+./scripts/0-provision.sh
+```
+
+## Quel fournisseur
+
+Sans `--provider`, le script décide d'après ce que vous avez défini :
+
+| Vous définissez | Fournisseur |
+| --- | --- |
+| `--host user@ip` | `existing` : rien n'est créé, l'hôte est vérifié par SSH |
+| `HCLOUD_TOKEN` | `hetzner` |
+| `AWS_PROFILE`, `AWS_ACCESS_KEY_ID`, ou un fichier `~/.aws/credentials` ou `~/.aws/config` | `aws` |
+
+Quand des identifiants Hetzner et AWS sont tous deux définis, il s'arrête et vous demande de passer
+`--provider`. Quand aucun ne l'est, il s'arrête et indique quoi définir. Cherry Servers n'est là que
+pour `--dry-run` ; une vraie exécution s'arrête et suggère de créer le serveur à la main, puis
+d'utiliser `--host`.
+
+## Regarder avant de créer
+
+```sh
+./scripts/0-provision.sh --provider hetzner --dry-run
+```
+
+Un essai à blanc affiche chaque appel au fournisseur sous forme de ligne `DRY:` et ne crée rien. Il
+n'a besoin ni de jeton, ni de CLI du fournisseur, ni de clé SSH, si bien que vous pouvez lire ce que
+ferait une exécution avant de vous inscrire où que ce soit. Il écrit tout de même `node.env`, avec
+des valeurs fictives comme l'adresse de documentation `192.0.2.1`, mais jamais par-dessus un
+`node.env` qui décrit un vrai nœud. `1-node.sh` n'accepte ce fichier qu'avec `--dry-run`, et l'étape
+suivante que l'essai à blanc affiche le précise.
+
+```text
+dry run: printing provider calls, creating nothing; node.env gets placeholder values
+DRY: curl -s --max-time 10 https://api.ipify.org
+DRY: hcloud ssh-key list -o noheader -o columns=fingerprint,name
+DRY: hcloud ssh-key create --name fc-node --public-key-from-file /home/you/.ssh/id_ed25519.pub
+DRY: hcloud firewall list -o noheader -o columns=name
+DRY: hcloud firewall create --name fc-node-fw --rules-file ./fc-node.firewall.json
+DRY: hcloud volume list -o noheader -o columns=name
+DRY: hcloud volume create --name fc-node-data --size 2000 --location fsn1 --format ext4
+...
+```
+
+## Hetzner
+
+Installez la [CLI hcloud](https://github.com/hetznercloud/cli#installation) et créez un jeton d'API
+en lecture/écriture dans la console Hetzner Cloud (votre projet, puis Security, puis API tokens).
+
+```sh
+export HCLOUD_TOKEN=<your token>
+./scripts/0-provision.sh
+```
+
+Il crée, dans `fsn1` sauf si vous passez `--region` :
+
+- le serveur `fc-node`, Ubuntu 24.04, du premier type qui peut être créé parmi `cpx41`, `ccx23` et
+  `cpx51` (passez `--type` pour choisir) ;
+- le volume `fc-node-data`, 2000 Go, formaté en ext4 ;
+- le pare-feu `fc-node-fw` ;
+- la clé SSH `fc-node`, sauf si le projet a déjà votre clé sous un autre nom.
+
+## AWS
+
+Installez la [CLI AWS v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+et donnez-lui des identifiants : `AWS_PROFILE`, ou `AWS_ACCESS_KEY_ID` et `AWS_SECRET_ACCESS_KEY`, ou
+`aws configure` (`aws configure sso` et `aws sso login` pour SSO).
+
+La région est `--region`, sinon `AWS_REGION`, sinon `AWS_DEFAULT_REGION`, sinon `us-east-1`. Dans la
+zone `<region>a`, il crée :
+
+- l'instance `fc-node`, `m6i.xlarge` ou à défaut `m5.xlarge`, à partir de l'image Ubuntu 24.04
+  actuelle de Canonical, avec un disque racine de 40 Go ;
+- le volume gp3 `fc-node-data`, 2000 Go, attaché une fois que l'instance tourne ;
+- le groupe de sécurité `fc-node-fw` et la paire de clés `fc-node`.
+
+L'utilisateur du nœud est `ubuntu`.
+
+## Un hôte que vous avez déjà
+
+```sh
+./scripts/0-provision.sh --host user@203.0.113.7
+```
+
+Rien n'est créé. Le script se connecte avec votre clé et exécute les mêmes vérifications que
+l'étape 1. Voir [Un nœud à la maison](../home-node/) pour ce dont un tel hôte a besoin.
+
+## Confirmation
+
+Une vraie exécution affiche son plan et attend que vous tapiez le nom du serveur :
+
+```text
+On hetzner this creates, or reuses when they already exist under these names:
+  server    fc-node: cpx41 ccx23 cpx51 (the first one available), ubuntu-24.04, fsn1
+  firewall  fc-node-fw: ssh, 3381 and 3383 from 203.0.113.10/32; gossip 3382 from anywhere
+  volume    fc-node-data, 2000 GB
+The server and the volume are billed until you run this again with --destroy.
+Type fc-node to create them:
+```
+
+Toute autre saisie, ou une entrée standard fermée, arrête l'exécution sans rien créer. `--yes` saute
+la question.
+
+## Le pare-feu
+
+Avec la valeur par défaut `--allow-ip auto`, le script demande votre IP publique à `api.ipify.org` et
+ouvre SSH (22), l'API HTTP du nœud (3381) et son API gRPC (3383) à cette seule adresse. Le gossip
+(3382, UDP et TCP) est ouvert à tous, parce que les autres nœuds s'y connectent. Le client n'a jamais
+besoin que 3381 soit public : il passe par le tunnel SSH que l'étape 1 ouvre.
+
+Passez `--allow-ip 198.51.100.0/24` pour autoriser une plage à la place. Relancer le script depuis un
+autre réseau déplace les règles vers votre nouvelle adresse, chez Hetzner comme chez AWS. Chez AWS,
+seules les règles créées par casty sont déplacées, reconnues à leur description ; une règle que vous
+avez ajoutée vous-même au groupe reste.
+
+`--https` ouvre aussi 80 et 443 à tous, ce dont `./scripts/1-node.sh serve --domain` a besoin pour son
+certificat et pour un téléphone sur un réseau mobile ([Depuis n'importe quel réseau](../serve/)).
+Une nouvelle exécution sans `--https` les referme.
+
+## Ce que fait le serveur au premier démarrage
+
+Le fichier cloud-init, écrit à côté de `node.env` sous le nom `fc-node.cloud-init.yaml` :
+
+- installe `chrony` et `jq` et relève la limite de fichiers ouverts ;
+- attend le volume de données, ne le formate que s'il est vierge, et le monte sur `/data` ;
+- lie `~/snapchain` à `/data/snapchain`, pour que la base de données atterrisse sur le volume ;
+- installe Docker avec le script d'installation de Docker et ajoute l'utilisateur au groupe `docker`.
+
+Il ne redémarre pas le serveur.
+
+## node.env
+
+```text
+NODE_PROVIDER=hetzner
+NODE_NAME=fc-node
+NODE_REGION=fsn1
+NODE_IP=192.0.2.1
+NODE_USER=root
+NODE_SSH_KEY=/home/you/.ssh/id_ed25519
+NODE_SERVER_ID=dry-run
+NODE_VOLUME_ID=dry-run-volume
+NODE_DATA_DIR=/data
+NODE_CREATED_AT=dry-run
+NODE_STARTED_AT=dry-run
+```
+
+Il contient des noms, des identifiants, l'IP et le chemin de votre clé SSH privée, jamais un jeton ni
+une clé. `NODE_STARTED_AT` est le moment où une exécution a créé, démarré ou allumé le serveur pour la
+dernière fois : l'étape 1 attend ssh jusqu'à vingt minutes sur un serveur démarré dans les 15
+dernières, une minute ou deux sinon. Conservez-le : l'étape 1 le lit, et `--destroy` en a besoin pour
+savoir quoi supprimer. `--json` l'affiche aussi en JSON, et `--out <file>` l'écrit ailleurs.
+
+## Le relancer
+
+Tout est retrouvé par nom, si bien que relancer la même commande réutilise ce qui existe et ne crée
+que ce qui manque. Une nouvelle exécution prend le fournisseur, le nom et la région dans `node.env`,
+si bien que `--https` ou un nouveau `--allow-ip` ajouté plus tard s'applique au même nœud ; une option
+qui nomme un autre fournisseur, un autre nom ou une autre région arrête l'exécution, et `--out <file>`
+est le moyen d'avoir un second nœud. Si une exécution s'arrête à mi-chemin, sur une erreur ou un
+Ctrl-C, `node.env` enregistre tout de même ce qui a été créé jusque-là. Relancez la même commande pour
+terminer, ou ajoutez `--destroy` pour le supprimer.
+
+## Supprimer le nœud
+
+```sh
+./scripts/0-provision.sh --destroy
+```
+
+Il lit `node.env`, vous demande de taper le nom, puis supprime le serveur, le volume et le pare-feu,
+dans cet ordre, et retire `node.env`. Le volume contient la base de données synchronisée, si bien
+qu'un nouveau nœud reprend la synchronisation depuis le début. `--destroy --dry-run` affiche les
+appels à la place. Chez AWS, il supprime les identifiants d'instance et de volume que `node.env`
+enregistre ; il n'en recherche un par son tag Name que lorsque `node.env` n'a pas d'identifiant pour
+lui, après une exécution qui s'est arrêtée à mi-chemin.
+
+## Options
+
+```text
+Usage: 0-provision.sh [--provider hetzner|aws|cherry|existing] [options]
+
+  --provider <name>      hetzner, aws, cherry (dry run only for now) or existing; without it,
+                         existing with --host, else the one whose credentials are set
+  --name <name>          server name; also <name>-data and <name>-fw (default: fc-node)
+  --region <region>      provider region (default: fsn1, us-east-1, eu_nord_1)
+  --type <type>          server type (default: cpx41 then ccx23, cpx51; m6i.xlarge then m5.xlarge)
+  --disk-gb <n>          data volume size, at least 2000 (default: 2000)
+  --ssh-pubkey <file>    key to log in with (default: ~/.ssh/id_ed25519.pub)
+  --allow-ip auto|<cidr> who may reach ssh, 3381 and 3383 (default: auto, your current IP)
+  --https                also open 80 and 443 to everyone, for 1-node.sh serve --domain; a
+                         rerun without it closes them again
+  --host <user@ip>       the host, for --provider existing
+  --dry-run              print every provider call instead of making it
+  --destroy              delete the server, then its volume, then its firewall
+  --yes                  do not ask before creating or deleting anything
+  --json                 print node.env as JSON
+  --out <file>           where to write node.env (default: node.env)
+
+Exit codes: 0 ok, 2 bad arguments, 3 missing prerequisite, 4 provider error, 5 preflight failed.
+```
+
+Suite : [1. Lancer le nœud de lecture](../1-node/).

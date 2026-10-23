@@ -1,0 +1,160 @@
+---
+title: Desde cualquier red
+description: 1-node.sh serve ejecuta casty en el host del nodo detrás de HTTPS, de modo que un teléfono lee y escribe desde cualquier lugar, no solo en casa.
+sidebar:
+  order: 3.6
+---
+
+```sh
+./scripts/1-node.sh serve --domain node.example.org    # or: --tailscale
+```
+
+`casty web` se ejecuta en tu máquina y llega a un teléfono en la misma red. `1-node.sh serve`
+ejecuta la misma página en el host del nodo, junto al nodo, detrás de un proxy que termina HTTPS,
+de modo que el teléfono llega a ella también desde una red móvil. Es el mismo código de `casty`,
+compilado en el host en un contenedor a partir de este checkout, y lee y escribe a través del nodo
+como `http://snapchain:3381` en la propia red de Docker del host.
+
+## Qué hace
+
+1. Lee aquí el directorio de configuración de casty (`~/.config/casty`, o `--config`):
+   `config.json` con tu fid, y `keys.enc.json` con la clave de aplicación, y pide la contraseña
+   del almacén de claves. Con `--read-only`, ni el almacén de claves ni una contraseña salen de
+   esta máquina, y la página lee pero no puede escribir.
+2. Envía el código fuente del cliente (no `node_modules`, pruebas ni una compilación) a
+   `~/snapchain/casty/src` en el host con un Dockerfile: `node:22-alpine`, las dependencias del
+   lockfile, la misma compilación que `2-client.sh --from-source`. El host compila la imagen; la
+   primera vez lleva un minuto o dos.
+3. Escribe `~/snapchain/docker-compose.casty.yml` junto al archivo compose del nodo y lo nombra en
+   `COMPOSE_FILE` en `~/snapchain/.env`, de modo que cada comando `docker compose` allí lo incluye.
+   El servicio `casty` ejecuta `casty serve --public-host <name>`, se reinicia con el host, guarda
+   su token y sus cachés en `~/snapchain/casty/config` (montado con bind) y lee la contraseña de un
+   secreto de Docker, el archivo `~/snapchain/casty/passphrase`, con modo 0600.
+4. Pone un proxy delante:
+   - `--domain <name>`: un servicio `caddy` publica 80 y 443 y obtiene el certificado de
+     Let's Encrypt por sí mismo. El nombre debe apuntar al host, y 80 y 443 deben ser accesibles
+     desde internet: `./scripts/0-provision.sh --https` los abre en un firewall de Hetzner o AWS
+     (una nueva ejecución conserva el servidor); en un host propio, ábrelos tú.
+   - `--tailscale`: `casty` se publica solo en el loopback del host y `tailscale serve --bg
+     3390` lo sirve como `https://<host>.<tailnet>.ts.net` a tu tailnet, con un certificado que
+     proporciona Tailscale. Tailscale debe estar instalado y con sesión iniciada en el host, y el
+     teléfono debe estar en la tailnet. No se abre ningún puerto a internet.
+5. Espera a que el servicio escriba su token de emparejamiento y luego imprime
+   `https://<name>/#token=...`. El código QR de ese enlace está en los registros del servicio:
+   `./scripts/1-node.sh logs casty`.
+
+Ejecuta `serve` otra vez después de un cambio en casty: vuelve a enviar el código fuente, recompila
+y reinicia. `./scripts/1-node.sh down` detiene el nodo y casty a la vez; en el host,
+`docker compose stop casty` (y `caddy`, con `--domain`) detiene solo la página. Para volver a
+emparejar desde cero, borra `~/snapchain/casty/config/web-token` en el host y ejecuta
+`docker compose restart casty`.
+
+## Qué añade casty serve a casty web
+
+`casty serve` es `casty web` sobre el índice descrito más abajo, con push, un límite de solicitudes
+y, con `--public-host`, el nombre del proxy:
+
+- los enlaces que imprime llevan `https://<public host>`, y ese nombre se acepta como `Host` de la
+  solicitud, además de una dirección IP o `localhost`;
+- cada respuesta lleva `Strict-Transport-Security`, de modo que un navegador que ha visto la página
+  una vez nunca la pide por HTTP sin cifrar;
+- `/api/*` está limitado a 120 solicitudes por minuto por dirección de cliente, contadas antes de
+  comprobar el token, con `429` y `Retry-After` por encima de eso. Detrás del proxy, la dirección
+  del cliente es la última de `X-Forwarded-For`, la que añadió el proxy; una dirección que el
+  propio cliente puso allí no cuenta;
+- sin `--public-host`, en un portátil, `casty serve` es `casty web` con el índice y el límite: los
+  mismos enlaces, sin HSTS, y el límite cuenta por la dirección del socket, ya que sin un proxy
+  `X-Forwarded-For` es lo que el cliente haya escrito. Compilado desde el código fuente,
+  `casty serve` necesita Node 22.13 o más reciente para su SQLite; el binario de un solo archivo
+  trae el suyo;
+- la contraseña del almacén de claves viene de `CASTY_PASSPHRASE_FILE`, el secreto de Docker, de
+  modo que el servicio arranca sin una terminal.
+
+Todo lo demás es la página descrita en [En un navegador y en un teléfono](../web/): el mismo
+emparejamiento por token, la misma numeración compartida con la terminal, las mismas escrituras a
+través del nodo.
+
+## El feed desde un índice
+
+`casty serve` guarda el feed en `index.sqlite` en su directorio de configuración
+(`~/snapchain/casty/config/index.sqlite` en el host), con el SQLite propio de Node. En su primer
+arranque lee a quién sigues, los 100 casts más recientes tuyos y de cada una de esas cuentas, los
+casts que te mencionan, las respuestas a tus 25 casts más recientes, y tus likes y recasts. A partir
+de ahí sigue el registro de eventos del nodo (`/v1/events`, cada shard, cada 1,5 s): un cast de
+alguien a quien sigues, una mención tuya o una respuesta a ti entra; un cast eliminado o podado
+sale; un follow que haces trae los casts más recientes de la nueva cuenta y un unfollow saca la
+cuenta; tus likes y recasts se mantienen al día. El feed, las menciones y el estado de los likes de
+la página salen entonces del índice en unos milisegundos en lugar de cientos de solicitudes al
+nodo, y una escritura que haces en la página lee los eventos al instante, así que aparece en la
+siguiente lista. Una vez terminada la primera pasada, también se leen los nombres y las
+aplicaciones de las cuentas que sigues, de modo que el primer feed después de un arranque no le
+pide nada al nodo. Hasta que termina la primera pasada, la página lee el nodo como lo hace
+`casty web`. Los perfiles y los hilos siempre leen el nodo.
+
+Mientras lees, la página pregunta al índice cada medio minuto, y cada vez que vuelve a estar a la
+vista, si han llegado casts más recientes que el de arriba. Si es así, una píldora bajo la barra
+dice "3 new casts"; la lista nunca se mueve bajo tus dedos. Un toque los dibuja.
+
+Un nodo guarda unos tres días de eventos; un servicio que estuvo apagado más de dos hace la primera
+pasada de nuevo cuando arranca, y sigue desde ahí. Borra `index.sqlite` en el host y reinicia
+`casty` para empezar desde nada.
+
+## Una mención llega al teléfono
+
+En you, "notifications" activa Web Push para ese navegador: la página registra su service worker
+(`sw.js`), se suscribe con la clave que `casty serve` creó en su primer arranque (`vapid.json` en
+su directorio de configuración, con modo 0600) y entrega la suscripción al servicio, que la guarda
+en `cache/push.json`. Cuando los eventos traen un cast de otra persona que te menciona o responde a
+uno de los tuyos, el servicio envía a cada navegador suscrito un mensaje: "new mention from @name"
+o "new reply from @name", y nada más, no el texto del cast. Va cifrado para la clave propia del
+navegador (RFC 8291) y firmado con la del servicio (RFC 8292), de modo que el servicio de push
+intermedio, el de Apple, el de Google o el de Mozilla, transporta un texto cifrado que no puede
+leer. Un toque abre mentions. Una suscripción que el servicio de push informa como desaparecida se
+descarta.
+
+En un iPhone, Web Push solo funciona para una página añadida a la pantalla de inicio (iOS 16.4 y
+posteriores); el número junto a mentions funciona en todas partes, como antes. Desactivar las
+notificaciones quita la suscripción tanto del navegador como del servicio.
+
+## Qué deja esto en el host
+
+Con `serve`, el host guarda, además del nodo:
+
+| Qué | Dónde | Qué puede hacer |
+| --- | --- | --- |
+| La clave de aplicación, cifrada | `~/snapchain/casty/config/keys.enc.json`, con modo 0600 | Nada sin la contraseña |
+| La contraseña del almacén de claves | `~/snapchain/casty/passphrase`, con modo 0600, leída por el contenedor al arrancar | Descifrar la clave: juntas, escribir como tú |
+| El token de la página | `~/snapchain/casty/config/web-token`, y en cada navegador emparejado | Leer y escribir como tú, desde cualquier lugar, mientras el servicio está en marcha |
+| El certificado y su clave | El volumen `caddy_data` de Caddy, o el de Tailscale | Servir la página con ese nombre |
+| El índice de tu feed | `~/snapchain/casty/config/index.sqlite` | Nada: contiene casts públicos, a quién sigues y tus reacciones, que el nodo también guarda |
+| El par de claves de push | `~/snapchain/casty/config/vapid.json`, con modo 0600 | Enviar pushes a los navegadores suscritos; un par nuevo anula todas las suscripciones |
+| Las suscripciones de push | `~/snapchain/casty/config/cache/push.json` | Enviar un push a esos navegadores, como los endpoints del servicio de push, con las claves públicas de los navegadores |
+
+Quien tenga root en el host tiene la clave de aplicación, descifrada, en la memoria del servicio.
+Ese es el precio de una página desde cualquier lugar, y estas son las razones por las que se mantiene
+acotado: la clave firma solo lo que sus scopes permiten (casts, reacciones y follows por defecto) y
+caduca sin usarse tras su TTL; `casty key revoke <key>` con la frase semilla, desde cualquier
+máquina, la revoca al instante; y `--read-only` mantiene la clave en casa para una página que solo
+lee. La frase semilla nunca va a ninguna parte. [Seguridad](../security/) enumera cada secreto.
+
+## Opciones
+
+```text
+Usage: casty serve [options]
+
+the page over an index of the feed, with push; on the node's host behind HTTPS,
+which 1-node.sh serve installs
+
+Options:
+  --public-host <domain>   the domain the page is reached at through a proxy
+                           that ends HTTPS; it goes into the pairing link
+  --listen <host:port>     where to serve, for the proxy (default:
+                           "0.0.0.0:3390")
+  --new-token              pair again; links printed before stop working
+  --read-only              do not unlock the app key; the page reads but cannot
+                           write
+  --no-allow-fname-server  look @names up with your node only; by default names
+                           it does not know are looked up on
+                           fnames.farcaster.xyz (public, no key)
+  -h, --help               display help for command
+```

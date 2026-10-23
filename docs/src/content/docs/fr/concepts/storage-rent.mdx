@@ -1,0 +1,51 @@
+---
+title: Location de stockage
+description: "Combien un compte peut conserver, ce qui se passe quand il est plein, et ce que casty en montre."
+sidebar:
+  order: 9
+---
+
+Les nœuds ne gardent les messages d'un compte que tant que le compte a du stockage. Le stockage se
+loue par unités, et chaque unité autorise un certain nombre de messages de chaque sorte. La
+documentation de Farcaster le décrit dans
+[Messages](https://docs.farcaster.xyz/learn/what-is-farcaster/messages).
+
+## Ce que contient une unité
+
+Les limites par unité dépendent du type de l'unité. `@farcaster/core` 0.20.0 en définit trois :
+
+| Type d'unité | Casts | Réactions | Links | Données utilisateur | Vérifications |
+| --- | --- | --- | --- | --- | --- |
+| `UNIT_TYPE_LEGACY` | 5000 | 2500 | 2500 | 50 | 25 |
+| `UNIT_TYPE_2024` | 2000 | 1000 | 1000 | 50 | 25 |
+| `UNIT_TYPE_2025` | 100 | 200 | 200 | 25 | 5 |
+
+casty ne calcule pas les limites lui-même ; il montre ce que votre nœud indique pour votre fid.
+
+## Quand un magasin se remplit
+
+Quand un compte dépasse la limite pour une sorte de message, le plus ancien message de cette sorte
+est élagué pour faire de la place. Les suppressions comptent aussi : un cast supprimé laisse derrière
+lui un `CAST_REMOVE`, qui occupe une place comme un cast.
+
+Quand le stockage expire, les nœuds gardent les messages pendant un délai de grâce de 30 jours, puis
+les abandonnent.
+
+## Ce que casty montre
+
+```sh
+./bin/casty storage
+```
+
+affiche vos unités et, pour chaque magasin, combien de messages il contient, sa limite et son taux de
+remplissage. Il avertit à 90 pour cent :
+
+```text
+warning: <store> is <percent>% full; when it fills, the oldest messages of that kind are pruned
+```
+
+`casty whoami` affiche les mêmes chiffres sur une ligne, et `casty storage --fid <fid>` ceux de
+n'importe quel compte. `casty init` refuse un fid sans aucune unité, parce que le réseau
+n'accepterait pas ses messages.
+
+casty ne loue pas de stockage.

@@ -1,0 +1,146 @@
+---
+title: "属于你自己的 Farcaster 节点和客户端"
+description: 你自己的 Farcaster 只读节点，以及一个从它读取、通过它写入的客户端。三条命令，不需要 API 密钥，不需要 gas。
+template: splash
+sidebar:
+  label: 概览
+  order: 0
+hero:
+  title: casty
+  tagline: 你自己的 Farcaster 只读节点，以及一个从它读取、通过它写入的客户端。三条命令，不需要 API 密钥，不需要 gas。
+  actions:
+    - text: 开始教程
+      link: guide/
+      icon: right-arrow
+    - text: 全部命令
+      link: commands/
+      variant: minimal
+    - text: GitHub 上的源代码
+      link: https://github.com/savvax/casty
+      icon: external
+      variant: minimal
+---
+
+## casty 是什么
+
+casty 在一台由你掌控的主机上放置一个 [Snapchain](https://snapchain.farcaster.xyz) 只读节点，
+并给你一个不与其他任何服务通信的客户端。节点保存 Farcaster 的完整副本；客户端从它读取你的时间线、
+提及和会话，并通过它发布 cast、回复、点赞、recast 和关注。任何内容都不经过托管的 Farcaster API，
+你和网络之间也没有别人的密钥或速率限制。
+
+- **三个脚本。** `0-provision.sh` 在 Hetzner 或 AWS 上租用一台带 2 TB 卷和防火墙的服务器，
+  或检查一台你已有的机器。`1-node.sh` 安装 Snapchain，等待它同步，并打开一条 SSH 隧道。
+  `2-client.sh` 安装 `casty`，添加应用密钥并读取你的时间线。`deploy.sh` 依次运行这三个脚本。
+- **不需要 gas 的应用密钥。** 为你的 cast 签名的密钥通过一条签名消息添加，而不是一笔交易：
+  由你的钱包在浏览器中签名，或者在终端中用助记词签名一次。不需要 ETH，也不需要 RPC。
+- **终端客户端。** `casty feed`、`casty cast`、`casty like 2`：每条命令都输出纯文本，
+  或者在使用 `--json` 时输出供脚本使用的 JSON。
+- **用于浏览器和手机的页面。** `casty web` 在本机提供时间线、会话、提及和撰写框；
+  `casty serve` 把同一个页面以 HTTPS 放到节点主机上，并为提及和回复提供推送通知。
+- **离线测试。** 一个模拟 Snapchain 节点检查每一个签名，因此整个客户端、脚本和页面都能在 CI 中
+  不依赖真实节点运行。
+
+## 快速开始
+
+```sh
+git clone https://github.com/savvax/casty.git && cd casty
+./scripts/deploy.sh --domain node.example.org   # everything below in order, and the page on the host behind HTTPS
+```
+
+`deploy.sh` 运行这三个步骤，在使用 `--domain` 或 `--tailscale` 时还会运行第四步，[从任何
+网络访问](serve/)。[完整流程](guide/)按顺序讲解全部步骤以及之后的日常使用。每一步都可以安全地重复运行，
+所以同一条命令会从上次中断的地方继续。分步运行：
+
+```sh
+./scripts/0-provision.sh   # a VM, 2 TB volume and firewall on Hetzner or AWS, whichever credentials are set; or --host user@ip
+./scripts/1-node.sh        # Snapchain read node, wait for sync, SSH tunnel to 127.0.0.1:3381
+./scripts/2-client.sh      # download casty, add a gasless app key with your wallet (--fid) or seed phrase, read your feed
+```
+
+助记词掌控整个账户。跟着本教程操作时请使用测试账户，只把助记词粘贴到你信任的开发者所写的软件中，
+并优先使用由钱包授权的密钥：`casty init --fid <fid>`，然后运行 `casty web`，在“你”页面中选择
+“add a key with your wallet”。
+
+在 casty 仓库的检出目录中按顺序运行这三个脚本。完成后，你会在一台由你掌控的主机上拥有一个
+[Snapchain](https://snapchain.farcaster.xyz) 只读节点，以及 `./bin/casty`，
+一个从该节点读取你的时间线并通过它发布内容的客户端。
+
+客户端不需要托管 Farcaster 服务的 API 密钥，常规路径上也不需要 Ethereum RPC。
+它的应用密钥通过一条签名消息添加，而不是链上交易，因此无需支付 gas。
+
+## 需要准备什么
+
+- 一个 Farcaster 测试账户：一个至少有一个 storage unit 的 fid，以及一个持有该 fid 注册地址的钱包，
+  或者该地址的助记词。casty 只使用助记词一次，用来签署密钥请求，从不把它写入磁盘。
+- 一台主机。可以是 Hetzner Cloud 的凭据（`HCLOUD_TOKEN` 和 `hcloud` CLI）或 AWS 的凭据（
+  AWS CLI v2 以及一个 profile 或访问密钥），也可以是对一台你已有的、能运行 Docker 的机器的 SSH 访问。
+  最后一种情况见[家中的节点](home-node/)。
+- 一对 SSH 密钥，默认是 `~/.ssh/id_ed25519` 和 `~/.ssh/id_ed25519.pub`。
+- 在你的机器上：`ssh`、`curl` 和 `jq`。只有自己构建客户端（`2-client.sh --from-source`）时
+  才需要 Node.js 22.12 或更新版本。支持 macOS 和 Linux；在 Windows 上请在 WSL2 中运行这些脚本。
+
+节点主机需要满足 Snapchain 的要求：16 GB 内存、4 个 vCPU、2 TB 可用磁盘和一个公网 IP
+（[入门指南](https://snapchain.farcaster.xyz/getting-started)）。在租用的主机上，第 0 步选择服务器和卷，
+第 1 步在安装任何东西之前检查主机。
+
+## 需要多长时间
+
+第 1 步耗时最长：节点首次启动时会下载几百 GB 的快照，然后追赶该快照之后的区块。预计需要数小时。
+`1-node.sh` 会等待，并在每次检查后打印节点落后多少。按 Ctrl-C 只结束等待；节点会继续同步，
+`./scripts/1-node.sh status --wait` 会重新开始等待。
+
+## 费用是多少
+
+casty 不知道你的服务商的价格。真正运行 `0-provision.sh` 时，它会列出即将创建的服务器、卷和防火墙，
+说明它们会一直计费直到你删除，并且只有在你把服务器名称输回去之后才会继续。
+`./scripts/0-provision.sh --destroy` 删除这三者。
+
+## 不用节点试用
+
+仓库附带一个模拟 Snapchain 节点，它用预置数据提供相同的 HTTP API，并检查提交给它的每条消息的签名。
+有了它，整个客户端可以离线运行：
+
+```sh
+pnpm install --frozen-lockfile
+pnpm demo
+```
+
+`pnpm demo` 在空闲端口启动模拟节点，用 BIP-39 测试助记词
+`test test test test test test test test test test test junk` 添加应用密钥，分别在包含和排除
+一个应用的 cast 的情况下读取时间线，发布一条 cast，点赞一条，最后删除临时配置。
+预置数据中的 fid 从 2000000001 开始，不属于任何人。
+
+`pnpm demo:web` 做同样的准备，然后在空闲端口提供 [casty web](web/)，即浏览器和手机页面，
+直到你按下 Ctrl-C。
+
+## 一条命令
+
+```text
+Usage: deploy.sh [--domain <name> | --tailscale] [--read-only] [--fid <fid>] [--from-source]
+                 [--env <file>] [--yes] [--dry-run] [-- <0-provision.sh options>]
+
+  Runs, in order: 0-provision.sh (unless --env's file already describes a host; with --domain,
+  again on that host to open 80 and 443), 1-node.sh (the node, the wait for its sync, the
+  tunnel), 2-client.sh (the client, an app key, the feed) and, with a front named, 1-node.sh
+  serve. Every step is safe to run again: the same command picks up where a run stopped.
+
+  --domain <name>   serve the page on the host as https://<name> (Caddy; opens 80 and 443)
+  --tailscale       serve it as the host's name on your tailnet instead
+  --read-only       a page that reads only: no app key or passphrase leaves this machine
+  --fid <fid>       no seed phrase: 2-client.sh --fid; add the key in ./bin/casty web with your
+                    wallet, then run the same command again for the page on the host
+  --from-source     build the client here with Node and pnpm instead of downloading it
+  --env <file>      node.env to write or read (default: node.env)
+  --yes             do not ask before creating anything
+  --dry-run         print what provisioning and the node would run; the client is skipped
+  -- <options>      passed to 0-provision.sh, e.g. -- --provider aws --region eu-west-1
+
+Exit codes: 0 ok, 2 bad arguments, otherwise the code of the step that stopped.
+```
+
+## 接下来去哪里
+
+从[0. 准备主机](0-provision/)开始。如果你想在运行脚本之前了解它们会搭建什么，请阅读
+[只读节点与验证者](concepts/read-nodes-vs-validators/)和
+[托管地址与应用密钥](concepts/custody-and-app-keys/)。[安全](security/)列出了涉及的每一个机密
+以及如何撤销每一个。

@@ -1,0 +1,77 @@
+---
+title: Security
+description: Every secret casty touches, where it is kept, what it can do and how to take it back.
+sidebar:
+  order: 10
+---
+
+casty has not been audited. This page lists what it holds and what each piece can do.
+
+## Secrets
+
+| Secret | Where it is | What it can do | How to take it back |
+| --- | --- | --- | --- |
+| Seed phrase | In memory while `casty init` or `casty key revoke` runs; never written to disk or sent anywhere. With `casty init --fid` and a key added from the page by a wallet, casty never sees it at all | Everything: it holds the custody of your fid | casty cannot. Keep it offline |
+| App key (Ed25519) | `~/.config/casty/keys.enc.json`, encrypted with scrypt and XChaCha20-Poly1305, mode 0600 | Sign casts, reactions and follows for your fid until it lapses unused (30 days by default, at most 90) | `casty key revoke <key>` with the seed phrase, or `--self` with the key itself |
+| Signed `KEY_ADD` not yet confirmed | In the same encrypted store, until `casty init` sees the key listed or the node refuses the message | Add that one key, once | `casty key revoke` if it ever merges |
+| Key store passphrase | Typed at a hidden prompt | Decrypt the app keys on this machine | Revoke the keys, delete `keys.enc.json`, run `casty init` |
+| casty web token | `~/.config/casty/web-token`, mode 0600; in the paired browser's storage | While `casty web` runs: read the feed and write with your app key, from wherever the page is reachable | Stop `casty web`, then start it with `--new-token` |
+| The same, on the node's host (`1-node.sh serve`) | `~/snapchain/casty/config/keys.enc.json` (0600), the passphrase in `~/snapchain/casty/passphrase` (0600, a Docker secret), the token in `~/snapchain/casty/config/web-token`; the key decrypted in the service's memory while it runs | Read and write as you from any network, while the service runs; root on the host has the key | `casty key revoke <key>` with the seed phrase; `docker compose stop casty` on the host; `--read-only` keeps the key at home |
+| Push key pair and subscriptions (`casty serve`) | `~/snapchain/casty/config/vapid.json` (0600) and `cache/push.json` on the host | Send a push, "new mention from @name", to the subscribed browsers; the push service sees only ciphertext | Delete both files and restart `casty`; turn notifications off in the browser |
+| Cloud token (`HCLOUD_TOKEN`, AWS credentials) | Your environment; the scripts never write it | Create and delete servers in that account | Revoke it in the provider's console |
+| SSH key | Yours; only the public half is uploaded | Log in to the node host with root rights | Remove it from the host and the provider |
+
+A seed phrase controls the whole account. Use a test account for this tutorial, paste a seed
+phrase only into software from developers you trust, and prefer a key authorised by your
+wallet: `casty init --fid <fid>`, then `casty web` and, under you, "add a key with your wallet".
+
+The seed phrase prompt reads from the terminal with echo off. With `--mnemonic-stdin` the phrase
+comes from a pipe instead, and the passphrase prompt still reads the terminal. casty zeroes the
+bytes of the phrase after use; the string handed to the key derivation library, and the key it
+derives, cannot be cleared from memory in JavaScript.
+
+`CASTY_PASSPHRASE` replaces the passphrase prompt. It exists for tests and `pnpm demo`; do not
+use it for a key store that holds a real key.
+
+## What is reachable
+
+- On a rented host, the firewall opens SSH (22), the HTTP API (3381) and gRPC (3383) to
+  `--allow-ip` only, your own address by default. Gossip (3382) is open to everyone so other
+  nodes can connect. A host you already have gets no firewall from casty.
+- statsd (8125/udp, 8126/tcp) and Grafana (3000) are published on the host's loopback only,
+  statsd through the compose file's own `STATSD_PUBLISH` variables in `.env`, Grafana through
+  the override. Grafana's `admin` password is the random one `.env` records; viewing needs no
+  login, as Snapchain's `grafana.ini` has it.
+- casty talks to your node through the SSH tunnel at `127.0.0.1:3381`. It calls no hosted
+  Farcaster API. The public fname registry at `fnames.farcaster.xyz` is asked only for a name the
+  node does not know: an `@name` you follow or mention in a cast (`--no-allow-fname-server` turns
+  that off), read with `feed --fids` or look up in `casty web`, and the author of a cast you name
+  by its farcaster.xyz link. An OP Mainnet RPC is asked only when you pass `--op-rpc`.
+- `casty web` listens on 127.0.0.1 unless `--listen` names another address, and every API request
+  to it needs its token. [In a browser and on a phone](../web/) lists how the page is protected,
+  and what changes when a phone reaches it over the local network.
+- `1-node.sh serve --domain` opens the page to the internet over HTTPS (80 and 443, opened with
+  `0-provision.sh --https`); `--tailscale` only to your tailnet. The page then needs its token,
+  sends HSTS, and answers one address at most 120 API requests a minute.
+  [From any network](../serve/) lists what the host holds.
+- Casts from other people may contain terminal escape sequences. casty removes control characters
+  and bidirectional overrides before printing them, and the web page inserts cast text as text.
+
+## If something leaks
+
+- An app key: `casty key list` shows what is registered to your fid. Revoke the key with
+  `casty key revoke <key> --self` from a machine that still has it, or with the seed phrase from
+  anywhere.
+- The seed phrase: move the fid to a new custody address with a wallet you trust, then revoke
+  every app key.
+- A cloud token: revoke it, then look for servers in the account that you did not create.
+- The casty web token: stop `casty web` and start it again with `--new-token`. Every link
+  printed before stops working. On the node's host: delete `~/snapchain/casty/config/web-token`
+  and `docker compose restart casty`.
+- The node's host: revoke the app key with the seed phrase, delete `~/snapchain/casty`, and
+  treat the host as compromised for the node too.
+
+## Reporting a problem
+
+Report vulnerabilities privately through the repository's security advisories, not in a public
+issue. The repository's `SECURITY.md` carries the same table.

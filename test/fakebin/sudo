@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Fake sudo for bats: records the call and runs the command as this user, so a "host" command
+# that needs root (tailscale serve as a non-root user) runs in the sandbox.
+printf 'sudo %s\n' "$*" >>"${FAKE_LOG:-/dev/null}"
+while [ $# -gt 0 ]; do
+  case $1 in -n | -E) shift ;; *) break ;; esac
+done
+exec "$@"

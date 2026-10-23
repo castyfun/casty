@@ -1,0 +1,40 @@
+---
+title: FID
+description: 标识 Farcaster 账户的数字，谁拥有它，以及 casty 如何找到你的。
+sidebar:
+  order: 5
+---
+
+fid 是标识一个 Farcaster 账户的数字。每条消息都携带它所代表的 fid，并且每条消息都必须由注册到该 fid
+的密钥签名。
+
+## 谁拥有一个 fid
+
+fid 在 OP Mainnet 上的 IdRegistry 合约中注册。fid 注册到的 Ethereum 地址就是它的托管地址，
+谁持有该地址的私钥，谁就掌控这个账户：他们可以添加和移除签署消息的密钥，也可以把 fid 转移到另一个地址。
+助记词持有这样的密钥；casty 在 `--address-index`（默认为 0）处从中推导出托管地址。
+
+casty 从 `@farcaster/core` 获取合约的地址和接口；这些都不是写死在 casty 本身中的。
+
+## casty 如何找到你的 fid
+
+Snapchain 节点会索引 IdRegistry 的事件。`casty init` 向你的节点询问你的托管地址最新的注册事件
+（`/v1/onChainIdRegistryEventByAddress`），并从中取出 fid，因此不需要 Ethereum RPC。
+
+仍在同步的节点可能还没有该事件。此时 `casty init --op-rpc <url>` 会通过你选择的 OP Mainnet RPC 调用
+`IdRegistry.idOf(address)`。已被转移到另一个地址的 fid 在旧地址下是找不到的。
+
+## 名称
+
+用户名，即 fname，与 fid 是分开的：节点保存把名称与 fid 关联起来的证明。
+`casty follow @name` 先向你的节点请求证明，只有在节点不知道该名称时才询问 `fnames.farcaster.xyz`
+上的公共注册表。在时间线中，没有已知名称的 fid 显示为 `!<fid>`。
+
+## 存储
+
+fid 只有在拥有存储时才能发布内容。`casty init` 拒绝没有 storage unit 的 fid；
+见[存储租用](../../concepts/storage-rent/)。
+
+## 本文档中的 fid
+
+示例来自仓库中的模拟节点。它的 fid 从 2000000001 开始，不属于任何人；测试助记词持有 2000000001。

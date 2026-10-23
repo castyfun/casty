@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Fake cherryctl for bats: records each call in $FAKE_LOG.
+printf 'cherryctl %s\n' "$*" >>"${FAKE_LOG:-/dev/null}"

@@ -1,0 +1,58 @@
+---
+title: A node at home
+description: Run the read node on a machine you already have instead of a rented server.
+sidebar:
+  order: 4
+---
+
+Any Linux machine you can reach over SSH can be the node host: a server at home, or one at a
+provider casty has no script for. Step 0 then creates nothing and only checks the machine.
+
+```sh
+./scripts/0-provision.sh --host you@192.168.1.20
+./scripts/1-node.sh
+./scripts/2-client.sh
+```
+
+## What the machine needs
+
+Snapchain asks for 16 GB RAM, 4 vCPU, 2 TB of free disk and a public IP. Step 0 and step 1 check
+the machine over SSH and stop with exit code 5 when it falls short:
+
+- at least 15 GiB of RAM;
+- 1.8 TiB free where the database will live. `CASTY_MIN_FREE_GIB=1700` before the command asks
+  for less instead, at your risk: once the database fills the disk, the node stops;
+- a Docker server the SSH user can talk to, so the user must be root or in the `docker` group;
+- a clock within 60 seconds of yours. Nodes reject messages timestamped more than 15 minutes in
+  the future, so keep NTP running on the host.
+
+A rented server gets Docker, `chrony` and a higher open-file limit from cloud-init. On your own
+machine those are up to you.
+
+## SSH
+
+casty logs in with your key and never with a password: it runs SSH with `BatchMode=yes`. The key
+is `~/.ssh/id_ed25519` unless you pass `--ssh-pubkey`, and the private half sits next to the
+public one. The first connection accepts the host's key and records it; later connections check
+it.
+
+## Where the data goes
+
+The node lives in `~/snapchain` of the SSH user, and the free-space check measures the
+filesystem of that user's home directory. To keep the database on another disk, mount it, make
+`~/snapchain` a link to a directory on it, and set `NODE_DATA_DIR` in `node.env` to the mount
+point, so the check measures that disk instead.
+
+## Ports and firewall
+
+casty creates no firewall for a machine it did not rent. Other nodes reach yours on 3382/udp, the
+only gossip port Snapchain's compose file publishes, so forward that from your router. Keep 3381 (HTTP API) and 3383 (gRPC) closed to
+the internet: casty reaches them through the SSH tunnel. Snapchain's compose file publishes
+statsd on 8125/udp and 8126/tcp on every interface unless told otherwise; `1-node.sh` sets
+`STATSD_PUBLISH` and `STATSD_ADMIN_PUBLISH` in its `.env` to the loopback on any host it runs
+on, this one included, so statsd and Grafana answer on `127.0.0.1` only.
+
+## Deleting
+
+`0-provision.sh --destroy` does not apply here, since nothing was created. `./scripts/1-node.sh
+down` stops the node; the database stays in `~/snapchain` until you delete it.

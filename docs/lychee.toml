@@ -1,0 +1,7 @@
+# Link checking for the built docs. `make docs-check` runs it with --offline (links inside the
+# site); the links-external CI job runs it without, and may fail without blocking a merge.
+no_progress = true
+max_retries = 2
+timeout = 20
+# Local and documentation-only addresses never resolve.
+exclude = ["^https?://(127\\.0\\.0\\.1|localhost)", "^https?://example\\.com"]

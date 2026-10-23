@@ -1,0 +1,19 @@
+/* The accent of the casty web page, so the site and the app read as one product. */
+:root {
+  --sl-color-accent-low: #3a1508;
+  --sl-color-accent: #ff7a45;
+  --sl-color-accent-high: #ffd9c7;
+}
+
+:root[data-theme="light"] {
+  --sl-color-accent-low: #f8dccf;
+  --sl-color-accent: #c4390a;
+  --sl-color-accent-high: #6b1f05;
+}
+
+/* Commands read left to right on a right-to-left page too. */
+[dir="rtl"] .expressive-code,
+[dir="rtl"] pre {
+  direction: ltr;
+  text-align: left;
+}

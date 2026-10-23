@@ -1,0 +1,56 @@
+---
+title: 家中的节点
+description: 在一台你已有的机器上运行只读节点，而不是租用服务器。
+sidebar:
+  order: 4
+---
+
+任何能通过 SSH 访问的 Linux 机器都可以作为节点主机：家中的一台服务器，或者某个 casty 没有对应脚本的
+服务商上的服务器。这时第 0 步不创建任何东西，只检查这台机器。
+
+```sh
+./scripts/0-provision.sh --host you@192.168.1.20
+./scripts/1-node.sh
+./scripts/2-client.sh
+```
+
+## 机器需要什么
+
+Snapchain 要求 16 GB 内存、4 个 vCPU、2 TB 可用磁盘和一个公网 IP。第 0 步和第 1 步通过 SSH 检查机器，
+不满足要求时以退出码 5 停止：
+
+- 至少 15 GiB 内存；
+- 数据库所在位置有 1.8 TiB 可用空间。在命令前加上 `CASTY_MIN_FREE_GIB=1700` 可以改为要求更少，
+  风险自负：一旦数据库占满磁盘，节点就会停止；
+- 一个 SSH 用户可以访问的 Docker 服务，所以该用户必须是 root 或在 `docker` 组中；
+- 时钟与你的时钟相差不超过 60 秒。节点会拒绝时间戳在未来 15 分钟以上的消息，所以请在主机上保持 NTP
+  运行。
+
+租用的服务器会从 cloud-init 获得 Docker、`chrony` 和更高的打开文件数上限。在你自己的机器上，
+这些需要你自己负责。
+
+## SSH
+
+casty 用你的密钥登录，从不使用密码：它以 `BatchMode=yes` 运行 SSH。除非你传入 `--ssh-pubkey`，
+密钥是 `~/.ssh/id_ed25519`，私钥部分与公钥放在一起。第一次连接时接受并记录主机的密钥；
+之后的连接会检查它。
+
+## 数据放在哪里
+
+节点位于 SSH 用户的 `~/snapchain` 中，可用空间检查测量的是该用户主目录所在的文件系统。
+要把数据库放在另一块磁盘上，请挂载它，把 `~/snapchain` 设为指向其上某个目录的链接，并把 `node.env`
+中的 `NODE_DATA_DIR` 设为挂载点，使检查改为测量那块磁盘。
+
+## 端口与防火墙
+
+对于不是它租用的机器，casty 不创建防火墙。其他节点通过 3382/udp 访问你的节点，这是 Snapchain 的
+compose 文件发布的唯一 gossip 端口，所以请在路由器上转发它。保持 3381（HTTP API）和 3383（gRPC）
+对互联网关闭：casty 通过 SSH 隧道访问它们。除非另有设置，Snapchain 的 compose 文件会在每个网络接口上
+发布 statsd 的 8125/udp 和 8126/tcp；`1-node.sh` 在它运行的每台主机（包括这台）上，把 `.env` 中的
+`STATSD_PUBLISH` 和 `STATSD_ADMIN_PUBLISH` 设为回环地址，所以 statsd 和 Grafana 只在 `127.0.0.1`
+上应答。
+
+## 删除
+
+`0-provision.sh --destroy` 在这里不适用，因为没有创建任何东西。`./scripts/1-node.sh
+down` 停止节点；数据库保留在 `~/snapchain` 中，直到你删除它。

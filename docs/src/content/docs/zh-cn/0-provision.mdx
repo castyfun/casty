@@ -1,0 +1,198 @@
+---
+title: 0. 准备主机
+description: 租用一台服务器、一个 2 TB 卷和一个防火墙，或检查一台你已有的主机，并写入 node.env。
+sidebar:
+  order: 1
+---
+
+第 0 步为你准备一台能运行 Snapchain 只读节点的主机，并写入 `node.env`，第 1 步读取这个文件来找到主机。
+
+```sh
+./scripts/0-provision.sh
+```
+
+## 选择哪个服务商
+
+不带 `--provider` 时，脚本根据你设置了什么来决定：
+
+| 你设置了 | 服务商 |
+| --- | --- |
+| `--host user@ip` | `existing`：不创建任何东西，通过 SSH 检查主机 |
+| `HCLOUD_TOKEN` | `hetzner` |
+| `AWS_PROFILE`、`AWS_ACCESS_KEY_ID`，或者 `~/.aws/credentials` 或 `~/.aws/config` 文件 | `aws` |
+
+如果 Hetzner 和 AWS 的凭据都设置了，它会停下并要求你传入 `--provider`。如果都没有设置，
+它会停下并说明需要设置什么。Cherry Servers 只用于 `--dry-run`；真正运行时它会停下，
+建议你手动创建服务器，然后使用 `--host`。
+
+## 创建之前先看看
+
+```sh
+./scripts/0-provision.sh --provider hetzner --dry-run
+```
+
+试运行把每一个服务商调用打印为一行 `DRY:`，不创建任何东西。它不需要令牌、服务商 CLI 或 SSH 密钥，
+所以你可以在注册任何服务之前先看看一次运行会做什么。它仍然会写入 `node.env`，其中是占位值，
+例如文档专用地址 `192.0.2.1`，但从不覆盖描述真实节点的 `node.env`。`1-node.sh` 只有在使用
+`--dry-run` 时才接受这样的文件，试运行打印的下一步也会说明这一点。
+
+```text
+dry run: printing provider calls, creating nothing; node.env gets placeholder values
+DRY: curl -s --max-time 10 https://api.ipify.org
+DRY: hcloud ssh-key list -o noheader -o columns=fingerprint,name
+DRY: hcloud ssh-key create --name fc-node --public-key-from-file /home/you/.ssh/id_ed25519.pub
+DRY: hcloud firewall list -o noheader -o columns=name
+DRY: hcloud firewall create --name fc-node-fw --rules-file ./fc-node.firewall.json
+DRY: hcloud volume list -o noheader -o columns=name
+DRY: hcloud volume create --name fc-node-data --size 2000 --location fsn1 --format ext4
+...
+```
+
+## Hetzner
+
+安装 [hcloud CLI](https://github.com/hetznercloud/cli#installation)，并在 Hetzner Cloud 控制台中
+创建一个读写 API 令牌（你的项目，然后 Security，然后 API tokens）。
+
+```sh
+export HCLOUD_TOKEN=<your token>
+./scripts/0-provision.sh
+```
+
+它在 `fsn1`（除非你传入 `--region`）中创建：
+
+- 服务器 `fc-node`，Ubuntu 24.04，类型为 `cpx41`、`ccx23` 和 `cpx51` 中第一个可以创建的
+  （传入 `--type` 来选择）；
+- 卷 `fc-node-data`，2000 GB，格式化为 ext4；
+- 防火墙 `fc-node-fw`；
+- SSH 密钥 `fc-node`，除非项目中已经以其他名称保存了你的密钥。
+
+## AWS
+
+安装 [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+并为它提供凭据：`AWS_PROFILE`，或 `AWS_ACCESS_KEY_ID` 和 `AWS_SECRET_ACCESS_KEY`，或
+`aws configure`（使用 SSO 时为 `aws configure sso` 和 `aws sso login`）。
+
+区域取 `--region`，否则取 `AWS_REGION`，否则取 `AWS_DEFAULT_REGION`，否则为 `us-east-1`。
+它在可用区 `<region>a` 中创建：
+
+- 实例 `fc-node`，`m6i.xlarge`，否则 `m5.xlarge`，使用 Canonical 当前的 Ubuntu 24.04 镜像，
+  带 40 GB 根磁盘；
+- gp3 卷 `fc-node-data`，2000 GB，在实例运行后挂载；
+- 安全组 `fc-node-fw` 和密钥对 `fc-node`。
+
+节点的用户是 `ubuntu`。
+
+## 一台你已有的主机
+
+```sh
+./scripts/0-provision.sh --host user@203.0.113.7
+```
+
+不创建任何东西。脚本用你的密钥登录，并运行第 1 步会运行的相同检查。这样的主机需要什么，
+见[家中的节点](../home-node/)。
+
+## 确认
+
+真正运行时，脚本会打印它的计划，并等待你输入服务器名称：
+
+```text
+On hetzner this creates, or reuses when they already exist under these names:
+  server    fc-node: cpx41 ccx23 cpx51 (the first one available), ubuntu-24.04, fsn1
+  firewall  fc-node-fw: ssh, 3381 and 3383 from 203.0.113.10/32; gossip 3382 from anywhere
+  volume    fc-node-data, 2000 GB
+The server and the volume are billed until you run this again with --destroy.
+Type fc-node to create them:
+```
+
+输入其他任何内容，或者 stdin 已关闭，都会停止运行，不创建任何东西。`--yes` 跳过这个问题。
+
+## 防火墙
+
+使用默认的 `--allow-ip auto` 时，脚本向 `api.ipify.org` 查询你的公网 IP，并只向这一个地址开放
+SSH（22）、节点的 HTTP API（3381）和它的 gRPC API（3383）。Gossip（3382，UDP 和 TCP）对所有人开放，
+因为其他节点要连接它。客户端从不需要公开 3381：它经由第 1 步打开的 SSH 隧道访问。
+
+传入 `--allow-ip 198.51.100.0/24` 可以改为允许一个地址段。从另一个网络再次运行脚本，
+会把规则移到你的新地址，在 Hetzner 和 AWS 上都是如此。在 AWS 上只有 casty 创建的规则会移动，
+它们通过描述来区分；你自己加到安全组中的规则保持不变。
+
+`--https` 还会向所有人开放 80 和 443，`./scripts/1-node.sh serve --domain` 需要它们来获取证书，
+移动网络上的手机也需要它们（[从任何网络访问](../serve/)）。不带 `--https` 再次运行会重新关闭它们。
+
+## 服务器首次启动时做什么
+
+cloud-init 文件，以 `fc-node.cloud-init.yaml` 为名写在 `node.env` 旁边：
+
+- 安装 `chrony` 和 `jq`，并提高打开文件数上限；
+- 等待数据卷，仅当它是空白时才格式化，并把它挂载到 `/data`；
+- 把 `~/snapchain` 链接到 `/data/snapchain`，使数据库落在卷上；
+- 用 Docker 的安装脚本安装 Docker，并把用户加入 `docker` 组。
+
+它不会重启服务器。
+
+## node.env
+
+```text
+NODE_PROVIDER=hetzner
+NODE_NAME=fc-node
+NODE_REGION=fsn1
+NODE_IP=192.0.2.1
+NODE_USER=root
+NODE_SSH_KEY=/home/you/.ssh/id_ed25519
+NODE_SERVER_ID=dry-run
+NODE_VOLUME_ID=dry-run-volume
+NODE_DATA_DIR=/data
+NODE_CREATED_AT=dry-run
+NODE_STARTED_AT=dry-run
+```
+
+它保存名称、ID、IP 和你的 SSH 私钥的路径，从不保存令牌或密钥。
+`NODE_STARTED_AT` 是某次运行最后一次创建、启动或开启服务器的时间：对于在过去 15 分钟内启动的服务器，
+第 1 步最多等待二十分钟让 ssh 可用，否则等待一两分钟。请保留好它：第 1 步读取它，
+`--destroy` 需要它来确定要删除什么。`--json` 还会以 JSON 打印它，`--out <file>` 把它写到别处。
+
+## 再次运行
+
+所有资源都按名称查找，所以再次运行同一条命令会复用已有的资源，只创建缺失的部分。
+再次运行时，服务商、名称和区域取自 `node.env`，所以之后的 `--https` 或新的 `--allow-ip`
+会作用于同一个节点；指定了另一个服务商、名称或区域的参数会停止运行，要创建第二个节点请使用
+`--out <file>`。如果某次运行在中途因错误或 Ctrl-C 停止，`node.env` 仍然记录了到那时为止创建的内容。
+再次运行同一条命令即可完成，或者加上 `--destroy` 删除它们。
+
+## 删除节点
+
+```sh
+./scripts/0-provision.sh --destroy
+```
+
+它读取 `node.env`，要求你输入名称，然后按顺序删除服务器、卷和防火墙，并删除 `node.env`。
+卷中保存着已同步的数据库，所以新的节点会从头开始同步。`--destroy --dry-run` 改为打印这些调用。
+在 AWS 上，它删除 `node.env` 记录的实例 ID 和卷 ID；只有当 `node.env` 中没有某个资源的 ID 时
+（在某次中途停止的运行之后），才会按 Name 标签查找它。
+
+## 选项
+
+```text
+Usage: 0-provision.sh [--provider hetzner|aws|cherry|existing] [options]
+
+  --provider <name>      hetzner, aws, cherry (dry run only for now) or existing; without it,
+                         existing with --host, else the one whose credentials are set
+  --name <name>          server name; also <name>-data and <name>-fw (default: fc-node)
+  --region <region>      provider region (default: fsn1, us-east-1, eu_nord_1)
+  --type <type>          server type (default: cpx41 then ccx23, cpx51; m6i.xlarge then m5.xlarge)
+  --disk-gb <n>          data volume size, at least 2000 (default: 2000)
+  --ssh-pubkey <file>    key to log in with (default: ~/.ssh/id_ed25519.pub)
+  --allow-ip auto|<cidr> who may reach ssh, 3381 and 3383 (default: auto, your current IP)
+  --https                also open 80 and 443 to everyone, for 1-node.sh serve --domain; a
+                         rerun without it closes them again
+  --host <user@ip>       the host, for --provider existing
+  --dry-run              print every provider call instead of making it
+  --destroy              delete the server, then its volume, then its firewall
+  --yes                  do not ask before creating or deleting anything
+  --json                 print node.env as JSON
+  --out <file>           where to write node.env (default: node.env)
+
+Exit codes: 0 ok, 2 bad arguments, 3 missing prerequisite, 4 provider error, 5 preflight failed.
+```
+
+下一步：[1. 运行只读节点](../1-node/)。

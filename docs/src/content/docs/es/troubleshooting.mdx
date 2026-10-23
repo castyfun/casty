@@ -1,0 +1,296 @@
+---
+title: Solución de problemas
+description: Los mensajes que imprimen los scripts y casty cuando algo falla, y qué hacer con cada uno.
+sidebar:
+  order: 11
+---
+
+Cada fallo imprime una línea que empieza por `error:` (los scripts) o `casty:` (el cliente).
+casty suele añadir una línea `hint:` con el paso siguiente. Los mensajes de abajo están copiados
+del código; los valores entre ángulos varían.
+
+## Paso 0: aprovisionamiento
+
+### Sin proveedor
+
+```text
+error: no provider: set HCLOUD_TOKEN for Hetzner or AWS credentials for AWS, or pass --host user@ip for a host you have (see --help)
+```
+
+Exporta `HCLOUD_TOKEN`, configura la CLI de AWS o pasa `--host` para una máquina que tengas. Cuando
+hay credenciales tanto de Hetzner como de AWS, el script pide en su lugar `--provider hetzner` o
+`--provider aws`.
+
+### Sin clave SSH
+
+```text
+error: no SSH public key at /home/you/.ssh/id_ed25519.pub. Create one with ssh-keygen -t ed25519, or pass --ssh-pubkey.
+```
+
+### No se pudo averiguar tu IP
+
+```text
+error: could not learn your public IP from api.ipify.org; pass --allow-ip <cidr>
+```
+
+El script pregunta a `api.ipify.org` por tu dirección para restringir a ella SSH y las API del
+nodo. Pasa la dirección tú mismo, por ejemplo `--allow-ip 198.51.100.4/32`.
+
+### Ningún tipo de servidor disponible
+
+```text
+warning: could not create a cpx41 server in fsn1; trying the next type
+error: none of cpx41 ccx23 cpx51 could be created in fsn1
+```
+
+El proveedor no tenía ninguno de los tipos predeterminados en esa ubicación, o puede que tu cuenta
+no pueda crearlos. Prueba otra `--region`, o nombra un tipo con `--type`. En AWS el mensaje dice
+`instance` y nombra la zona.
+
+### Una clave distinta con el mismo nombre
+
+```text
+error: the project has a different SSH key named fc-node; pass another --name or --ssh-pubkey
+```
+
+Hetzner ya guarda una clave llamada `fc-node` que no es la tuya. Elige otro `--name`, o usa la clave
+que está ahí.
+
+### La ejecución se detuvo a medias
+
+```text
+node.env records what was created so far: run the same command again to finish, or add --destroy
+```
+
+Ejecuta otra vez el mismo comando `0-provision.sh`; reutiliza lo que existe. El paso 1 rechaza un
+`node.env` así:
+
+```text
+error: node.env has no NODE_IP: provisioning stopped half way; run ./scripts/0-provision.sh again
+```
+
+## Paso 1: el nodo
+
+### Sin conexión SSH
+
+```text
+error: no ssh connection to root@<ip>: <what ssh said>. Check NODE_IP and NODE_SSH_KEY in node.env.
+```
+
+Un servidor nuevo tarda un rato en arrancar. Si persiste, comprueba que `NODE_SSH_KEY` en
+`node.env` es la mitad privada de la clave que diste al paso 0, y que tu IP sigue siendo la que
+permite el firewall: ejecutar el paso 0 otra vez desde tu red actual actualiza las reglas de Hetzner.
+
+### El host se queda corto
+
+```text
+error: root@<ip> does not meet the requirements above
+```
+
+Código de salida 5. La tabla encima del mensaje tiene `no` en las filas que fallaron: `ram`,
+`disk`, `docker`, `compose` o `clock`. `docker missing` significa que Docker no está instalado.
+`docker no server` significa que el comando `docker` está pero no puede llegar al daemon de
+Docker: está detenido (`sudo systemctl start docker`), o el usuario de SSH no es root ni está en el
+grupo `docker`.
+
+### El nodo aún no responde
+
+```text
+warning: the node did not return JSON from http://127.0.0.1:3381/v1/info (still starting?); waiting for it
+```
+
+Se imprime una vez, mientras el nodo aún no responde, por ejemplo justo después de arrancar. La
+espera continúa. Si nunca
+termina, `./scripts/1-node.sh logs` muestra qué está haciendo el nodo.
+
+### No sincronizado a tiempo
+
+```text
+error: not synced after 43200s
+```
+
+El nodo sigue sincronizando; solo la espera se rindió. Vigílalo con
+`./scripts/1-node.sh status --wait`, o espera más con `--timeout <seconds>`.
+
+### El túnel no se levanta
+
+```text
+error: the tunnel did not come up; is something else using local port 3381 or 3383?
+```
+
+Otro proceso ocupa uno de esos puertos en tu máquina, a menudo un túnel de una ejecución anterior o
+un nodo simulado local. Detenlo, o ejecuta `./scripts/1-node.sh tunnel --stop`, y vuelve a
+intentarlo.
+
+### No se puede fijar una versión
+
+```text
+error: Snapchain <version>'s docker-compose.yml does not name farcasterxyz/snapchain:latest, so it cannot be pinned
+```
+
+El archivo compose de la versión nombra su imagen de otra manera, así que casty no lo reescribirá.
+Ejecuta sin `--release`.
+
+## Paso 2: el cliente
+
+### No hay versión para esta máquina
+
+```text
+error: no casty binary is built for <os>-<arch>; run this script with --from-source, which needs Node 22.12 or newer
+error: could not download casty-<os>-<arch> and SHA256SUMS from <url>: no release for <os>-<arch> there yet, or no connection. Run this script with --from-source to build casty here.
+```
+
+Las versiones incluyen linux-x64, linux-arm64 y darwin-arm64. En otra máquina, o sin conexión con
+GitHub, `./scripts/2-client.sh --from-source` compila el cliente aquí.
+
+### La descarga no coincide con su suma de comprobación
+
+```text
+error: the sha256 of the downloaded casty-<os>-<arch> is <hash>, not the <hash> SHA256SUMS lists; nothing was installed
+```
+
+El archivo no es el que publicó la versión: una descarga cortada, un proxy que lo cambió, o un
+espejo nombrado en `CASTY_RELEASE_URL` que contiene otra cosa. Ejecuta el script otra vez; si se
+repite, compila desde el código fuente.
+
+### Node.js demasiado antiguo
+
+```text
+error: Node <version> is too old; casty needs 22.12 or newer.
+```
+
+Solo `--from-source` necesita Node. El mensaje sigue con cómo instalar uno más reciente con fnm o
+nvm. En Node 25 o posterior, corepack ya no viene incluido: `npm install -g corepack`.
+
+### casty no puede llegar al nodo
+
+```text
+casty: cannot reach the node at http://127.0.0.1:3381
+hint: start the tunnel with ./scripts/1-node.sh tunnel, or pass --node <url>
+```
+
+Código de salida 4. El túnel está caído, o el nodo está en otro sitio.
+
+### Ningún fid para la frase semilla
+
+```text
+casty: no fid is registered to <address>
+hint: check --address-index; if your node is still syncing, pass --op-rpc <OP Mainnet RPC url>
+```
+
+La dirección del índice 0 de la frase semilla no tiene ningún fid, al menos hasta donde sabe el
+nodo. Si tu billetera usa otra cuenta de la misma frase, pasa `--address-index`. Puede que un nodo
+que aún está sincronizando no haya visto todavía el registro.
+
+### Sin almacenamiento
+
+```text
+casty: fid <fid> has no storage units, so the network will not accept its messages
+```
+
+Alquila primero una storage unit para el fid. Consulta
+[Alquiler de almacenamiento](../concepts/storage-rent/).
+
+### La frase semilla se rechaza
+
+```text
+casty: a seed phrase has 12, 15, 18, 21 or 24 words, not <n>
+casty: word <n> is not in the BIP-39 English word list
+casty: the seed phrase checksum does not match
+```
+
+Los mensajes nombran posiciones de palabras, nunca las palabras. Comprueba la ortografía y el orden.
+
+### El nodo rechaza un mensaje
+
+casty imprime el mensaje propio del nodo y luego una pista elegida según lo que contiene el mensaje:
+
+| El mensaje contiene | Qué significa |
+| --- | --- |
+| `invalid signature` | la frase semilla no contiene la dirección de custodia del fid; comprueba `--address-index` |
+| `invalid signed key request` | el fid de la aplicación debe estar en custodia de `--app-address-index` de la misma frase semilla |
+| `nonce is not greater than stored nonce` | otro cambio de clave llegó primero; `casty init` reintenta una vez por sí mismo |
+| `active key cap exceeded` | el fid tiene 1000 claves de aplicación activas; revoca algunas con `casty key revoke` |
+| `invalid scope` | la clave de aplicación no puede firmar este tipo de mensaje; añade una con `casty init --scopes` |
+
+Estas cadenas vienen de la
+[guía para escribir mensajes](https://snapchain.farcaster.xyz/guides/writing-messages) de Snapchain.
+Código de salida 3.
+
+### Contraseña incorrecta
+
+```text
+casty: cannot decrypt the key store: wrong passphrase or a damaged file
+```
+
+Una contraseña olvidada no se puede recuperar. Borra `keys.enc.json` y ejecuta `casty init` para
+añadir una clave nueva. Las claves antiguas siguen registradas hasta que caducan sin usarse; para
+quitarlas antes, encuéntralas con `casty key list` y ejecuta `casty key revoke <key>` con tu frase
+semilla.
+
+### Ninguna clave de aplicación utilizable
+
+```text
+casty: no app key for fid <fid> yet
+hint: add one with your wallet in casty web, under you, or run casty init with the seed phrase
+```
+
+`casty init --fid` no añade ninguna clave: aprueba primero una con tu billetera.
+
+```text
+casty: none of the app keys in <dir> is registered to fid <fid>
+```
+
+Tu nodo no lista la clave. Una aprobada hace un momento cuenta en cuanto tu nodo se ha sincronizado
+más allá de ella: `casty doctor` muestra cuánto va retrasado. Si no, la clave caducó tras su TTL sin
+usarse o fue revocada; añade otra en `casty web`, en you, o con `casty init`.
+
+### Aceptado pero no fusionado
+
+```text
+casty: <hash> was accepted but not merged within 40s
+```
+
+El nodo tomó el mensaje pero casty no vio que se fusionara
+([por qué](../concepts/read-nodes-vs-validators/)). Búscalo, por ejemplo con `casty feed`, antes de
+enviarlo otra vez: ejecutar el comando de nuevo envía un mensaje nuevo. Después de `casty init`, la
+clave se conserva, y ejecutar `casty init` otra vez reenvía el mismo mensaje sin pedir la frase
+semilla.
+
+### Números que no coinciden
+
+```text
+casty: no list numbered yet to take cast 2 from
+casty: the last list numbered has no cast 9
+```
+
+`casty like 2` significa el segundo cast de la última lista mostrada, por `casty feed`,
+`casty mentions`, `casty thread` o casty web. Muestra una primero, o nombra el cast como
+`<fid>:<0x hash>`.
+
+### El nodo responde 429 o 503 a un feed
+
+`casty feed` y casty web piden al nodo hasta 64 páginas a la vez, de modo que un feed de 300
+cuentas lleva cinco idas y vueltas en lugar de diecinueve. Un nodo que responde a algunas con 429 o
+503 está recibiendo demasiadas a la vez: define `CASTY_CONCURRENCY=32` (cualquier número entero de
+1 a 256) en el entorno del comando, o de `casty web`, y bájalo hasta que paren los errores.
+
+### El reloj va desajustado
+
+```text
+warning: this clock and the node's differ by over a minute; nodes reject messages from the future
+```
+
+`casty doctor` compara tu reloj con el del nodo. Los mensajes con una marca de tiempo de más de 15
+minutos en el futuro se rechazan; activa la sincronización horaria en tu máquina.
+
+## Códigos de salida
+
+| Código | Scripts | casty |
+| --- | --- | --- |
+| 0 | hecho | hecho |
+| 1 | no sincronizado, túnel caído | no sincronizado (`node status`), cualquier otra cosa |
+| 2 | argumentos incorrectos | argumentos incorrectos |
+| 3 | falta un requisito previo | el nodo rechazó el mensaje |
+| 4 | el proveedor o el host fallaron | no se puede llegar al nodo |
+| 5 | el host se queda corto | problema de configuración, del almacén de claves o de la frase semilla |

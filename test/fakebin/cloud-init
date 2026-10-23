@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Fake cloud-init for bats, so a CI runner's real one is never asked. Records the call.
+printf 'cloud-init %s\n' "$*" >>"${FAKE_LOG:-/dev/null}"

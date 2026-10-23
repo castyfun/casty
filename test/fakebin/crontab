@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Fake crontab for bats, so tests can never touch the real one. Records calls and the new table;
+# `crontab -l` prints $FAKE_CRONTAB.
+printf 'crontab %s\n' "$*" >>"${FAKE_LOG:-/dev/null}"
+[ "$1" = -l ] && printf '%s\n' "${FAKE_CRONTAB:-}" | sed '/^$/d' 
+[ "$1" = - ] && sed 's/^/crontab> /' >>"${FAKE_LOG:-/dev/null}"
+exit 0

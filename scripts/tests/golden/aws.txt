@@ -1,0 +1,18 @@
+dry run: printing provider calls, creating nothing; node.env gets placeholder values
+DRY: curl -s --max-time 10 https://api.ipify.org
+DRY: aws ssm get-parameter --name /aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id --query Parameter.Value --region us-east-1 --output text
+DRY: aws ec2 describe-key-pairs --filters Name=key-name,Values=fc-node --include-public-key --query 'KeyPairs[].PublicKey' --region us-east-1 --output text
+DRY: aws ec2 import-key-pair --key-name fc-node --public-key-material fileb://ROOT/scripts/tests/fixtures/id_ed25519.pub --query KeyName --region us-east-1 --output text
+DRY: aws ec2 describe-security-groups --filters Name=group-name,Values=fc-node-fw --query 'SecurityGroups[].GroupId' --region us-east-1 --output text
+DRY: aws ec2 create-security-group --group-name fc-node-fw --description 'casty snapchain read node' --query GroupId --region us-east-1 --output text
+DRY: aws ec2 authorize-security-group-ingress --group-id sg-dryrun --ip-permissions file://TMP/fc-node.firewall.json --query Return --region us-east-1 --output text
+DRY: aws ec2 describe-volumes --filters Name=tag:Name,Values=fc-node-data --query 'Volumes[].VolumeId' --region us-east-1 --output text
+DRY: aws ec2 create-volume --availability-zone us-east-1a --size 2000 --volume-type gp3 --tag-specifications 'ResourceType=volume,Tags=[{Key=Name,Value=fc-node-data}]' --query VolumeId --region us-east-1 --output text
+DRY: aws ec2 describe-instances --query 'Reservations[].Instances[].InstanceId' --filters Name=tag:Name,Values=fc-node Name=instance-state-name,Values=pending,running,stopping,stopped --region us-east-1 --output text
+DRY: aws ec2 run-instances --image-id ami-dryrun --instance-type m6i.xlarge --key-name fc-node --security-group-ids sg-dryrun --placement AvailabilityZone=us-east-1a --user-data file://TMP/fc-node.cloud-init.yaml --block-device-mappings '[{"DeviceName":"/dev/sda1","Ebs":{"VolumeSize":40,"VolumeType":"gp3"}}]' --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=fc-node}]' --query 'Instances[0].InstanceId' --region us-east-1 --output text
+DRY: aws ec2 wait instance-running --instance-ids i-dryrun --region us-east-1
+DRY: aws ec2 describe-volumes --volume-ids vol-dryrun --query 'Volumes[0].State' --region us-east-1 --output text
+DRY: aws ec2 attach-volume --volume-id vol-dryrun --instance-id i-dryrun --device /dev/sdf --query State --region us-east-1 --output text
+DRY: aws ec2 describe-instances --instance-ids i-dryrun --query 'Reservations[0].Instances[0].PublicIpAddress' --region us-east-1 --output text
+wrote TMP/node.env (aws, ubuntu@192.0.2.1)
+next: ROOT/scripts/1-node.sh --env TMP/node.env --dry-run

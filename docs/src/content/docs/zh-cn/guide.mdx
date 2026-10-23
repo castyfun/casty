@@ -1,0 +1,257 @@
+---
+title: 完整流程
+description: 从零开始，一步一步得到你自己的节点、一个带应用密钥的客户端和手机上的页面，然后日常运行它。
+sidebar:
+  order: 0.5
+---
+
+本页按你操作的顺序把完整流程走一遍，并链接到每一步的详细页面。除非注明“在主机上”，
+命令都在 casty 仓库的检出目录中运行。
+
+## 0. 开始之前
+
+助记词掌控整个账户。跟着本教程操作时请使用测试账户，只把助记词粘贴到你信任的开发者所写的软件中，
+并优先使用由钱包授权的密钥：`casty init --fid <fid>`，然后运行 `casty web`，在“你”页面中选择
+“add a key with your wallet”。
+
+你需要：
+
+- **一个 Farcaster 测试账户**：它的 fid、至少一个 storage unit
+  （[存储租用](../concepts/storage-rent/)），以及一个持有该 fid 注册地址的钱包
+  （或者作为备选，该地址的助记词）。casty 设置好之后，`casty whoami` 和
+  `casty storage` 会显示这两者。
+- **一台用于节点的主机**：一个 Hetzner Cloud 或 AWS 账户，casty 从那里租用服务器；
+  或者你自己的一台有 16 GB 内存、4 个核心、2 TB 可用磁盘和 Docker 的机器
+  （[家中的节点](../home-node/)）。租用的服务器及其 2 TB 卷会一直计费，直到你删除它们
+  （第 9 步）。
+- **在你的机器上**：`ssh`、`curl` 和 `jq`，以及一对 SSH 密钥，默认是
+  `~/.ssh/id_ed25519`。在项目发布第一个版本之前，还需要 Node.js 22.12 或更新版本，因为那时第 2 步
+  会在本机构建客户端。在 Windows 上请使用 WSL2。
+- **时间**：节点首次同步会下载几百 GB 的快照，需要数小时。
+  停止等待不会丢失任何东西；每一步都可以重新运行，并从中断的地方继续。
+
+```sh
+git clone https://github.com/savvax/casty.git && cd casty
+ls ~/.ssh/id_ed25519.pub || ssh-keygen -t ed25519   # a key to log in to the node with
+```
+
+## 1. 给 casty 一个云账户，或一台主机
+
+设置一个服务商的凭据；脚本从你的环境变量中读取它们，从不把它们写到任何地方
+（[0. 准备主机](../0-provision/)）。
+
+```sh
+export HCLOUD_TOKEN=<token>        # Hetzner: Cloud console, your project, Security, API tokens (read/write)
+# or, for AWS: aws configure       # or AWS_PROFILE, or AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+```
+
+如果使用一台你已有的机器，跳过这一步，在第 2 步中传入 `--host user@ip`。
+
+在创建任何东西之前，先看看一次运行会做什么；试运行不需要凭据：
+
+```sh
+./scripts/deploy.sh --dry-run -- --provider hetzner
+```
+
+它把每一条服务商命令和 SSH 命令打印为一行 `DRY:`，不创建任何东西。
+
+## 2. 运行
+
+### 一条命令
+
+```sh
+./scripts/deploy.sh --fid <fid>
+```
+
+它按顺序运行下面三个步骤，并在第一个失败的步骤处停止，返回该步骤的退出码。再次运行同一条命令即可继续：
+首次同步需要数小时，期间按 Ctrl-C 不会丢失任何东西。加上 `--domain <name>`（或 `--tailscale`）
+还会把页面放到主机上，即第 6 步。不带 `--fid` 时，第 2c 步会改为询问助记词。
+
+每一步需要你做什么：
+
+- **主机**（`0-provision.sh`）：它打印将要创建和计费的内容，只有你把服务器名称输回去之后才会继续
+  （`--yes` 跳过这个问题）。它写入 `node.env`，之后的每一步都会读取它，删除节点时也需要它：请保留好。
+  使用 `--host user@ip` 时不会创建任何东西；只通过 SSH 检查主机。
+- **节点**（`1-node.sh`）：无需回答任何问题。它检查主机（内存、磁盘、Docker、时钟），启动 Snapchain，
+  打印同步进度，并在节点追上之后打开一条到 `127.0.0.1:3381` 的 SSH 隧道。
+- **客户端**（`2-client.sh`）：使用 `--fid` 时无需任何操作；casty 会为你的 fid 设置好，
+  暂时还没有密钥，然后读取时间线。不使用它时，需要在隐藏输入的提示符下输入密钥库的口令（两次），
+  然后输入助记词。
+
+### 或者分步运行
+
+同样的事情，一次一步：
+
+```sh
+./scripts/0-provision.sh             # a: a server, a 2 TB volume and a firewall; or --host user@ip
+./scripts/1-node.sh                  # b: the read node, the wait for its sync, the tunnel
+./scripts/2-client.sh --fid <fid>    # c: ./bin/casty, set up for your fid; the seed phrase path without --fid
+```
+
+节点同步期间，`./scripts/1-node.sh status` 显示每个分片落后多少，
+`./scripts/1-node.sh status --wait` 一直等到同步完成。详情：
+[1. 运行只读节点](../1-node/)、[2. 安装客户端](../2-client/)。
+
+## 3. 添加应用密钥
+
+casty 用应用密钥写入：一个由你的 fid 的托管地址授权的 Ed25519 密钥，通过你的节点以一条不需要 gas 的
+`KEY_ADD` 消息添加，没有交易，也没有 gas
+（[托管地址与应用密钥](../concepts/custody-and-app-keys/)）。
+
+### 用你的钱包
+
+```sh
+./bin/casty web
+```
+
+1. `casty web` 要求为它即将创建的密钥库设置口令，输入两次，然后打印一个带令牌的链接。
+   在装有你的钱包（例如 MetaMask 这样的扩展）的浏览器中打开它。
+2. 在“你”页面中选择 “add a key with your wallet”。
+3. 钱包会被请求提供账户；选择该 fid 注册的那个账户。如果它在另一条链上，钱包会被请求切换到
+   Ethereum 主网，这不花费任何费用。
+4. 签署钱包显示的两个请求：先是密钥请求，然后是密钥添加。
+5. 页面检查两个签名，通过你的节点发送 `KEY_ADD`，等到节点列出该密钥，
+   然后把它加密保存在 `~/.config/casty/keys.enc.json` 中。
+
+如果手机上的钱包是一个应用，启动 `./bin/casty web --listen 0.0.0.0:3390`（或使用主机上的页面，
+第 6 步），在手机上打开页面，然后在“你”页面中使用在钱包浏览器中打开它的链接；
+旁边的按钮会复制配对链接，以便粘贴到那里。
+
+### 用助记词，作为备选
+
+```sh
+./bin/casty init
+```
+
+它先询问口令，然后在隐藏输入的提示符下询问助记词；助记词只用一次，用来签署密钥请求，从不写入磁盘。
+`--address-index` 选择该助记词的另一个地址。
+
+无论哪种方式，该密钥都可以签署 cast、反应和关注（`--scopes` 加上资料修改），
+并且在 30 天未使用后失效（`--ttl`，最多 `90d`）；它签署的每条消息都会让它续期。
+`./bin/casty whoami` 显示密钥、托管地址和你的存储。
+
+## 4. 在终端中使用
+
+`./bin/casty --help` 列出每条命令；`<command> --help` 列出其参数。若想直接输入 `casty`，
+链接一次即可：`ln -s "$PWD/bin/casty" ~/.local/bin/casty`。
+
+| 要做的事 | 运行 |
+| --- | --- |
+| 读取你的时间线 | `casty feed`、`casty feed --since 24h --no-replies --limit 20` |
+| 读取别人对你说的话 | `casty mentions` |
+| 打开一条 cast，连同它所回复的内容和对它的回复 | `casty thread 2` |
+| 发帖 | `casty cast "hello from my own node"`、`--channel /name`、`--embed <url>` |
+| 回复、点赞、recast | `casty reply 1 "agreed"`、`casty like 1`、`casty recast 1` |
+| 撤销 | `casty unlike 1`、`casty unrecast 1`、`casty delete 1` |
+| 关注 | `casty follow @name`、`casty unfollow @name` |
+| 查看某个 fid 的密钥背后的应用 | `casty clients --fid <fid>` |
+| 查看你的存储 | `casty storage` |
+| 检查节点、时钟和配置 | `casty doctor`、`casty node status` |
+
+上一次列表中 cast 前面的数字是 `like`、`reply`、`recast`、`delete` 和
+`thread` 接受的参数；`<fid>:<hash>` 和这条 cast 在 farcaster.xyz 上的链接也可以。`via` 给出发布这条 cast
+所经由的应用；`--only-app` 和 `--exclude-app` 据此过滤。每次写入都会等到节点拥有该消息，
+如果没有，会明确告诉你。
+
+## 5. 在浏览器中使用
+
+`./bin/casty web` 把同样的命令作为页面提供在 `http://127.0.0.1:3390`，并打印一个用于配对浏览器的链接
+（[在浏览器和手机上](../web/)）。
+
+- **在家中的手机上**：`./bin/casty web --listen 0.0.0.0:3390` 为每个网络地址打印一个链接和一个二维码；
+  在同一网络中扫描它。连接是普通 HTTP，所以请使用你信任的网络。把页面添加到主屏幕，即可全屏打开。
+- **只读**：`--read-only` 不询问口令，页面不能写入。
+- **新令牌**：`--new-token` 让之前打印的所有链接失效。
+
+Ctrl-C 停止 `casty web`；手机使用它期间，这台机器必须保持开机。
+
+## 6. 从任何网络访问页面
+
+要从移动网络访问页面，请在节点主机上以 HTTPS 运行它
+（[从任何网络访问](../serve/)）。这首先需要本机上有一个应用密钥（第 3 步）：密钥库及其口令
+会作为 Docker secret 送到主机，除非指定 `--read-only`。
+
+使用域名：
+
+1. 把你拥有的某个名称（比如 `node.example.org`）的 DNS `A` 记录指向节点的 IP
+   （`node.env` 中的 `NODE_IP`）。
+2. 运行：
+
+   ```sh
+   ./scripts/deploy.sh --fid <fid> --domain node.example.org
+   ```
+
+   在 casty 租用的节点上，这会在其防火墙上打开 80 和 443 端口；在你自己的主机上，请自行打开。
+   然后它在主机上构建 casty，在获取证书的 Caddy 后面启动它，询问密钥库口令，
+   并打印 `https://node.example.org/#token=...`。
+   该链接的二维码在 `./scripts/1-node.sh logs casty` 中。
+
+如果改用 Tailscale，请在主机上安装并登录，把手机加入同一个 tailnet，
+然后运行 `./scripts/deploy.sh --fid <fid> --tailscale`；不会向互联网开放任何端口。
+
+在主机上，时间线来自一个跟随节点事件的索引。在“你”页面中，
+“notifications” 会为每条提及或回复开启推送，通知里只有发送者的名字；
+在 iPhone 上，请先把页面添加到主屏幕（iOS 16.4 及更高版本）。
+
+casty 有改动之后，再次运行 `./scripts/1-node.sh serve --domain <name>`：它会重新构建并重启页面。
+
+## 7. 运行节点
+
+| 要做的事 | 运行 |
+| --- | --- |
+| 查看同步进度 | `./scripts/1-node.sh status`（落后时退出码为 1） |
+| 跟踪它的日志，或页面的日志 | `./scripts/1-node.sh logs`、`./scripts/1-node.sh logs casty` |
+| 在你的机器重启后重新打开隧道 | `./scripts/1-node.sh tunnel`（`--stop` 关闭它） |
+| 升级到最新的 Snapchain 版本 | `./scripts/1-node.sh upgrade` |
+| 停留在某个版本 | `./scripts/1-node.sh upgrade --release 0.14.3` |
+| 每周自动升级 | `./scripts/1-node.sh --autoupgrade --fid <fid>`：它会在整台主机上运行 `docker system prune --volumes -f` |
+| 保留更少的区块 | `./scripts/1-node.sh --block-retention 30`（天） |
+| 查看 Grafana | 在主机上，在 `~/snapchain` 中运行 `docker compose up -d grafana`；在本机，`ssh -L 3000:127.0.0.1:3000 <user>@<ip>` 然后打开 `http://127.0.0.1:3000` |
+| 停止节点和页面 | `./scripts/1-node.sh down`；数据库保留在卷上 |
+
+从另一个网络访问时，防火墙仍然只允许你原来的地址：再次运行
+`./scripts/0-provision.sh`，它会把规则移到你当前的地址，节点不变。
+
+## 8. 密钥与安全
+
+| 要做的事 | 运行 |
+| --- | --- |
+| 列出你的 fid 的密钥 | `casty key list` |
+| 用这个 casty 的密钥本身移除它 | `casty key revoke --self` |
+| 移除任意密钥 | `casty key revoke <key>`，需要助记词 |
+| 取消所有浏览器的配对 | `casty web --new-token`；在主机上，删除 `~/snapchain/casty/config/web-token` 并运行 `docker compose restart casty` |
+
+已失效或在别处被移除的密钥会被跳过；按第 3 步再添加一个。
+[安全](../security/)列出了涉及的每一个机密、它存放的位置以及泄露时该怎么做。
+
+## 9. 删除一切
+
+```sh
+./bin/casty key revoke --self        # first, while the node runs: the key stops working everywhere
+./scripts/1-node.sh down             # stops the node and the page; nothing is deleted
+./scripts/0-provision.sh --destroy   # deletes the server, its volume and its firewall, after you type the name
+rm -rf ~/.config/casty               # the config and the encrypted key store here
+```
+
+`--destroy` 读取 `node.env` 以确定要删除什么，并在之后删除该文件；新的节点会从头开始同步。
+在你自己的主机上没有什么需要销毁：在那里删除 `~/snapchain` 即可。
+
+## 没有节点时
+
+`pnpm install`，然后 `pnpm demo`，会用测试助记词在模拟节点上运行客户端，并删除它创建的内容；
+`pnpm demo:web` 以同样的方式提供页面，直到按下 Ctrl-C。
+
+## 当某一步停下时
+
+每个脚本都会打印失败的原因和应该怎么做，并以一个表明问题类型的退出码退出：
+
+| 退出码 | `0-provision.sh` | `1-node.sh` | `2-client.sh` |
+| --- | --- | --- | --- |
+| 1 | | 未同步，或节点没有应答 | |
+| 2 | 参数错误 | 参数错误 | 参数错误 |
+| 3 | 缺少工具或凭据 | 缺少工具 | 缺少工具，或 Node 版本过旧 |
+| 4 | 服务商拒绝 | 没有 SSH 连接，或下载失败 | 节点不可达（请打开隧道），或没有可用的下载 |
+| 5 | 主机不满足要求 | 主机不满足要求 | 密钥问题：口令、助记词、存储 |
+
+[故障排除](../troubleshooting/)列出了每条消息及其解决方法。`deploy.sh` 以停下的那一步的退出码停止，
+同一条命令会从那里继续。

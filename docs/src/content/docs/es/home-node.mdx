@@ -1,0 +1,60 @@
+---
+title: Un nodo en casa
+description: Ejecuta el nodo de lectura en una máquina que ya tienes en lugar de un servidor alquilado.
+sidebar:
+  order: 4
+---
+
+Cualquier máquina Linux a la que puedas llegar por SSH puede ser el host del nodo: un servidor en
+casa, o uno en un proveedor para el que casty no tiene script. El paso 0 entonces no crea nada y solo
+comprueba la máquina.
+
+```sh
+./scripts/0-provision.sh --host you@192.168.1.20
+./scripts/1-node.sh
+./scripts/2-client.sh
+```
+
+## Qué necesita la máquina
+
+Snapchain pide 16 GB de RAM, 4 vCPU, 2 TB de disco libre y una IP pública. El paso 0 y el paso 1
+comprueban la máquina por SSH y se detienen con el código de salida 5 cuando se queda corta:
+
+- al menos 15 GiB de RAM;
+- 1,8 TiB libres donde vivirá la base de datos. `CASTY_MIN_FREE_GIB=1700` antes del comando pide
+  menos en su lugar, bajo tu responsabilidad: en cuanto la base de datos llena el disco, el nodo se
+  detiene;
+- un servidor de Docker con el que pueda hablar el usuario de SSH, así que el usuario debe ser root o
+  estar en el grupo `docker`;
+- un reloj a menos de 60 segundos del tuyo. Los nodos rechazan los mensajes con una marca de tiempo
+  más de 15 minutos en el futuro, así que mantén NTP en marcha en el host.
+
+Un servidor alquilado recibe de cloud-init Docker, `chrony` y un límite de archivos abiertos más alto.
+En tu propia máquina, eso depende de ti.
+
+## SSH
+
+casty inicia sesión con tu clave y nunca con una contraseña: ejecuta SSH con `BatchMode=yes`. La clave
+es `~/.ssh/id_ed25519` salvo que pases `--ssh-pubkey`, y la mitad privada está junto a la pública. La
+primera conexión acepta la clave del host y la registra; las conexiones posteriores la comprueban.
+
+## Adónde van los datos
+
+El nodo vive en `~/snapchain` del usuario de SSH, y la comprobación de espacio libre mide el sistema
+de archivos del directorio personal de ese usuario. Para tener la base de datos en otro disco, móntalo,
+haz de `~/snapchain` un enlace a un directorio en él y define `NODE_DATA_DIR` en `node.env` con el
+punto de montaje, para que la comprobación mida ese disco en su lugar.
+
+## Puertos y firewall
+
+casty no crea ningún firewall para una máquina que no alquiló. Otros nodos llegan al tuyo por
+3382/udp, el único puerto de gossip que publica el archivo compose de Snapchain, así que redirígelo desde tu router. Mantén 3381 (API HTTP) y 3383 (gRPC) cerrados a
+internet: casty llega a ellos a través del túnel SSH. El archivo compose de Snapchain publica statsd
+en 8125/udp y 8126/tcp en todas las interfaces salvo que se le indique otra cosa; `1-node.sh` define
+`STATSD_PUBLISH` y `STATSD_ADMIN_PUBLISH` en su `.env` con el loopback en cualquier host en el que se
+ejecuta, este incluido, así que statsd y Grafana responden solo en `127.0.0.1`.
+
+## Borrado
+
+`0-provision.sh --destroy` no se aplica aquí, ya que no se creó nada. `./scripts/1-node.sh
+down` detiene el nodo; la base de datos se queda en `~/snapchain` hasta que la borres.

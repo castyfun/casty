@@ -1,0 +1,181 @@
+---
+title: 1. تشغيل عقدة القراءة
+description: ثبّت Snapchain على المضيف، وانتظر اكتمال مزامنته، وافتح نفق SSH إلى واجهته البرمجية.
+sidebar:
+  order: 2
+---
+
+تثبّت الخطوة 1 عقدة قراءة Snapchain على المضيف المذكور في `node.env`، وتنتظر حتى تلحق
+بالشبكة، وتفتح نفق SSH بحيث يصل `http://127.0.0.1:3381` على جهازك إلى
+واجهة HTTP API للعقدة.
+
+```sh
+./scripts/1-node.sh
+```
+
+## ما تفعله على المضيف
+
+1. تنتظر حتى يستجيب المضيف لـ SSH. يحتاج الخادم الجديد إلى الإقلاع وتشغيل cloud-init
+   أولًا؛ يحاول السكربت 60 مرة، بفاصل 5 ثوانٍ.
+2. تنتظر انتهاء cloud-init، إن كان المضيف يستخدمه.
+3. تفحص المضيف وتطبع صفًا لكل فحص:
+
+   | الفحص | يحتاج إلى |
+   | --- | --- |
+   | `ram` | 15 GiB (يطلب Snapchain ذاكرة 16 GB؛ وتحتفظ النواة ببعضها) |
+   | `disk` | 1.8 TiB حرة في دليل البيانات، ويُتخطى بعد أن يوجد `~/snapchain/.rocks` |
+   | `docker` | خادم Docker يستطيع مستخدم SSH التخاطب معه |
+   | `compose` | Docker Compose 2.24.4 أو أحدث، وهو ما يحتاجه ملف التجاوز أدناه |
+   | `ports` | المنافذ من 3381 إلى 3383 حرة؛ يُعرض ولا يفشل أبدًا، لأن العقدة تشغلها عند إعادة التشغيل |
+   | `clock` | في حدود 60 ثانية من ساعة جهازك |
+
+   قيمة `no` في أي صف توقف التشغيل برمز الخروج 5.
+4. تكتب `~/snapchain/.env` مع `AGREE_NO_REWARDS_FOR_ME=true`، و`HUB_OPERATOR_FID` (قيمة
+   `--fid` لديك، و0 افتراضيًا)، و`SKIP_CRONTAB=true` ما لم تمرّر `--autoupgrade`، وكلمة مرور
+   عشوائية واحدة لـ Grafana باسم `GRAFANA_CREDS` (يقرؤها سكربت Snapchain نفسه) و
+   `GRAFANA_PASSWORD` (يعطيها ملف التجاوز لـ Grafana)، و`STATSD_PUBLISH` و
+   `STATSD_ADMIN_PUBLISH` مضبوطين على واجهة loopback للمضيف، حيث ينشر ملف compose خدمة statsd.
+   لا تضيف إلا المفاتيح التي لا يحويها الملف بعد، ولا تغيّر أبدًا قيمة موجودة
+   بالفعل.
+5. تنزّل `docker-compose.mainnet.yml` (يُحفظ باسم `docker-compose.yml`)، و`validators.toml`،
+   و`grafana.ini` الخاص بـ Grafana، ولوحة Snapchain من مستودع Snapchain عند
+   الوسم `@latest`، أو عند `v<version>` مع `--release`.
+6. تكتب `docker-compose.override.yml`، الذي يدمجه Docker Compose فوق الملف المنزَّل و
+   لا تستبدله ترقيات Snapchain أبدًا. ينشر Grafana على واجهة loopback للمضيف فقط،
+   ويعطيه كلمة المرور من `.env` ومصدر بياناته ولوحته، ومع
+   `--block-retention`، يضبط تقليم الكتل.
+7. تشغّل خدمتي `snapchain` و`statsd` بالأمر `docker compose up -d`.
+8. تنتظر المزامنة، حتى `--timeout` ثانية (12 ساعة افتراضيًا).
+9. تفتح النفق، ما لم تمرّر `--no-tunnel`.
+
+الخطوات من 4 إلى 7 هي الأجزاء غير التفاعلية من `snapchain.sh upgrade` الخاص بـ Snapchain نفسه؛ ويصف
+[دليل العقدة](https://snapchain.farcaster.xyz/guides/managing-a-node) مفاتيح `.env` و
+ملف التجاوز.
+
+## انتظار المزامنة
+
+يُنزّل التشغيل الأول لقطة بحجم عدة مئات من GB، ثم يزامن الكتل التي أُنتجت منذ تلك
+اللقطة. توقّع ساعات. يطبع السكربت الحالة الكاملة مرة واحدة:
+
+```text
+snapchain <version>, synced: no
+shard 0  height <n>  behind <s>s  size <x> GiB  mempool n/a
+shard 1  height <n>  behind <s>s  size <x> GiB  mempool n/a
+shard 2  height <n>  behind <s>s  size <x> GiB  mempool n/a
+```
+
+ثم سطرًا واحدًا لكل فحص، مع الوقت، ومقدار تأخر أبطأ شريحة، وتقدير
+مبني على المعدل منذ الفحص الأول:
+
+```text
+<HH:MM>  <hours>h <minutes>m behind, ETA <estimate>
+```
+
+تبدأ الفحوصات بفاصل 10 ثوانٍ ثم تتباطأ إلى فحص كل دقيقة. تُعَدّ العقدة متزامنة عندما
+تكون كل شريحة متأخرة بأقل من 10 ثوانٍ؛ وتُطبع الحالة الكاملة مجددًا حينئذٍ. قيمة `behind` هي
+`blockDelay` الذي تبلّغ عنه العقدة في `/v1/info`. لا تبلّغ عقد القراءة عن حجم mempool لبعض
+الشرائح، فيظهر ذلك بصورة `n/a`.
+
+الضغط على Ctrl-C ينهي الانتظار فقط. تواصل العقدة المزامنة على المضيف؛
+ويراقبها `./scripts/1-node.sh status --wait` من حيث هي. تشغيل `./scripts/1-node.sh` مجددًا
+يعمل أيضًا، لكنه يكرر كل خطوة، ويعيد تنزيل ملف compose (ملف أحدث إصدار
+ما لم تمرّر `--release` نفسه).
+
+## النفق
+
+```sh
+./scripts/1-node.sh tunnel          # forward 127.0.0.1:3381 and :3383 to the node
+./scripts/1-node.sh tunnel --stop   # close it
+```
+
+النفق عملية `ssh -N` في الخلفية، يُعثر عليها وتُوقف عبر مقبس التحكم الخاص بها
+في `~/.ssh`. لا يعود من تلقاء نفسه بعد انقطاع الاتصال أو إعادة تشغيل جهازك:
+شغّل `tunnel` مجددًا. إن كان شيء آخر
+يستمع بالفعل على المنفذ المحلي 3381 أو 3383، فلا يعمل النفق ويقول السكربت ذلك.
+
+## أوامر أخرى
+
+| الأمر | ما يفعله |
+| --- | --- |
+| `status` | حالة المزامنة مرة واحدة؛ رمز الخروج 0 عند اكتمال المزامنة، و1 في غير ذلك |
+| `status --wait` | يستطلع حتى تكتمل المزامنة، كما يفعل `up` |
+| `logs` | يتابع سجلات حاوية `snapchain`؛ و`logs casty` سجلات الصفحة |
+| `upgrade` | يجلب ملف compose لأحدث إصدار، أو لإصدار `--release`، ثم يسحب الصورة ويعيد التشغيل |
+| `serve` | يشغّل casty على المضيف خلف HTTPS، مع `--domain` أو `--tailscale`: [من أي شبكة](../serve/) |
+| `down` | يوقف العقدة، وcasty إن كان يقدّم الصفحة؛ وتبقى قاعدة البيانات على القرص |
+
+يسأل `status` العقدة عبر SSH، لذا لا يلزم أبدًا أن يكون المنفذ 3381 عامًا من أجله.
+
+## تثبيت إصدار، والترقيات
+
+يسمّي ملف compose لكل إصدار من Snapchain الصورة `farcasterxyz/snapchain:latest`.
+ينزّل `--release 0.14.3` ملفات `v0.14.3` ويعيد كتابة ذلك السطر إلى
+`farcasterxyz/snapchain:0.14.3`؛ وإن لم يعد الملف يذكر `:latest`، يتوقف السكربت بدل
+أن يشغّل شيئًا آخر. ويعود `./scripts/1-node.sh upgrade` بدون `--release` إلى أحدث
+إصدار.
+
+يثبّت `--autoupgrade --fid <fid>` بدلًا من ذلك مهمة الترقية الأسبوعية الخاصة بـ `snapchain.sh`، في يوم من الأسبوع
+يُشتق من معرّفك fid بالطريقة التي يشتقه بها `snapchain.sh`. تشغّل تلك المهمة
+`docker system prune --volumes -f`، وهو ما يؤثر في كل مشروع Docker على المضيف، لا في
+Snapchain وحده. لا يمكن الجمع بين `--release` و`--autoupgrade`، ويزيل `--release` أي مهمة ترقية
+يجدها، لأن المهمة ستستبدل الإصدار المثبّت.
+
+## الاحتفاظ بالكتل
+
+يضبط `--block-retention <n>` المتغير `SNAPCHAIN_PRUNING__BLOCK_RETENTION` لكي تقلّم العقدة الكتل الأقدم
+من `n` يومًا. يسمح Snapchain بهذا على عقد القراءة فقط ويتركه معطّلًا افتراضيًا. القيمة
+مدة زمنية، يقرؤها إعداد Snapchain بصيغة humantime، لذا فإن `<n>d` الذي يكتبه casty هو `30d` لـ
+30 يومًا.
+
+## Grafana
+
+يتضمن ملف compose الخاص بـ Snapchain خدمة Grafana. لا يشغّل casty إلا `snapchain` و`statsd`، لكنه
+يُعِدّ Grafana بحيث يشغّله أمر واحد ولوحة Snapchain في مكانها: على
+المضيف، شغّل `docker compose up -d grafana` في `~/snapchain`. ينشره ملف التجاوز على
+واجهة loopback للمضيف، فاصل إليه عبر SSH:
+
+```sh
+ssh -L 3000:127.0.0.1:3000 <user>@<node ip>   # then open http://127.0.0.1:3000
+```
+
+تفتح اللوحة دون تسجيل دخول (يسمح `grafana.ini` الخاص بـ Snapchain لأي أحد بالعرض)؛ وللتعديل، سجّل الدخول
+باسم `admin` مع كلمة المرور التي يحملها `GRAFANA_PASSWORD` في `~/snapchain/.env`. لا يقرأ Grafana
+تلك الكلمة إلا عند أول تشغيل له: إن ضبطت `GRAFANA_CREDS` بنفسك قبل تشغيل casty،
+فاضبط `GRAFANA_PASSWORD` لتطابقها.
+
+## الخيارات
+
+```text
+Usage: 1-node.sh [up|status|logs|tunnel|upgrade|serve|down] [options]
+
+  (no command)            up, wait for sync, then open the tunnel
+  up                      check the host, write ~/snapchain, start the node, wait for sync
+  status [--wait]         sync progress per shard; --wait polls until synced
+  logs [casty]            follow the node's logs, or the casty service's
+  tunnel [--stop]         forward local ports 3381 and 3383 to the node over SSH
+  upgrade                 fetch the latest release's compose file (or --release) and restart
+  serve                   run casty on the host, reached over HTTPS from any network: needs
+                          --domain <name> (Caddy gets the certificate; open 80 and 443 with
+                          0-provision.sh --https) or --tailscale (tailscale serve on the host)
+  down                    stop the node, and casty if it serves
+
+  --fid <fid>             your fid, recorded as HUB_OPERATOR_FID (default: 0)
+  --autoupgrade           install snapchain.sh's weekly auto-upgrade (needs --fid). It runs
+                          docker system prune --volumes -f on the whole host.
+  --block-retention <n>   prune blocks older than n days (read nodes only)
+  --release <version>     run this Snapchain release, such as 0.14.3, instead of the latest
+  --no-tunnel             do not open the tunnel after sync
+  --timeout <seconds>     how long status --wait waits (default: 43200, 12 hours)
+  --env <file>            node.env from step 0 (default: node.env)
+  --dry-run               print the ssh commands instead of running them
+  serve:
+  --domain <name>         the name the page is reached at; must point at the host
+  --tailscale             reach it as the host's name on your tailnet instead
+  --read-only             a page that reads only: no app key or passphrase leaves this machine
+  --config <dir>          casty's config directory here (default: $XDG_CONFIG_HOME/casty)
+
+Exit codes: 0 ok, 1 not synced or the node did not answer, 2 bad arguments, 3 missing prerequisite,
+4 no ssh connection or download failed, 5 preflight failed.
+```
+
+التالي: [2. تثبيت العميل](../2-client/).

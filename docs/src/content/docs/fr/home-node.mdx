@@ -1,0 +1,63 @@
+---
+title: Un nœud à la maison
+description: "Faire tourner le nœud de lecture sur une machine que vous avez déjà au lieu d'un serveur loué."
+sidebar:
+  order: 4
+---
+
+N'importe quelle machine Linux que vous pouvez atteindre par SSH peut être l'hôte du nœud : un
+serveur à la maison, ou un serveur chez un fournisseur pour lequel casty n'a pas de script. L'étape 0
+ne crée alors rien et se contente de vérifier la machine.
+
+```sh
+./scripts/0-provision.sh --host you@192.168.1.20
+./scripts/1-node.sh
+./scripts/2-client.sh
+```
+
+## Ce dont la machine a besoin
+
+Snapchain demande 16 Go de RAM, 4 vCPU, 2 To de disque libre et une IP publique. Les étapes 0 et 1
+vérifient la machine par SSH et s'arrêtent avec le code de sortie 5 quand elle ne suffit pas :
+
+- au moins 15 Gio de RAM ;
+- 1,8 Tio libre là où la base de données se trouvera. `CASTY_MIN_FREE_GIB=1700` avant la commande
+  demande moins à la place, à vos risques : une fois que la base de données remplit le disque, le
+  nœud s'arrête ;
+- un serveur Docker auquel l'utilisateur SSH peut parler, si bien que l'utilisateur doit être root ou
+  membre du groupe `docker` ;
+- une horloge à moins de 60 secondes de la vôtre. Les nœuds rejettent les messages horodatés de plus
+  de 15 minutes dans le futur, donc laissez NTP tourner sur l'hôte.
+
+Un serveur loué reçoit Docker, `chrony` et une limite de fichiers ouverts plus élevée par cloud-init.
+Sur votre propre machine, cela vous revient.
+
+## SSH
+
+casty se connecte avec votre clé et jamais avec un mot de passe : il lance SSH avec `BatchMode=yes`.
+La clé est `~/.ssh/id_ed25519` sauf si vous passez `--ssh-pubkey`, et la moitié privée se trouve à
+côté de la moitié publique. La première connexion accepte la clé de l'hôte et l'enregistre ; les
+connexions suivantes la vérifient.
+
+## Où vont les données
+
+Le nœud se trouve dans `~/snapchain` de l'utilisateur SSH, et la vérification d'espace libre mesure
+le système de fichiers du répertoire personnel de cet utilisateur. Pour garder la base de données sur
+un autre disque, montez-le, faites de `~/snapchain` un lien vers un répertoire sur ce disque, et
+définissez `NODE_DATA_DIR` dans `node.env` sur le point de montage, pour que la vérification mesure ce
+disque à la place.
+
+## Ports et pare-feu
+
+casty ne crée aucun pare-feu pour une machine qu'il n'a pas louée. Les autres nœuds atteignent le
+vôtre sur 3382/udp, le seul port de gossip que publie le fichier compose de Snapchain, donc
+redirigez-le depuis votre routeur. Gardez 3381 (API HTTP) et 3383 (gRPC) fermés à internet : casty
+les atteint par le tunnel SSH. Le fichier compose de Snapchain publie statsd sur 8125/udp et 8126/tcp
+sur toutes les interfaces sauf indication contraire ; `1-node.sh` fixe `STATSD_PUBLISH` et
+`STATSD_ADMIN_PUBLISH` dans son `.env` sur la boucle locale sur tout hôte où il tourne, celui-ci
+compris, si bien que statsd et Grafana ne répondent que sur `127.0.0.1`.
+
+## Suppression
+
+`0-provision.sh --destroy` ne s'applique pas ici, puisque rien n'a été créé. `./scripts/1-node.sh
+down` arrête le nœud ; la base de données reste dans `~/snapchain` jusqu'à ce que vous la supprimiez.

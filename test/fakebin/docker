@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Fake docker for bats: records each call in $FAKE_LOG; `docker version` reports 27.3.1, or
+# fails as without access to the daemon when FAKE_DOCKER_NO_SERVER is set, and
+# `docker compose version --short` $FAKE_COMPOSE_VERSION (default 2.29.7). `compose exec -T
+# casty cat <path>` reads the file from the service's config directory as the container would
+# see it, bind-mounted from ~/snapchain/casty/config, or fails as a stopped container does
+# when FAKE_DOCKER_EXEC_FAIL is set.
+printf 'docker %s\n' "$*" >>"${FAKE_LOG:-/dev/null}"
+if [ "$1" = version ] && [ -n "${FAKE_DOCKER_NO_SERVER:-}" ]; then
+  echo "permission denied while trying to connect to the Docker daemon socket" >&2
+  exit 1
+fi
+[ "$1" = version ] && echo 27.3.1
+[ "$*" = "compose version --short" ] && echo "${FAKE_COMPOSE_VERSION:-2.29.7}"
+if [ "$1 $2 $3 $5" = "compose exec -T cat" ]; then
+  [ -z "${FAKE_DOCKER_EXEC_FAIL:-}" ] || { echo "service \"$4\" is not running" >&2; exit 1; }
+  cat "${6//\/config\/casty/$HOME/snapchain/casty/config}"
+  exit $?
+fi
+exit 0

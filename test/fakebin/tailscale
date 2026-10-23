@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Fake tailscale for bats: records each call in $FAKE_LOG; `status --json` names the host on
+# the tailnet, as 1-node.sh serve --tailscale reads it.
+printf 'tailscale %s\n' "$*" >>"${FAKE_LOG:-/dev/null}"
+[ "$*" = "status --json" ] && printf '{"Self":{"DNSName":"fc-node.tail1234.ts.net.","TailscaleIPs":["100.64.0.5"]}}\n'
+exit 0

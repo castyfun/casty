@@ -1,0 +1,67 @@
+---
+title: Mensajes de Snapchain
+description: De qué está hecho un mensaje de Farcaster, cómo viaja a través de tu nodo y qué comprueba casty antes de enviar uno.
+sidebar:
+  order: 7
+---
+
+Todo lo que hace una cuenta en Farcaster es un mensaje firmado: un cast, un like, un follow, un cambio de
+perfil, un cambio de clave. Los nodos comprueban cada mensaje y guardan los que aceptan. El protocolo se
+describe en [Messages](https://docs.farcaster.xyz/learn/what-is-farcaster/messages) en la documentación
+de Farcaster.
+
+## Qué hay en uno
+
+| Campo | Qué |
+| --- | --- |
+| `data` | el contenido: tipo, fid, marca de tiempo, red y un cuerpo para el tipo |
+| `hash` | hash BLAKE3 de `data`, 20 bytes |
+| `signature` | firma Ed25519 sobre el hash |
+| `signer` | la clave pública que firmó, que debe estar registrada para el fid |
+
+casty nunca los ensambla a mano; llama a los constructores de `@farcaster/core` (`makeCastAdd`,
+`makeReactionAdd`, `makeLinkAdd` y los demás) con tu clave de aplicación.
+
+Las marcas de tiempo cuentan segundos desde la época de Farcaster, 2021-01-01 00:00:00 UTC. Los nodos
+rechazan un mensaje con una marca de más de 15 minutos en el futuro, y por eso `casty doctor` y el paso 1
+comprueban tu reloj.
+
+## Casts
+
+Un cast contiene hasta 320 bytes de texto UTF-8, o hasta 1024 bytes como cast largo; casty elige el tipo
+según la longitud. El texto se cuenta en bytes, no en caracteres, así que en un cast en cirílico o con
+emoji caben menos caracteres.
+
+Las menciones no forman parte del texto. Un cast guarda los fids mencionados y los desplazamientos en
+bytes donde van, y el feed vuelve a poner `@name` en su sitio. Una respuesta apunta a su padre por fid y
+hash; una publicación en un canal apunta en su lugar a la URL del canal. Los enlaces van en embeds,
+`--embed <url>` en la línea de comandos.
+
+Borrar un cast publica un `CAST_REMOVE`. Los likes y los recasts son reacciones, los follows son links,
+y cada uno tiene también un mensaje de eliminación.
+
+## Shards
+
+Snapchain divide la red en shards. Los casts, reacciones, follows y perfil de una cuenta viven en un
+shard de mensajes, elegido a partir de los primeros 4 bytes del SHA-256 de su fid. Los cambios de clave y
+algunos otros mensajes que afectan a toda la cuenta van al shard 0. Por eso `status` y `casty doctor`
+imprimen una línea por shard: el nodo está sincronizado solo cuando lo está cada shard.
+
+## Enviar uno a través de tu nodo
+
+1. casty construye y firma el mensaje y envía sus bytes a `POST /v1/submitMessage`.
+2. El nodo lo comprueba y responde `200`, o un error con el motivo.
+3. Un nodo de lectura no guarda nada: pasa el mensaje por gossip y lo olvida. `200` significa
+   aceptado para retransmitir, no guardado.
+4. Una vez que un validador incluye el mensaje en un bloque, todos los nodos, el tuyo incluido, lo
+   tienen.
+
+Por eso casty lee el mensaje de vuelta, por ejemplo con `castById` después de un cast, hasta que aparece;
+[Nodos de lectura y validadores](../../concepts/read-nodes-vs-validators/) tiene los tiempos. Los mismos
+bytes tienen el mismo hash, así que un mensaje enviado dos veces se guarda una vez.
+
+## Almacenamiento
+
+Cada mensaje que una cuenta guarda cuenta para su almacenamiento, eliminaciones incluidas: un
+`CAST_REMOVE` queda como registro de que el cast ya no existe. Consulta
+[Alquiler de almacenamiento](../../concepts/storage-rent/).

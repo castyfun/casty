@@ -1,0 +1,15 @@
+# Written by casty scripts/1-node.sh. Docker Compose merges this over docker-compose.yml,
+# which snapchain.sh upgrades replace; they never touch this file.
+services:
+  grafana:
+    # Published on loopback only: reach it over SSH.
+    ports: !override
+      - "127.0.0.1:3000:3000"
+    environment:
+      # The password .env records as GRAFANA_CREDS; Grafana reads it on its first start only.
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/provisioning/dashboards/snapchain.json
+    volumes:
+      # The Graphite datasource and the Snapchain dashboard, written by 1-node.sh up.
+      - ./grafana/provisioning:/etc/grafana/provisioning
+{{SNAPCHAIN_SERVICE}}

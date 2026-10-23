@@ -1,0 +1,127 @@
+---
+title: Commandes
+description: "Chaque script et chaque commande casty, ce que fait chacun, et les options que vous utiliserez le plus."
+---
+
+Deux sortes de commandes : les scripts de `scripts/`, qui mettent en place l'hôte, le nœud et le
+client, et `casty`, le client lui-même. Chaque script et chaque commande accepte `--help` et affiche
+la liste complète de ses options.
+
+## Démarrage rapide
+
+```sh
+git clone https://github.com/savvax/casty.git && cd casty
+./scripts/0-provision.sh   # a server with a 2 TB volume and a firewall, or --host user@ip for your own
+./scripts/1-node.sh        # Snapchain on that host, the wait for its sync, an SSH tunnel to it
+./scripts/2-client.sh      # casty in ./bin, an app key for your fid, your feed
+./bin/casty feed           # read
+./bin/casty cast "hello"   # write
+./bin/casty web            # the same in a browser
+```
+
+Ou les trois étapes d'un coup, avec la page sur l'hôte derrière HTTPS :
+
+```sh
+./scripts/deploy.sh --domain node.example.org
+```
+
+## Les scripts
+
+| Commande | Ce qu'elle fait |
+| --- | --- |
+| `./scripts/deploy.sh` | Exécute les étapes 0, 1 et 2 dans l'ordre et, avec `--domain` ou `--tailscale`, met la page sur l'hôte. Peut être relancé sans risque : il reprend là où une exécution s'est arrêtée. |
+| `./scripts/0-provision.sh` | Crée un serveur, un volume de données de 2 To et un pare-feu chez Hetzner ou AWS, selon les identifiants définis, et écrit `node.env`. Demande avant de créer quoi que ce soit de payant. |
+| `./scripts/0-provision.sh --host user@ip` | Utilise une machine que vous avez déjà : ne crée rien, vérifie la RAM, le disque, Docker et l'horloge par SSH. |
+| `./scripts/0-provision.sh --dry-run` | Affiche chaque appel au fournisseur au lieu de l'effectuer. |
+| `./scripts/0-provision.sh --https` | Ouvre aussi les ports 80 et 443, pour la page sur l'hôte. |
+| `./scripts/0-provision.sh --destroy` | Supprime le serveur, puis son volume, puis son pare-feu. |
+| `./scripts/1-node.sh` | Vérifie l'hôte, installe Snapchain dans `~/snapchain`, le démarre, attend qu'il soit synchronisé et ouvre le tunnel. |
+| `./scripts/1-node.sh status [--wait]` | Le retard de chaque shard ; `--wait` interroge jusqu'à ce que le nœud ait rattrapé son retard. |
+| `./scripts/1-node.sh tunnel [--stop]` | Redirige les ports locaux 3381 et 3383 vers le nœud par SSH, pour que casty l'atteigne sur `127.0.0.1:3381`. |
+| `./scripts/1-node.sh logs [casty]` | Suit les journaux du nœud, ou ceux de casty sur l'hôte. |
+| `./scripts/1-node.sh upgrade` | Récupère la dernière version de Snapchain, ou `--release <version>`, et redémarre le nœud. |
+| `./scripts/1-node.sh serve --domain <name>` | Fait tourner `casty serve` sur l'hôte derrière Caddy avec un certificat Let's Encrypt ; `--tailscale` le sert sur votre tailnet à la place. |
+| `./scripts/1-node.sh down` | Arrête le nœud, et casty sur l'hôte s'il y tourne. |
+| `./scripts/2-client.sh` | Télécharge casty pour votre plateforme, le vérifie avec les sommes de contrôle de la version, exécute `casty doctor`, puis `casty init`. |
+| `./scripts/2-client.sh --fid <fid>` | Configure sans phrase de récupération ; vous ajoutez ensuite la clé avec votre portefeuille dans `casty web`. |
+| `./scripts/2-client.sh --from-source` | Compile casty ici avec Node 22.12 ou plus récent au lieu de le télécharger. |
+
+Codes de sortie des scripts : 0 terminé, 1 pas synchronisé ou le nœud n'a pas répondu, 2 arguments
+invalides, 3 un prérequis manque, 4 le fournisseur, SSH ou un téléchargement a échoué, 5 l'hôte ne
+suffit pas.
+
+## casty
+
+### Options de chaque commande
+
+| Option | Ce qu'elle fait |
+| --- | --- |
+| `--node <url>` | L'API HTTP du nœud. Par défaut `http://127.0.0.1:3381`, le tunnel de l'étape 1. |
+| `--json` | Affiche le résultat en JSON, pour les scripts. |
+| `--quiet` | N'affiche que le résultat, sans notes de progression. |
+| `--config <dir>` | Où casty garde sa configuration et ses clés. Par défaut `~/.config/casty`. |
+
+### Configuration
+
+| Commande | Ce qu'elle fait |
+| --- | --- |
+| `casty doctor` | Vérifie que le nœud répond, son retard, votre horloge par rapport à celle du nœud, et ce qui est configuré localement. |
+| `casty init --fid <fid>` | Configure votre compte sans phrase de récupération ni clé ; `casty web` ajoute ensuite une clé avec votre portefeuille. |
+| `casty init` | Ajoute une clé d'application sans gas à partir de votre phrase de récupération, saisie à une invite masquée et jamais stockée. `--ttl 90d` pour la durée de vie la plus longue, `--address-index <n>` pour un autre compte de la même phrase. |
+| `casty whoami` | Votre fid, votre nom d'utilisateur, votre adresse de custody, la clé d'application active et votre stockage. |
+| `casty key list` | Les clés enregistrées pour votre fid, en marquant celles que ce casty détient. |
+| `casty key revoke --self` | Supprime la clé de ce casty, signé par la clé elle-même. |
+| `casty key revoke <key>` | Supprime n'importe quelle clé de votre fid ; demande la phrase de récupération. |
+
+### Lecture
+
+| Commande | Ce qu'elle fait |
+| --- | --- |
+| `casty feed` | Les casts les plus récents de vous et des comptes que vous suivez, numérotés. `--limit`, `--since 24h`, `--no-replies`, `--channel /name`, `--only-app` et `--exclude-app` le restreignent ; `--fids 2,@alice` lit d'autres comptes. |
+| `casty mentions` | Les casts qui vous mentionnent et les réponses à vos casts, les plus récents d'abord. |
+| `casty thread <cast>` | Un cast, ce à quoi il répond, et ses réponses. |
+| `casty clients [--fid <fid>]` | Les clés d'application d'un compte et quelle application a demandé chacune. |
+| `casty storage [--fid <fid>]` | Les storage units et le taux de remplissage de chaque magasin de messages. |
+| `casty node status` | Uniquement la synchronisation du nœud ; code de sortie 1 tant qu'il n'a pas rattrapé son retard. |
+
+### Écriture
+
+| Commande | Ce qu'elle fait |
+| --- | --- |
+| `casty cast "<text>"` | Publie un cast : jusqu'à 320 octets, ou 1024 en cast long. `--reply <cast>`, `--channel /name`, `--embed <url>` (deux fois au plus) ; les `@names` deviennent des mentions. |
+| `casty reply <cast> "<text>"` | Répond à un cast. |
+| `casty delete <cast>` | Supprime un de vos casts. |
+| `casty like <cast>` / `casty unlike <cast>` | Like un cast, ou retire le like. |
+| `casty recast <cast>` / `casty unrecast <cast>` | Recaste un cast vers vos abonnés, ou le retire. |
+| `casty follow <fid or @name>` / `casty unfollow` | Suit un compte, ou arrête de le suivre. |
+
+Chaque écriture va à votre nœud, qui la relaie au réseau ; casty attend de pouvoir relire le
+message, et le signale s'il n'y arrive pas.
+
+### Dans un navigateur
+
+| Commande | Ce qu'elle fait |
+| --- | --- |
+| `casty web` | Le fil, les fils de discussion, les mentions, les profils et une zone de rédaction sur `http://127.0.0.1:3390`, appairée par le lien qu'il affiche. `--listen 0.0.0.0:3390` laisse entrer un téléphone sur le même réseau ; `--read-only` laisse la clé verrouillée. |
+| `casty serve` | La même page sur un index du fil, avec des notifications push, pour l'hôte du nœud derrière HTTPS. `1-node.sh serve` l'installe. |
+
+### Désigner un cast
+
+Partout où une commande prend `<cast>`, chacune de ces formes fonctionne :
+
+- son numéro dans la dernière liste affichée par `casty feed`, `mentions`, `thread` ou la page : `casty like 2` ;
+- `<fid>:<0x hash>` : `casty like 2000000001:0x1a2b...` ;
+- son lien farcaster.xyz.
+
+### Codes de sortie
+
+| Code | Signification |
+| --- | --- |
+| 0 | Terminé. |
+| 1 | Pas synchronisé (`casty node status`), ou un autre échec. |
+| 2 | Arguments invalides. |
+| 3 | Le nœud a refusé le message, ou il n'a pas été fusionné. |
+| 4 | Le nœud est injoignable. |
+| 5 | Un problème avec la configuration, le magasin de clés ou la phrase de récupération. |
+
+[Dépannage](../troubleshooting/) liste les messages derrière chaque code et ce qu'il faut faire.

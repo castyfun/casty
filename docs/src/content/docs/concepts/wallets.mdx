@@ -1,0 +1,73 @@
+---
+title: Wallets and keys
+description: What casty does with your custody address and app key, and how a wallet adds a key without a seed phrase.
+sidebar:
+  order: 9
+---
+
+casty touches two keys. The custody address, an Ethereum account that owns your fid, signs one
+thing: the request for an app key. The app key, an Ed25519 key casty makes, signs everything
+else: casts, reactions, follows. This page says how that works.
+
+## The two keys
+
+| What | Where it lives | When it is used |
+| --- | --- | --- |
+| Seed phrase | Nowhere: typed once into `casty init` or `casty key revoke`, zeroed after use | To derive the custody address and sign the key request, or a revocation |
+| App key | `~/.config/casty/keys.enc.json`, scrypt and XChaCha20-Poly1305, mode 0600; on the node's host too with `1-node.sh serve` | Every message; lapses after its TTL without use (30 days by default, at most 90), and every message renews it |
+| Key store passphrase | Typed at a hidden prompt, or a Docker secret on the host | To open the store |
+
+`casty init` derives the custody account from the phrase (`--address-index` picks another
+account of the same phrase), asks the node which fid it holds, makes the app key, has the
+custody account sign the key request (EIP-712 typed data, as `@farcaster/core` builds it) and
+sends the `KEY_ADD` message through the node. No transaction, no gas, no API key.
+`casty key list` shows every key the node lists for your fid; `casty key revoke` removes one,
+with the phrase or, with `--self`, with the key itself. The page under "you" shows the keys,
+warns a week before this casty's key lapses, and adds a key with the wallet in the browser
+(below).
+
+## Add a key with a wallet
+
+The custody signature is ordinary EIP-712 typed data, so anything that signs typed data for the
+custody address can authorise an app key: a wallet app, a hardware wallet behind one, a browser
+extension.
+
+Under you, "add a key with your wallet": casty makes the Ed25519 key and the two typed-data
+messages, the page hands them to the wallet in the browser (`eth_signTypedData_v4` over
+EIP-1193: MetaMask, Rabby, Rainbow and the others, a Ledger behind any of them), the wallet
+signs with the custody address, casty checks both signatures against that address, sends the
+`KEY_ADD` through the node and stores the key. The seed phrase never leaves the wallet, and
+casty never sees it. `casty init --fid <fid>` sets up with no phrase and no key, for the page
+to add the first one. The terminal flow stays for an account whose custody is a bare recovery
+phrase and nothing else. [In a browser and on a phone](../../web/) has the steps.
+
+- On a phone with no wallet in the browser, the page offers to open itself inside MetaMask,
+  Coinbase Wallet or Trust Wallet, pairing included; wallets that announce themselves
+  (EIP-6963) are found side by side; a wallet on the wrong account is asked to let you pick.
+  WalletConnect, a dependency and a relay run by someone else, was left out on purpose.
+- An account whose custody is the recovery phrase farcaster.xyz gave it imports that phrase
+  into one of those wallets once; from then on the wallet signs and the phrase is typed into
+  nothing of casty's.
+
+## Verified addresses
+
+The protocol carries `VerificationAddAddress` messages, an account's proof that it owns an
+Ethereum or Solana address, and the node answers `verificationsByFid`. A profile on the page
+lists them, each a link to its explorer and a copy; yours are under you too. Reading them
+costs nothing and asks no third party; nothing is read from a chain.
+
+## How long a key lives
+
+A gasless key lapses after its TTL without use, and every message it signs renews it. casty
+never posts in your name to keep a key alive; the page warns a week ahead, and
+`casty init --ttl 90d` is the longest the protocol allows.
+
+## What casty leaves out
+
+- Payments, tips and swaps. Each needs a chain RPC, a funded wallet and chain state, which
+  casty keeps off its path on purpose (see [Security](../../security/)). A verified address on a
+  profile can be copied into a wallet you trust.
+- WalletConnect. It would add a dependency and a relay run by someone else; wallets in the
+  browser and the wallet apps' own browsers cover the same ground.
+- Passkey pairing and the OS keychain. The page pairs with a 256-bit token that travels in the
+  link's fragment, and `casty web` asks for the passphrase once per start.

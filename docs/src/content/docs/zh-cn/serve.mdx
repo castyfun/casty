@@ -1,0 +1,135 @@
+---
+title: 从任何网络访问
+description: 1-node.sh serve 在节点主机上以 HTTPS 运行 casty，使手机在任何地方都能读写，而不只是在家中。
+sidebar:
+  order: 3.6
+---
+
+```sh
+./scripts/1-node.sh serve --domain node.example.org    # or: --tailscale
+```
+
+`casty web` 运行在你的机器上，只能让同一网络中的手机访问。`1-node.sh serve` 在节点主机上、
+节点旁边运行同一个页面，放在一个终结 HTTPS 的代理后面，所以手机从移动网络也能访问它。
+这是同一份 `casty` 代码，在主机上的容器中从本检出目录构建，并通过主机自己的 Docker 网络中的
+`http://snapchain:3381` 经由节点读取和写入。
+
+## 它做什么
+
+1. 读取本机的 casty 配置目录（`~/.config/casty`，或 `--config`）：包含你的 fid 的 `config.json`，
+   以及包含应用密钥的 `keys.enc.json`，并询问密钥库口令。使用 `--read-only` 时，密钥库和口令都不会
+   离开这台机器，页面只能读取，不能写入。
+2. 把客户端的源代码（不包括 `node_modules`、测试或构建产物）连同一个 Dockerfile 发送到主机上的
+   `~/snapchain/casty/src`：`node:22-alpine`，按锁文件安装的依赖，与 `2-client.sh --from-source`
+   相同的构建。镜像由主机构建；第一次需要一两分钟。
+3. 在节点的 compose 文件旁边写入 `~/snapchain/docker-compose.casty.yml`，并在 `~/snapchain/.env` 的
+   `COMPOSE_FILE` 中列出它，使那里的每条 `docker compose` 命令都包含它。
+   `casty` 服务运行 `casty serve --public-host <name>`，随主机重启，把令牌和缓存保存在
+   `~/snapchain/casty/config`（绑定挂载）中，并从一个 Docker secret 读取口令，即权限为 0600 的文件
+   `~/snapchain/casty/passphrase`。
+4. 在前面放一个代理：
+   - `--domain <name>`：一个 `caddy` 服务发布 80 和 443 端口，并自行从 Let's Encrypt 获取证书。
+     该名称必须指向主机，80 和 443 必须能从互联网访问：`./scripts/0-provision.sh --https` 会在
+     Hetzner 或 AWS 防火墙上打开它们（再次运行会保留服务器）；在你自己的主机上，请自行打开。
+   - `--tailscale`：`casty` 只发布在主机的回环地址上，由 `tailscale serve --bg
+     3390` 以 `https://<host>.<tailnet>.ts.net` 向你的 tailnet 提供，证书由 Tailscale 提供。
+     主机上必须安装并登录 Tailscale，手机也必须在该 tailnet 上。不会向互联网开放任何端口。
+5. 等待服务写入它的配对令牌，然后打印 `https://<name>/#token=...`。该链接的二维码在服务的日志中：
+   `./scripts/1-node.sh logs casty`。
+
+casty 有改动之后再次运行 `serve`：它会重新发送源代码、重新构建并重启。
+`./scripts/1-node.sh down` 同时停止节点和 casty；在主机上，
+`docker compose stop casty`（使用 `--domain` 时还有 `caddy`）只停止页面。要从头重新配对，
+在主机上删除 `~/snapchain/casty/config/web-token` 并运行 `docker compose restart casty`。
+
+## casty serve 在 casty web 基础上增加了什么
+
+`casty serve` 是基于下文所述索引的 `casty web`，加上推送、请求限制，以及在使用 `--public-host` 时
+代理的名称：
+
+- 它打印的链接带有 `https://<public host>`，除 IP 地址或 `localhost` 之外，该名称也被接受为请求的
+  `Host`；
+- 每个应答都带有 `Strict-Transport-Security`，所以看到过一次该页面的浏览器从不会再通过普通 HTTP
+  请求它；
+- `/api/*` 限制为每个客户端地址每分钟 120 个请求，在检查令牌之前计数，超过后返回 `429` 和
+  `Retry-After`。在代理后面，客户端地址是 `X-Forwarded-For` 中的最后一个，即代理追加的那个；
+  客户端自己放进去的地址不计入；
+- 不使用 `--public-host` 时，在笔记本电脑上，`casty serve` 就是带索引和限制的 `casty web`：
+  同样的链接，没有 HSTS，限制按套接字的地址计数，因为没有代理时 `X-Forwarded-For` 是客户端随便写的。
+  从源代码构建时，`casty serve` 需要 Node 22.13 或更新版本来使用它的 SQLite；单文件二进制自带 SQLite；
+- 密钥库口令来自 `CASTY_PASSPHRASE_FILE`，即那个 Docker secret，所以服务不需要终端就能启动。
+
+其他一切都与[在浏览器和手机上](../web/)中描述的页面相同：同样的令牌配对，与终端共享的同样的编号，
+同样经由节点写入。
+
+## 来自索引的时间线
+
+`casty serve` 用 Node 自带的 SQLite 把时间线保存在其配置目录中的 `index.sqlite` 里
+（在主机上是 `~/snapchain/casty/config/index.sqlite`）。首次启动时，它读取你的关注列表、你和每个被关注者
+最新的 100 条 cast、提及你的 cast、对你最新 25 条 cast 的回复，以及你的点赞和 recast。从那以后，
+它跟随节点的事件日志（`/v1/events`，每个分片，每 1.5 秒）：你关注的人发的 cast、对你的提及或对你的回复
+会加入；被删除或被裁剪的 cast 会移出；你新关注一个账户会带入该账户最新的 cast，取消关注则移出该账户；
+你的点赞和 recast 保持最新。之后页面的时间线、提及和点赞状态都来自索引，只需几毫秒，而不是向节点发出
+数百个请求；你在页面上做的写入会立即读取事件，所以它会出现在下一个列表中。第一遍完成后，
+还会读取你关注的人的名称和应用，所以启动后的第一次时间线读取不会向节点请求任何东西。在第一遍完成之前，
+页面像 `casty web` 那样读取节点。个人资料和会话总是读取节点。
+
+你阅读期间，页面每半分钟询问一次索引，并在每次重新回到视图时询问，是否有比顶部那条更新的 cast。
+如果有，栏下方会出现一个写着 “3 new casts” 的提示条；列表从不会在你眼前移动。点击即可显示它们。
+
+节点保留大约三天的事件；停止超过两天的服务在启动时会重新做第一遍，然后从那里继续。
+在主机上删除 `index.sqlite` 并重启 `casty`，即可从零开始。
+
+## 提及到达手机
+
+在“你”页面中，“notifications” 为该浏览器开启 Web Push：页面注册它的 service worker（`sw.js`），
+用 `casty serve` 首次启动时生成的密钥（其配置目录中的 `vapid.json`，权限 0600）订阅，
+并把订阅交给服务，服务把它保存在 `cache/push.json` 中。当事件带来一条别人发的、提及你或回复你某条 cast
+的 cast 时，服务向每个已订阅的浏览器发送一条消息：“new mention from @name” 或
+“new reply from @name”，仅此而已，不包含 cast 的文本。消息用浏览器自己的密钥加密（RFC 8291），
+并用服务的密钥签名（RFC 8292），所以中间的推送服务，无论是 Apple、Google 还是 Mozilla 的，
+传递的都是它无法读取的密文。点击会打开 mentions。推送服务报告已失效的订阅会被丢弃。
+
+在 iPhone 上，Web Push 只对添加到主屏幕的页面有效（iOS 16.4 及更高版本）；mentions 旁边的计数
+和以前一样在任何地方都有效。关闭通知会同时从浏览器和服务中删除订阅。
+
+## 这会在主机上放置什么
+
+使用 `serve` 时，除节点外，主机还保存：
+
+| 内容 | 位置 | 它能做什么 |
+| --- | --- | --- |
+| 应用密钥，已加密 | `~/snapchain/casty/config/keys.enc.json`，权限 0600 | 没有口令时什么也做不了 |
+| 密钥库口令 | `~/snapchain/casty/passphrase`，权限 0600，容器在启动时读取 | 解密密钥：两者合在一起，可以以你的身份写入 |
+| 页面的令牌 | `~/snapchain/casty/config/web-token`，以及每个已配对的浏览器中 | 在服务运行期间，从任何地方以你的身份读取和写入 |
+| 证书及其密钥 | Caddy 的 `caddy_data` 卷，或 Tailscale 的 | 以该名称提供页面 |
+| 你的时间线的索引 | `~/snapchain/casty/config/index.sqlite` | 什么也做不了：它保存公开的 cast、你的关注和反应，节点上也有这些 |
+| 推送密钥对 | `~/snapchain/casty/config/vapid.json`，权限 0600 | 向已订阅的浏览器发送推送；新的密钥对会让所有订阅失效 |
+| 推送订阅 | `~/snapchain/casty/config/cache/push.json` | 以推送服务端点和浏览器公钥的形式，向这些浏览器发送推送 |
+
+拥有主机 root 权限的人就拥有服务内存中已解密的应用密钥。这是为了能从任何地方访问页面而做的取舍，
+而它保持有限的原因是：密钥只签署其权限范围允许的内容（默认是 cast、反应和关注），并在超过 TTL
+未使用后失效；在任何机器上用助记词运行 `casty key revoke <key>` 都能立即撤销它；
+`--read-only` 则把密钥留在家中，用于只读的页面。助记词从不去往任何地方。[安全](../security/)列出了每一个机密。
+
+## 选项
+
+```text
+Usage: casty serve [options]
+
+the page over an index of the feed, with push; on the node's host behind HTTPS,
+which 1-node.sh serve installs
+
+Options:
+  --public-host <domain>   the domain the page is reached at through a proxy
+                           that ends HTTPS; it goes into the pairing link
+  --listen <host:port>     where to serve, for the proxy (default:
+                           "0.0.0.0:3390")
+  --new-token              pair again; links printed before stop working
+  --read-only              do not unlock the app key; the page reads but cannot
+                           write
+  --no-allow-fname-server  look @names up with your node only; by default names
+                           it does not know are looked up on
+                           fnames.farcaster.xyz (public, no key)
+  -h, --help               display help for command
+```

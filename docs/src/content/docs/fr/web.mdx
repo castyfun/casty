@@ -1,0 +1,201 @@
+---
+title: Dans un navigateur et sur un téléphone
+description: "casty web sert le fil, les fils de discussion, les profils, votre compte et une zone de rédaction depuis votre propre machine, et appaire un téléphone sur le même réseau."
+sidebar:
+  order: 3.5
+---
+
+```sh
+./bin/casty web
+```
+
+`casty web` demande la phrase de passe du magasin de clés, puis sert une page sur
+`http://127.0.0.1:3390` qui lit depuis le même nœud que les autres commandes et écrit à travers lui.
+Il affiche un lien avec un jeton ; ouvrez-le pour appairer le navigateur.
+
+```text
+casty web on http://127.0.0.1:3390
+open to pair a browser: http://127.0.0.1:3390/#token=<43 characters>
+Ctrl-C stops it; until then the app key stays unlocked in memory
+```
+
+Pour la voir sans nœud, `pnpm demo:web` démarre le nœud factice, ajoute une clé avec la phrase de
+test, publie un cast et sert la page sur un port libre jusqu'à ce que vous appuyiez sur Ctrl-C.
+
+![Le fil sur un téléphone, thème clair : des casts numérotés, l'application par laquelle chacun est arrivé, reply, recast et like en toutes lettres, et la barre pour un nouveau cast en bas](../../../assets/web-phone-light.png)
+
+## Ce que fait la page
+
+La page a les commandes de la CLI, sous les mêmes noms.
+
+| Sur la page | Dans un terminal |
+| --- | --- |
+| Le fil, numéroté : vos casts et ceux des comptes que vous suivez, les plus récents d'abord | `casty feed` |
+| « mentions » : les casts qui vous mentionnent et les réponses à vos 25 casts les plus récents | `casty mentions` |
+| Les bascules au-dessus : réponses affichées ou non, et une par application | `--no-replies`, `--exclude-app` |
+| Toucher un nom de canal : seulement ce canal ; toucher de nouveau le filtre : tout | `--channel` |
+| Toucher un cast : le cast auquel il répond, le cast, ses réponses | `casty thread` |
+| « reply », « recast », « like », et dans « more » : supprimer, ouvrir sur farcaster.xyz, copier le lien | `reply`, `recast`, `like`, `delete` |
+| `› cast something` en bas : du texte avec des @names comme mentions, un canal facultatif, jusqu'à deux liens | `cast --channel --embed` |
+| Toucher un nom : les casts de ce compte, les applications à travers lesquelles il publie, le suivre | `clients --fid`, `follow`, `unfollow` |
+| « you » (votre compte) : votre fid, votre adresse de custody, vos clés d'application, votre stockage, le nœud et l'horloge | `whoami`, `key list`, `storage`, `doctor` |
+| Dans votre compte, « add a key with your wallet » (replié sous « add another key » dès que ce casty en a une) : une nouvelle clé d'application, autorisée par le portefeuille dans le navigateur | `casty init` avec la phrase de récupération |
+| Les adresses vérifiées d'un profil, Ethereum ou Solana, avec copie | |
+| Le champ de recherche dans votre compte : un compte par @name ou fid | `follow @name` |
+
+Un brouillon dans la zone de rédaction survit à un rechargement, conservé dans le navigateur selon ce
+à quoi il répond, jusqu'à ce que le cast parte. Le fil charge sa page suivante quand sa fin arrive à
+l'écran, et le bouton « show more » reste pour les claviers. Sur un téléphone, tirer le fil vers le
+bas depuis son sommet puis relâcher l'actualise, puisqu'une page installée n'a pas de barre de
+navigateur à tirer.
+
+Chaque fois que la page affiche le fil ou les mentions, elle enregistre leur ordre comme le fait
+`casty feed`, si bien que `casty like 3` dans un terminal agit sur le cast numéroté 3 à l'écran. La
+dernière liste affichée l'emporte : un autre navigateur, ou `casty feed`, `casty mentions` ou
+`casty thread` dans un terminal, renumérote.
+
+## Une clé d'application depuis votre portefeuille
+
+L'adresse de custody autorise une clé d'application avec deux signatures EIP-712, la demande de clé
+et l'ajout de clé ; `casty init` les fait signer par la phrase de récupération. La page peut les
+faire signer par un portefeuille à la place : dans votre compte, « add a key with your wallet »
+demande à `casty web` une nouvelle clé et les deux messages, les transmet au portefeuille dans le
+navigateur (une extension de portefeuille, ou la page ouverte dans le navigateur intégré d'une
+application de portefeuille, `eth_signTypedData_v4` via EIP-1193), vérifie que le compte du
+portefeuille est l'adresse de custody, et renvoie les signatures ; `casty web` les vérifie, envoie le
+`KEY_ADD` à travers votre nœud, et stocke la clé, chiffrée, comme sa plus récente. La phrase de
+récupération ne quitte jamais le portefeuille, et un portefeuille matériel derrière l'extension
+fonctionne de la même façon.
+
+Pour commencer sans aucune phrase, `casty init --fid <fid>` écrit la configuration à partir du nœud,
+adresse de custody comprise, et ne crée aucune clé ; `casty web` demande ensuite une phrase de passe
+pour le magasin qu'il s'apprête à créer, et la page ajoute la première clé. La suppression d'une clé
+reste dans le terminal (`casty key revoke`, avec la phrase de récupération ou avec la clé elle-même).
+
+La page trouve un portefeuille de la façon dont les portefeuilles s'annoncent (EIP-6963), si bien que
+plusieurs extensions côte à côte ne posent pas de problème, et `window.ethereum` en solution de
+repli. Si le portefeuille propose un autre compte que celui de custody, la page lui demande de vous
+laisser choisir le bon. Les messages de clé nomment Ethereum mainnet, si bien qu'un portefeuille sur
+Base ou OP Mainnet est d'abord invité à changer de chaîne (MetaMask refuse de signer pour une autre
+chaîne que la chaîne active) ; le changement ne coûte rien. Sur un téléphone sans portefeuille dans le
+navigateur, la page propose des liens qui l'ouvrent dans MetaMask, Coinbase Wallet ou Trust Wallet, et
+un bouton qui copie le lien d'appairage à coller sur la page là-bas, pour que le navigateur du
+portefeuille signe. Les liens ne portent aucun jeton : chacun passe d'abord par le serveur de
+l'éditeur du portefeuille. Un compte dont la custody est la phrase de récupération Farcaster de
+farcaster.xyz peut importer cette phrase une fois dans n'importe lequel de ces portefeuilles, et ne
+jamais la taper dans un terminal.
+
+Un profil affiche les adresses que son compte a vérifiées comme siennes, Ethereum ou Solana, à partir
+du nœud : chacune renvoie vers son explorateur (ouvert seulement quand on la touche) et se copie. Les
+vôtres sont aussi listées dans votre compte. Rien n'est lu sur une chaîne.
+
+Pour rester rapide, la page réutilise ce qu'elle a lu sur votre nœud dans les 30 dernières secondes
+quand vous basculez un filtre, affichez plus ou revenez à une vue. Tout ce que vous écrivez depuis la
+page efface ce cache, tout comme l'actualisation, le rechargement de la page, et toucher « feed »,
+« mentions » ou « you » quand la vue est ouverte ; un cast publié dans un terminal apparaît à
+l'actualisation suivante, ou à un chargement plus de 30 secondes après. Recharger la page relit les
+casts mais reprend votre liste de suivis des dix dernières minutes ; l'actualisation la relit aussi,
+si bien qu'un compte suivi dans une autre application apparaît tout de suite.
+
+Tant que la page est ouverte, elle demande à votre nœud toutes les deux minutes, et de nouveau chaque
+fois que vous y revenez, si quelqu'un vous a mentionné ou a répondu à vos 25 casts les plus récents
+depuis votre dernière visite. La réponse s'affiche sous forme de nombre à côté de « mentions », dans le
+titre de l'onglet, et sur l'icône de la page si vous l'avez installée comme application et que le
+navigateur le permet. Ouvrir « mentions » le remet à zéro. Tout comme `casty mentions` dans un
+terminal, ou « mentions » ouvert dans un autre navigateur : casty retient la mention la plus récente
+qui vous a été montrée, dans son répertoire de configuration, pas dans le navigateur. Le premier
+compte part du moment où la page interroge pour la première fois, si bien que les mentions
+antérieures ne comptent jamais comme nouvelles.
+
+Une semaine avant que la clé d'application de ce casty n'expire, l'avis sous la barre le signale ;
+n'importe quel cast, like ou follow la renouvelle. La zone de rédaction compte les octets. Au-delà de
+320, le cast part comme un cast long, jusqu'à 1024. Une écriture attend que le nœud ait le message,
+comme le fait la CLI ; si elle échoue, la page affiche le même message et la même indication que la
+CLI. Le point à côté de casty est votre nœud : vert quand il est synchronisé, orange quand il est en
+retard, rouge quand il ne répond pas.
+
+Au clavier : `n` nouveau cast, `r` actualiser, `j` et `k` passent d'un cast à l'autre, `l` like, `o`
+ou Entrée ouvrir, Échap fermer, Ctrl-Entrée ou Cmd-Entrée envoyer.
+
+Le mot en haut à droite règle le thème : « auto » suit le système, « light » et « dark » restent tels
+que choisis dans ce navigateur. Sur un téléphone, la barre n'a de place ni pour lui ni pour
+l'actualisation : le thème est dans votre compte, et toucher « feed », « mentions » ou « you » quand
+la vue est ouverte la recharge.
+
+![Un cast dans le thème sombre, avec le cast auquel il répond au-dessus et sa réponse en dessous](../../../assets/web-phone-dark.png)
+
+La page ne charge rien depuis d'autres sites. Elle n'affiche ni images ni avatars, et un lien dans un
+cast ne s'ouvre que quand vous le suivez.
+
+## Sur un téléphone
+
+```sh
+./bin/casty web --listen 0.0.0.0:3390
+```
+
+Cela affiche un lien pour chaque adresse IPv4 que la machine a sur un réseau, et un code QR du
+premier. Scannez-le avec un téléphone sur le même réseau. La page peut être ajoutée à l'écran
+d'accueil et s'ouvre alors en plein écran ; si elle y affiche l'écran d'appairage, collez-y le lien.
+La machine doit rester allumée avec `casty web` en cours d'exécution.
+
+La connexion est en HTTP simple. Quiconque peut observer le trafic sur ce réseau peut lire le jeton
+et publier en votre nom jusqu'à ce que vous arrêtiez `casty web`. Utilisez un réseau en qui vous avez
+confiance, ou reliez le téléphone et la machine par un VPN comme WireGuard et n'écoutez que sur
+l'adresse du VPN. Pour que tous les liens affichés auparavant cessent de fonctionner, arrêtez
+`casty web` et redémarrez-le avec `--new-token`.
+
+Un navigateur appairé garde le jeton pour cette adresse et ce port, disons `http://192.168.1.20:3390`.
+Sur un autre réseau, la même adresse peut appartenir à la machine de quelqu'un d'autre, et une page
+ouverte là depuis l'écran d'accueil lui remettrait le jeton. Si cela a pu se produire, démarrez
+`casty web` avec `--new-token`.
+
+Ouvrir le lien le place, jeton compris, dans l'historique du navigateur, et dans son historique
+synchronisé si le navigateur se synchronise. Effacez cette entrée sur un navigateur que vous
+partagez.
+
+`--read-only` saute la phrase de passe. La page lit alors et ne peut pas écrire.
+
+Ctrl-C arrête `casty web`. Une écriture (un cast, un like, un recast, une suppression ou un follow)
+qui attend encore son message peut d'abord se terminer, et le terminal le signale ; un second Ctrl-C
+arrête immédiatement.
+
+Pour atteindre la page depuis n'importe quel réseau, pas seulement celui où se trouve la machine,
+faites-la plutôt tourner sur l'hôte du nœud derrière HTTPS, où une mention ou une réponse peut aussi
+arriver sur le téléphone comme notification push : [Depuis n'importe quel réseau](../serve/).
+
+## Comment la page est protégée
+
+- Elle écoute sur 127.0.0.1 sauf si `--listen` indique autre chose.
+- Chaque requête à l'API porte le jeton. Le lien le contient après `#`, qu'un navigateur n'envoie
+  jamais à un serveur ; la page le déplace dans le stockage du navigateur et le retire de la barre
+  d'adresse, y compris quand le lien est ouvert dans un onglet qui affiche déjà la page.
+- Le jeton se trouve dans `~/.config/casty/web-token`, mode 0600, si bien qu'un téléphone appairé
+  reste appairé d'un redémarrage à l'autre.
+- Les écritures ne sont acceptées qu'en JSON, si bien qu'un formulaire sur un autre site ne peut pas
+  envoyer de données à la page.
+- Une requête dont le Host n'est ni une adresse IP, ni `localhost`, ni l'hôte de `--listen` est
+  refusée, si bien qu'un site qui fait pointer son propre domaine vers votre machine ne peut pas
+  atteindre la page.
+- La page n'exécute que son propre script et son propre style, et insère le texte des casts comme du
+  texte, jamais comme du HTML.
+- Tant que `casty web` tourne, la clé d'application est déchiffrée en mémoire, comme elle l'est
+  pendant la durée d'un simple `casty cast`.
+
+## Options
+
+```text
+Usage: casty web [options]
+
+the feed, threads and a compose box in a browser, on this machine or a phone
+
+Options:
+  --listen <host:port>     where to serve; 0.0.0.0:3390 lets a phone on the same
+                           network in (default: "127.0.0.1:3390")
+  --new-token              pair again; links printed before stop working
+  --read-only              do not unlock the app key; the page reads but cannot
+                           write
+  --no-allow-fname-server  look @names up with your node only; by default names
+                           it does not know are looked up on
+                           fnames.farcaster.xyz (public, no key)
+  -h, --help               display help for command
+```

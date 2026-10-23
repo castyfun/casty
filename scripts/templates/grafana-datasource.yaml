@@ -1,0 +1,8 @@
+# Written by casty scripts/1-node.sh: statsd's Graphite, as snapchain.sh upgrade would add it.
+apiVersion: 1
+datasources:
+  - name: Graphite
+    type: graphite
+    url: http://statsd:80
+    access: proxy
+    isDefault: true

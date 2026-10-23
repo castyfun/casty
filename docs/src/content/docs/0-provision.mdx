@@ -1,0 +1,204 @@
+---
+title: 0. Provision a host
+description: Rent a server, a 2 TB volume and a firewall, or check a host you already have, and write node.env.
+sidebar:
+  order: 1
+---
+
+Step 0 gets you a host that can run a Snapchain read node and writes `node.env`, the file step 1
+reads to find it.
+
+```sh
+./scripts/0-provision.sh
+```
+
+## Which provider
+
+Without `--provider`, the script decides from what you have set:
+
+| You set | Provider |
+| --- | --- |
+| `--host user@ip` | `existing`: nothing is created, the host is checked over SSH |
+| `HCLOUD_TOKEN` | `hetzner` |
+| `AWS_PROFILE`, `AWS_ACCESS_KEY_ID`, or a `~/.aws/credentials` or `~/.aws/config` file | `aws` |
+
+When both Hetzner and AWS credentials are set it stops and asks you to pass `--provider`. When
+neither is, it stops and says what to set. Cherry Servers is there for `--dry-run` only; a live
+run stops and suggests creating the server by hand, then using `--host`.
+
+## Look before you create
+
+```sh
+./scripts/0-provision.sh --provider hetzner --dry-run
+```
+
+A dry run prints every provider call as a `DRY:` line and creates nothing. It needs no token, no
+provider CLI and no SSH key, so you can read what a run would do before you sign up anywhere. It
+still writes `node.env`, with placeholder values such as the documentation address `192.0.2.1`,
+but never over a `node.env` that describes a real node. `1-node.sh` takes that file only with
+`--dry-run`, and the next step the dry run prints says so.
+
+```text
+dry run: printing provider calls, creating nothing; node.env gets placeholder values
+DRY: curl -s --max-time 10 https://api.ipify.org
+DRY: hcloud ssh-key list -o noheader -o columns=fingerprint,name
+DRY: hcloud ssh-key create --name fc-node --public-key-from-file /home/you/.ssh/id_ed25519.pub
+DRY: hcloud firewall list -o noheader -o columns=name
+DRY: hcloud firewall create --name fc-node-fw --rules-file ./fc-node.firewall.json
+DRY: hcloud volume list -o noheader -o columns=name
+DRY: hcloud volume create --name fc-node-data --size 2000 --location fsn1 --format ext4
+...
+```
+
+## Hetzner
+
+Install the [hcloud CLI](https://github.com/hetznercloud/cli#installation) and create a
+read/write API token in the Hetzner Cloud console (your project, then Security, then API tokens).
+
+```sh
+export HCLOUD_TOKEN=<your token>
+./scripts/0-provision.sh
+```
+
+It creates, in `fsn1` unless you pass `--region`:
+
+- the server `fc-node`, Ubuntu 24.04, of the first type that can be created out of `cpx41`,
+  `ccx23` and `cpx51` (pass `--type` to choose);
+- the volume `fc-node-data`, 2000 GB, formatted ext4;
+- the firewall `fc-node-fw`;
+- the SSH key `fc-node`, unless the project already has your key under some other name.
+
+## AWS
+
+Install the [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+and give it credentials: `AWS_PROFILE`, or `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`, or
+`aws configure` (`aws configure sso` and `aws sso login` for SSO).
+
+The region is `--region`, else `AWS_REGION`, else `AWS_DEFAULT_REGION`, else `us-east-1`. In zone
+`<region>a` it creates:
+
+- the instance `fc-node`, `m6i.xlarge` or else `m5.xlarge`, from Canonical's current Ubuntu 24.04
+  image, with a 40 GB root disk;
+- the gp3 volume `fc-node-data`, 2000 GB, attached once the instance runs;
+- the security group `fc-node-fw` and the key pair `fc-node`.
+
+The node's user is `ubuntu`.
+
+## A host you already have
+
+```sh
+./scripts/0-provision.sh --host user@203.0.113.7
+```
+
+Nothing is created. The script logs in with your key and runs the same checks step 1 runs. See
+[A node at home](../home-node/) for what such a host needs.
+
+## Confirming
+
+A real run prints its plan and waits for you to type the server name:
+
+```text
+On hetzner this creates, or reuses when they already exist under these names:
+  server    fc-node: cpx41 ccx23 cpx51 (the first one available), ubuntu-24.04, fsn1
+  firewall  fc-node-fw: ssh, 3381 and 3383 from 203.0.113.10/32; gossip 3382 from anywhere
+  volume    fc-node-data, 2000 GB
+The server and the volume are billed until you run this again with --destroy.
+Type fc-node to create them:
+```
+
+Anything else, or a closed stdin, stops the run with nothing created. `--yes` skips the question.
+
+## The firewall
+
+With the default `--allow-ip auto`, the script asks `api.ipify.org` for your public IP and opens
+SSH (22), the node's HTTP API (3381) and its gRPC API (3383) to that one address. Gossip (3382,
+UDP and TCP) is open to everyone, because other nodes connect to it. The client never needs 3381
+to be public: it goes through the SSH tunnel step 1 opens.
+
+Pass `--allow-ip 198.51.100.0/24` to allow a range instead. Running the script again from another
+network moves the rules to your new address, on Hetzner and on AWS. On AWS only the rules casty
+made move, told apart by their descriptions; a rule you added to the group yourself stays.
+
+`--https` also opens 80 and 443 to everyone, which `./scripts/1-node.sh serve --domain` needs for
+its certificate and for a phone on a mobile network ([From any network](../serve/)). A rerun
+without `--https` closes them again.
+
+## What the server does on first boot
+
+The cloud-init file, written next to `node.env` as `fc-node.cloud-init.yaml`:
+
+- installs `chrony` and `jq` and raises the open-file limit;
+- waits for the data volume, formats it only if it is blank, and mounts it at `/data`;
+- links `~/snapchain` to `/data/snapchain`, so the database lands on the volume;
+- installs Docker with Docker's install script and adds the user to the `docker` group.
+
+It does not reboot the server.
+
+## node.env
+
+```text
+NODE_PROVIDER=hetzner
+NODE_NAME=fc-node
+NODE_REGION=fsn1
+NODE_IP=192.0.2.1
+NODE_USER=root
+NODE_SSH_KEY=/home/you/.ssh/id_ed25519
+NODE_SERVER_ID=dry-run
+NODE_VOLUME_ID=dry-run-volume
+NODE_DATA_DIR=/data
+NODE_CREATED_AT=dry-run
+NODE_STARTED_AT=dry-run
+```
+
+It holds names, ids, the IP and the path of your private SSH key, never a token or a key.
+`NODE_STARTED_AT` is when a run last created, started or powered on the server: step 1 waits up
+to twenty minutes for ssh on a server that started in the last 15, a minute or two otherwise. Keep
+it: step 1 reads it, and `--destroy` needs it to know what to delete. `--json` prints it as JSON
+as well, and `--out <file>` writes it somewhere else.
+
+## Running it again
+
+Everything is found by name, so running the same command again reuses what exists and creates
+only what is missing. A rerun takes the provider, the name and the region from `node.env`, so
+`--https` or a new `--allow-ip` later lands on the same node; a flag that names another provider,
+name or region stops the run, and `--out <file>` is the way to a second node. If a run stops half way, on an error or Ctrl-C, `node.env` still records
+what was made so far. Run the same command again to finish, or add `--destroy` to remove it.
+
+## Deleting the node
+
+```sh
+./scripts/0-provision.sh --destroy
+```
+
+It reads `node.env`, asks you to type the name, then deletes the server, the volume and the
+firewall, in that order, and removes `node.env`. The volume holds the synced database, so a new
+node starts the sync from the beginning. `--destroy --dry-run` prints the calls instead. On AWS
+it deletes the instance and volume ids `node.env` records; it looks one up by its Name tag only
+when `node.env` has no id for it, after a run that stopped half way.
+
+## Options
+
+```text
+Usage: 0-provision.sh [--provider hetzner|aws|cherry|existing] [options]
+
+  --provider <name>      hetzner, aws, cherry (dry run only for now) or existing; without it,
+                         existing with --host, else the one whose credentials are set
+  --name <name>          server name; also <name>-data and <name>-fw (default: fc-node)
+  --region <region>      provider region (default: fsn1, us-east-1, eu_nord_1)
+  --type <type>          server type (default: cpx41 then ccx23, cpx51; m6i.xlarge then m5.xlarge)
+  --disk-gb <n>          data volume size, at least 2000 (default: 2000)
+  --ssh-pubkey <file>    key to log in with (default: ~/.ssh/id_ed25519.pub)
+  --allow-ip auto|<cidr> who may reach ssh, 3381 and 3383 (default: auto, your current IP)
+  --https                also open 80 and 443 to everyone, for 1-node.sh serve --domain; a
+                         rerun without it closes them again
+  --host <user@ip>       the host, for --provider existing
+  --dry-run              print every provider call instead of making it
+  --destroy              delete the server, then its volume, then its firewall
+  --yes                  do not ask before creating or deleting anything
+  --json                 print node.env as JSON
+  --out <file>           where to write node.env (default: node.env)
+
+Exit codes: 0 ok, 2 bad arguments, 3 missing prerequisite, 4 provider error, 5 preflight failed.
+```
+
+Next: [1. Run the read node](../1-node/).

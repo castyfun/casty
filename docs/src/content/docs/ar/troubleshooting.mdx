@@ -1,0 +1,281 @@
+---
+title: استكشاف الأخطاء وإصلاحها
+description: الرسائل التي تطبعها السكربتات وcasty حين يفشل شيء ما، وما يجب فعله إزاء كل منها.
+sidebar:
+  order: 11
+---
+
+كل فشل يطبع سطرًا واحدًا يبدأ بـ `error:` (السكربتات) أو `casty:` (العميل). وكثيرًا ما يضيف casty سطر
+`hint:` بالخطوة التالية. الرسائل أدناه منسوخة من الشيفرة؛ والقيم بين الأقواس الزاوية تتغير.
+
+## الخطوة 0: التجهيز
+
+### لا مزوّد
+
+```text
+error: no provider: set HCLOUD_TOKEN for Hetzner or AWS credentials for AWS, or pass --host user@ip for a host you have (see --help)
+```
+
+صدّر `HCLOUD_TOKEN`، أو اضبط أداة AWS CLI، أو مرّر `--host` لجهاز تملكه. حين تُضبط بيانات اعتماد Hetzner
+وAWS كلتاهما، يطلب السكربت `--provider hetzner` أو `--provider aws` بدلًا من ذلك.
+
+### لا مفتاح SSH
+
+```text
+error: no SSH public key at /home/you/.ssh/id_ed25519.pub. Create one with ssh-keygen -t ed25519, or pass --ssh-pubkey.
+```
+
+### تعذّر العثور على عنوان IP الخاص بك
+
+```text
+error: could not learn your public IP from api.ipify.org; pass --allow-ip <cidr>
+```
+
+يسأل السكربت `api.ipify.org` عن عنوانك ليقصر SSH وواجهات API الخاصة بالعقدة عليه. مرّر العنوان بنفسك،
+مثلًا `--allow-ip 198.51.100.4/32`.
+
+### لا نوع خادم متاح
+
+```text
+warning: could not create a cpx41 server in fsn1; trying the next type
+error: none of cpx41 ccx23 cpx51 could be created in fsn1
+```
+
+لم يكن لدى المزوّد أي من الأنواع الافتراضية في ذلك الموقع، أو ربما لا يُسمح لحسابك بإنشائها. جرّب
+`--region` آخر، أو سمِّ نوعًا بـ `--type`. على AWS تقول الرسالة `instance` وتسمّي المنطقة.
+
+### مفتاح مختلف بالاسم نفسه
+
+```text
+error: the project has a different SSH key named fc-node; pass another --name or --ssh-pubkey
+```
+
+لدى Hetzner بالفعل مفتاح يسمى `fc-node` ليس لك. اختر `--name` آخر، أو استخدم المفتاح الموجود هناك.
+
+### توقف التشغيل في منتصف الطريق
+
+```text
+node.env records what was created so far: run the same command again to finish, or add --destroy
+```
+
+شغّل أمر `0-provision.sh` نفسه مجددًا؛ فهو يعيد استخدام ما هو موجود. ترفض الخطوة 1 ملف `node.env` كهذا:
+
+```text
+error: node.env has no NODE_IP: provisioning stopped half way; run ./scripts/0-provision.sh again
+```
+
+## الخطوة 1: العقدة
+
+### لا اتصال SSH
+
+```text
+error: no ssh connection to root@<ip>: <what ssh said>. Check NODE_IP and NODE_SSH_KEY in node.env.
+```
+
+يستغرق الخادم الجديد بعض الوقت ليُقلع. إن استمر ذلك، فتحقق من أن `NODE_SSH_KEY` في `node.env` هو النصف
+الخاص من المفتاح الذي أعطيته للخطوة 0، وأن عنوان IP الخاص بك لا يزال هو الذي يسمح به جدار الحماية: تشغيل
+الخطوة 0 مجددًا من شبكتك الحالية يحدّث قواعد Hetzner.
+
+### المضيف لا يفي بالمتطلبات
+
+```text
+error: root@<ip> does not meet the requirements above
+```
+
+رمز الخروج 5. يحتوي الجدول فوق الرسالة على `no` في الصفوف التي فشلت: `ram` أو `disk` أو `docker` أو
+`compose` أو `clock`. تعني `docker missing` أن Docker غير مثبت. وتعني `docker no server` أن الأمر `docker`
+موجود لكنه لا يستطيع الوصول إلى خدمة Docker: إما أنها متوقفة (`sudo systemctl start docker`)، أو أن مستخدم
+SSH ليس root وليس في المجموعة `docker`.
+
+### العقدة لا تُجيب بعد
+
+```text
+warning: the node did not return JSON from http://127.0.0.1:3381/v1/info (still starting?); waiting for it
+```
+
+تُطبع مرة واحدة، ما دامت العقدة لا تُجيب بعد، مثلًا بعد تشغيلها مباشرة. ويستمر الانتظار. وإن لم ينتهِ
+أبدًا، فإن `./scripts/1-node.sh logs` يعرض ما تفعله العقدة.
+
+### لم تتزامن في الوقت المحدد
+
+```text
+error: not synced after 43200s
+```
+
+تواصل العقدة المزامنة؛ الانتظار وحده هو الذي توقف. راقبها بـ `./scripts/1-node.sh status --wait`، أو انتظر
+مدة أطول بـ `--timeout <seconds>`.
+
+### النفق لا يعمل
+
+```text
+error: the tunnel did not come up; is something else using local port 3381 or 3383?
+```
+
+عملية أخرى تشغل أحد هذين المنفذين على جهازك، وغالبًا ما تكون نفقًا من تشغيل سابق أو عقدة وهمية محلية.
+أوقفها، أو شغّل `./scripts/1-node.sh tunnel --stop`، ثم حاول مجددًا.
+
+### لا يمكن تثبيت إصدار
+
+```text
+error: Snapchain <version>'s docker-compose.yml does not name farcasterxyz/snapchain:latest, so it cannot be pinned
+```
+
+ملف compose الخاص بالإصدار يسمّي صورته بطريقة أخرى، لذا لن يعيد casty كتابته. شغّل دون `--release`.
+
+## الخطوة 2: العميل
+
+### لا إصدار لهذا الجهاز
+
+```text
+error: no casty binary is built for <os>-<arch>; run this script with --from-source, which needs Node 22.12 or newer
+error: could not download casty-<os>-<arch> and SHA256SUMS from <url>: no release for <os>-<arch> there yet, or no connection. Run this script with --from-source to build casty here.
+```
+
+تتضمن الإصدارات linux-x64 وlinux-arm64 وdarwin-arm64. على جهاز آخر، أو بدون اتصال بـ GitHub، يبني
+`./scripts/2-client.sh --from-source` العميل هنا.
+
+### التنزيل لا يطابق مجموعه الاختباري
+
+```text
+error: the sha256 of the downloaded casty-<os>-<arch> is <hash>, not the <hash> SHA256SUMS lists; nothing was installed
+```
+
+الملف ليس الذي نشره الإصدار: تنزيل انقطع، أو وكيل غيّره، أو مرآة مسمّاة في `CASTY_RELEASE_URL` تحمل شيئًا
+آخر. شغّل السكربت مجددًا؛ وإن تكرر ذلك، فابنِ من الشيفرة المصدرية.
+
+### إصدار Node.js قديم جدًا
+
+```text
+error: Node <version> is too old; casty needs 22.12 or newer.
+```
+
+لا يحتاج إلى Node إلا `--from-source`. تتابع الرسالة بشرح طريقة تثبيت إصدار أحدث باستخدام fnm أو nvm. على
+Node 25 أو أحدث، لم يعد corepack مضمّنًا: `npm install -g corepack`.
+
+### لا يستطيع casty الوصول إلى العقدة
+
+```text
+casty: cannot reach the node at http://127.0.0.1:3381
+hint: start the tunnel with ./scripts/1-node.sh tunnel, or pass --node <url>
+```
+
+رمز الخروج 4. النفق متوقف، أو العقدة في مكان آخر.
+
+### لا معرّف fid لعبارة البذرة
+
+```text
+casty: no fid is registered to <address>
+hint: check --address-index; if your node is still syncing, pass --op-rpc <OP Mainnet RPC url>
+```
+
+العنوان عند الفهرس 0 من عبارة البذرة لا يحمل أي معرّف fid، على الأقل بحسب ما تعرفه العقدة. إن كانت محفظتك
+تستخدم حسابًا آخر من العبارة نفسها، فمرّر `--address-index`. والعقدة التي لا تزال تتزامن ربما لم ترَ
+التسجيل بعد.
+
+### لا تخزين
+
+```text
+casty: fid <fid> has no storage units, so the network will not accept its messages
+```
+
+استأجر وحدة تخزين للمعرّف fid أولًا. انظر [إيجار التخزين](../concepts/storage-rent/).
+
+### عبارة البذرة مرفوضة
+
+```text
+casty: a seed phrase has 12, 15, 18, 21 or 24 words, not <n>
+casty: word <n> is not in the BIP-39 English word list
+casty: the seed phrase checksum does not match
+```
+
+تذكر الرسائل مواضع الكلمات، لا الكلمات نفسها أبدًا. تحقق من الإملاء والترتيب.
+
+### العقدة ترفض رسالة
+
+يطبع casty رسالة العقدة نفسها، ثم تلميحًا يُختار بحسب ما تحتويه الرسالة:
+
+| تحتوي الرسالة على | ما يعنيه |
+| --- | --- |
+| `invalid signature` | عبارة البذرة لا تحمل عنوان الحفظ (custody address) للمعرّف fid؛ تحقق من `--address-index` |
+| `invalid signed key request` | يجب أن يكون معرّف fid الخاص بالتطبيق محفوظًا لدى `--app-address-index` من عبارة البذرة نفسها |
+| `nonce is not greater than stored nonce` | تغيير آخر في المفاتيح وصل أولًا؛ يعيد `casty init` المحاولة مرة واحدة بنفسه |
+| `active key cap exceeded` | يحمل المعرّف fid ‏1000 مفتاح تطبيق نشط؛ ألغِ بعضها بـ `casty key revoke` |
+| `invalid scope` | لا يجوز لمفتاح التطبيق توقيع هذا النوع من الرسائل؛ أضف مفتاحًا بـ `casty init --scopes` |
+
+تأتي هذه السلاسل النصية من
+[دليل Snapchain لكتابة الرسائل](https://snapchain.farcaster.xyz/guides/writing-messages). رمز الخروج 3.
+
+### كلمة مرور خاطئة
+
+```text
+casty: cannot decrypt the key store: wrong passphrase or a damaged file
+```
+
+لا يمكن استرداد كلمة مرور منسية. احذف `keys.enc.json` وشغّل `casty init` لإضافة مفتاح جديد. تبقى المفاتيح
+القديمة مسجلة إلى أن تنتهي صلاحيتها دون استخدام؛ ولإزالتها قبل ذلك، اعثر عليها بـ `casty key list` وشغّل
+`casty key revoke <key>` مع عبارة البذرة.
+
+### لا مفتاح تطبيق صالحًا للاستخدام
+
+```text
+casty: no app key for fid <fid> yet
+hint: add one with your wallet in casty web, under you, or run casty init with the seed phrase
+```
+
+لا يضيف `casty init --fid` أي مفتاح: وافق على مفتاح بمحفظتك أولًا.
+
+```text
+casty: none of the app keys in <dir> is registered to fid <fid>
+```
+
+عقدتك لا تسرد المفتاح. المفتاح الذي وُوفق عليه قبل لحظة يُحتسب بعد أن تتجاوزه مزامنة عقدتك: يعرض
+`casty doctor` مقدار تأخرها. وإلا فقد انتهت صلاحية المفتاح بعد مدة TTL دون استخدام أو أُلغي؛ أضف مفتاحًا
+آخر في `casty web`، تحت «you»، أو بـ `casty init`.
+
+### مقبولة لكن غير مدمجة
+
+```text
+casty: <hash> was accepted but not merged within 40s
+```
+
+أخذت العقدة الرسالة لكن casty لم يرها تُدمج
+([السبب](../concepts/read-nodes-vs-validators/)). ابحث عنها، مثلًا بـ `casty feed`، قبل أن ترسلها
+مجددًا: تشغيل الأمر مجددًا يرسل رسالة جديدة. بعد `casty init`، يُحتفظ بالمفتاح، وتشغيل `casty init` مجددًا
+يعيد إرسال الرسالة نفسها دون طلب عبارة البذرة.
+
+### أرقام لا تتطابق
+
+```text
+casty: no list numbered yet to take cast 2 from
+casty: the last list numbered has no cast 9
+```
+
+يعني `casty like 2` المنشور الثاني من آخر قائمة معروضة، سواء بـ `casty feed` أو `casty mentions` أو
+`casty thread` أو casty web. اعرض قائمة أولًا، أو سمِّ المنشور بالصيغة `<fid>:<0x hash>`.
+
+### العقدة تُجيب بـ 429 أو 503 على طلب تغذية
+
+يطلب `casty feed` وcasty web من العقدة حتى 64 صفحة في آن واحد، فتستغرق تغذية من 300 حساب خمس رحلات ذهاب
+وإياب بدل تسع عشرة. والعقدة التي تُجيب عن بعضها بـ 429 أو 503 يُطلب منها أكثر مما ينبغي في وقت واحد: اضبط
+`CASTY_CONCURRENCY=32` (أي عدد صحيح من 1 إلى 256) في بيئة الأمر، أو بيئة `casty web`، واخفضه إلى أن تتوقف
+الأخطاء.
+
+### الساعة غير مضبوطة
+
+```text
+warning: this clock and the node's differ by over a minute; nodes reject messages from the future
+```
+
+يقارن `casty doctor` ساعتك بساعة العقدة. تُرفض الرسائل المختومة بوقت يسبق الحاضر بأكثر من 15 دقيقة؛ فعّل
+مزامنة الوقت على جهازك.
+
+## رموز الخروج
+
+| الرمز | السكربتات | casty |
+| --- | --- | --- |
+| 0 | تم | تم |
+| 1 | غير متزامن، النفق متوقف | غير متزامن (`node status`)، أي شيء آخر |
+| 2 | وسائط خاطئة | وسائط خاطئة |
+| 3 | متطلب مسبق مفقود | رفضت العقدة الرسالة |
+| 4 | فشل المزوّد أو المضيف | لا يمكن الوصول إلى العقدة |
+| 5 | المضيف لا يفي بالمتطلبات | مشكلة في الإعدادات أو مخزن المفاتيح أو عبارة البذرة |

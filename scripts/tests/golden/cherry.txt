@@ -1,0 +1,8 @@
+dry run: printing provider calls, creating nothing; node.env gets placeholder values
+DRY: curl -s --max-time 10 https://api.ipify.org
+DRY: cherryctl ssh-key create --label fc-node --key-file ROOT/scripts/tests/fixtures/id_ed25519.pub
+DRY: cherryctl storage create --project-id dry-run-project --size 2000 --region eu_nord_1 --description fc-node-data
+DRY: cherryctl server create --project-id dry-run-project --plan TODO-plan-with-16GB-RAM --image ubuntu_24_04 --region eu_nord_1 --hostname fc-node --ssh-keys fc-node --userdata-file TMP/fc-node.cloud-init.yaml
+DRY: cherryctl storage attach --server-id dry-run --storage-id dry-run-volume
+wrote TMP/node.env (cherry, root@192.0.2.1)
+next: ROOT/scripts/1-node.sh --env TMP/node.env --dry-run
