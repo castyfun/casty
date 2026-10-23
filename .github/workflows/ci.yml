@@ -103,4 +103,4 @@ jobs:
           persist-credentials: false
       - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
         with:
-          args: --config docs/lychee.toml docs/src/content/docs README.md
+          args: --config docs/lychee.toml --scheme https --scheme http docs/src/content/docs README.md

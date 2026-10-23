@@ -204,7 +204,8 @@ describe("what the index review found", () => {
 
   it("reads the feed through the time index, without sorting every candidate", () => {
     const index = openIndex(":memory:");
-    expect(index.feedPlan()).not.toMatch(/TEMP B-TREE/);
+    // Older SQLite builds dedupe the follow list in a temp b-tree; the casts are never sorted in one.
+    expect(index.feedPlan()).not.toMatch(/TEMP B-TREE FOR ORDER BY/);
     index.close();
   });
 });

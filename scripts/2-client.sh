@@ -53,7 +53,7 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-RELEASE_URL=${CASTY_RELEASE_URL:-https://github.com/savvax/casty/releases/latest/download}
+RELEASE_URL=${CASTY_RELEASE_URL:-https://github.com/castyfun/casty/releases/latest/download}
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
@@ -89,8 +89,9 @@ install_release() {
   fi
   want=$(sed -n "s/^\([0-9a-f]\{64\}\)  $file\$/\1/p" "$WORK/SHA256SUMS")
   got=$(sha256_hex <"$WORK/$file")
-  [ -n "$want" ] && [ "$want" = "$got" ] ||
+  if [ -z "$want" ] || [ "$want" != "$got" ]; then
     die "$EXIT_PROVIDER" "the sha256 of the downloaded $file is $got, not the ${want:-missing} SHA256SUMS lists; nothing was installed"
+  fi
   mkdir -p "$ROOT/bin"
   chmod +x "$WORK/$file"
   mv "$WORK/$file" "$ROOT/bin/casty"

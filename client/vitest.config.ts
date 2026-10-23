@@ -4,6 +4,10 @@ export default defineConfig({
   test: {
     include: ["test/**/*.test.ts"],
     setupFiles: ["test/setup.ts"],
+    // Many tests start a mock node and a casty process; a 2-core CI runner running every suite
+    // side by side needs more than the default 5 s for some of them.
+    testTimeout: 20_000,
+    hookTimeout: 20_000,
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],

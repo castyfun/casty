@@ -58,9 +58,9 @@ serve() { node_sh serve --config "$CONFIG" "$@"; }
   assert_success
   cmp "$CONFIG/keys.enc.json" "$REMOTE/casty/config/keys.enc.json"
   cmp "$CONFIG/config.json" "$REMOTE/casty/config/config.json"
-  [ "$(stat -f %Lp "$REMOTE/casty/config/keys.enc.json" 2>/dev/null || stat -c %a "$REMOTE/casty/config/keys.enc.json")" = 600 ]
+  [ "$(stat -c %a "$REMOTE/casty/config/keys.enc.json" 2>/dev/null || stat -f %Lp "$REMOTE/casty/config/keys.enc.json")" = 600 ]
   [ "$(cat "$REMOTE/casty/passphrase")" = secret-pass ]
-  [ "$(stat -f %Lp "$REMOTE/casty/passphrase" 2>/dev/null || stat -c %a "$REMOTE/casty/passphrase")" = 600 ]
+  [ "$(stat -c %a "$REMOTE/casty/passphrase" 2>/dev/null || stat -f %Lp "$REMOTE/casty/passphrase")" = 600 ]
   [ "$(yq '.services.casty.environment.CASTY_PASSPHRASE_FILE' "$REMOTE/docker-compose.casty.yml")" = /run/secrets/casty_passphrase ]
   [ "$(yq '.secrets.casty_passphrase.file' "$REMOTE/docker-compose.casty.yml")" = ./casty/passphrase ]
   refute_output --partial "secret-pass"
