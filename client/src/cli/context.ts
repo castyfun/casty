@@ -4,6 +4,7 @@ import type { Command } from "commander";
 import {
   type Config,
   configDir,
+  DEFAULT_NODE_URL,
   PASSPHRASE_ENV,
   PASSPHRASE_FILE_ENV,
   readConfig,
@@ -39,6 +40,8 @@ interface GlobalOptions {
 export interface Context {
   io: Io;
   node: NodeClient;
+  /** The url `node` talks to. */
+  nodeUrl: string;
   json: boolean;
   dir: string;
   confirm: ConfirmOptions;
@@ -48,14 +51,35 @@ export interface Context {
   note(text: string): void;
 }
 
+/** The node named on the command line, else the one casty init remembered, else the tunnel. */
+function nodeUrl(command: Command, options: GlobalOptions, dir: string): string {
+  let root = command;
+  while (root.parent) root = root.parent;
+  if (root.getOptionValueSource("node") !== "default") return options.node;
+  try {
+    return readConfig(dir)?.node ?? options.node;
+  } catch {
+    // A config that cannot be read is reported by the command that needs it.
+    return options.node;
+  }
+}
+
+/** What casty init records as the node: nothing for the tunnel, which is the default anyway. */
+export function nodeToRemember(ctx: Context): string | undefined {
+  return ctx.nodeUrl === DEFAULT_NODE_URL ? undefined : ctx.nodeUrl;
+}
+
 export function contextFor(command: Command, io: Io): Context {
   const options = command.optsWithGlobals<GlobalOptions>();
   const json = Boolean(options.json);
+  const dir = configDir(options.config, io.env);
+  const url = nodeUrl(command, options, dir);
   return {
     io,
-    node: nodeClient(options.node),
+    node: nodeClient(url),
+    nodeUrl: url,
     json,
-    dir: configDir(options.config, io.env),
+    dir,
     confirm: io.confirm ?? {},
     print: (data, text) => io.stdout.write(`${json ? JSON.stringify(data, null, 2) : text}\n`),
     note: (text) => {

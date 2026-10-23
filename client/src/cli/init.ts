@@ -9,7 +9,14 @@ import { KEY_FILE, type KeyRecord, loadKeys, updateKeys } from "../keys/store.js
 import { NodeError, NonceError, NotMergedError } from "../node/errors.js";
 import { parseScopes, scopeGroups, scopeNames } from "../protocol/scopes.js";
 import { parseDuration } from "../protocol/time.js";
-import { type Context, contextFor, type Io, mnemonic, passphrase } from "./context.js";
+import {
+  type Context,
+  contextFor,
+  type Io,
+  mnemonic,
+  nodeToRemember,
+  passphrase,
+} from "./context.js";
 import { aboveZero, shortKey, table, wholeNumber } from "./format.js";
 
 interface InitOptions {
@@ -167,6 +174,7 @@ async function init(ctx: Context, options: InitOptions): Promise<void> {
       fid,
       custodyAddress: custody.address,
       keys: stored ? [...known, pubkey] : known,
+      node: nodeToRemember(ctx),
     });
   };
   try {
@@ -234,7 +242,7 @@ async function initForFid(ctx: Context, fid: number): Promise<void> {
   }
   const previous = readConfig(ctx.dir);
   const keys = previous?.fid === fid ? previous.keys : [];
-  const config = { fid, custodyAddress: custody, keys };
+  const config = { fid, custodyAddress: custody, keys, node: nodeToRemember(ctx) };
   writeConfig(ctx.dir, config);
   ctx.print(
     config,

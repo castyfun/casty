@@ -46,6 +46,8 @@ export interface Config {
   custodyAddress: `0x${string}`;
   /** Public keys of the app keys in the store, oldest first. */
   keys: string[];
+  /** The node casty init was given, used when a command names none; absent: the tunnel. */
+  node?: string | undefined;
 }
 
 const CONFIG_FILE = "config.json";
@@ -59,7 +61,8 @@ function isConfig(value: unknown): value is Config {
     typeof c.custodyAddress === "string" &&
     c.custodyAddress.startsWith("0x") &&
     Array.isArray(c.keys) &&
-    c.keys.every((k) => typeof k === "string")
+    c.keys.every((k) => typeof k === "string") &&
+    (c.node === undefined || typeof c.node === "string")
   );
 }
 

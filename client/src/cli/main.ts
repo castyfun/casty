@@ -45,7 +45,11 @@ Examples:
 function program(io: Io): Command {
   const casty = new Command("casty")
     .description("Read and write Farcaster through your own Snapchain node.")
-    .option("--node <url>", "node HTTP API", DEFAULT_NODE_URL)
+    .option(
+      "--node <url>",
+      "node HTTP API; casty init remembers the one it is given",
+      DEFAULT_NODE_URL,
+    )
     .option("--json", "print results as JSON")
     .option("--config <dir>", "config directory (default: $XDG_CONFIG_HOME/casty)")
     .option("--quiet", "print results only, no progress notes")

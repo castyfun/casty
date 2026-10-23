@@ -29,8 +29,8 @@ exports[`help for casty 1`] = `
 Read and write Farcaster through your own Snapchain node.
 
 Options:
-  --node <url>                    node HTTP API (default:
-                                  "http://127.0.0.1:3381")
+  --node <url>                    node HTTP API; casty init remembers the one it
+                                  is given (default: "http://127.0.0.1:3381")
   --json                          print results as JSON
   --config <dir>                  config directory (default:
                                   $XDG_CONFIG_HOME/casty)

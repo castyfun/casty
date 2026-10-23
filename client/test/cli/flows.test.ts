@@ -402,6 +402,19 @@ describe("init --fid", () => {
     expect(config.custodyAddress.toLowerCase()).toBe(register.idRegisterEventBody.to.toLowerCase());
   });
 
+  it("remembers the node it was given, so later commands need no --node", async () => {
+    const node = await startMock();
+    const dir = tempConfig();
+    expect((await casty(["init", "--fid", String(ME_FID), ...flags(node.url, dir)])).code).toBe(0);
+    expect(JSON.parse(readFileSync(join(dir, "config.json"), "utf8")).node).toBe(node.url);
+    const doctor = await casty(["doctor", "--json", "--config", dir]);
+    expect(doctor.code).toBe(0);
+    expect(JSON.parse(doctor.stdout).node).toBe(node.url);
+    // A --node given still wins over the remembered one.
+    const other = await casty(["doctor", "--node", "http://127.0.0.1:9", "--config", dir]);
+    expect(other.code).toBe(4);
+  });
+
   it("a write with no key yet points at the wallet, not only at the seed phrase", async () => {
     const node = await startMock();
     const dir = tempConfig();

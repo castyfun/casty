@@ -15,7 +15,8 @@ usage() {
 Usage: 2-client.sh [--node <url>] [--fid <fid>] [--from-source] [--no-init]
                    [-- <casty init options>]
 
-  --node <url>    the node's HTTP API (default: http://127.0.0.1:3381, the tunnel from step 1)
+  --node <url>    the node's HTTP API (default: http://127.0.0.1:3381, the tunnel from step 1);
+                  any Snapchain node will do, and casty remembers it for later commands
   --fid <fid>     no seed phrase: casty init --fid, then add the key in casty web with your wallet
   --from-source   build casty here with Node 22.12 or newer and pnpm, instead of downloading it
   --no-init       stop after casty doctor; run ./bin/casty init yourself later
