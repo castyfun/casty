@@ -5,10 +5,10 @@
 Ваша собственная read-нода Farcaster и клиент командной строки, который читает из неё и пишет через неё.
 Без API-ключей, без Ethereum RPC на обычном пути, без ончейн-транзакции для ключа приложения.
 
-Документация на шести языках: https://savvax.github.io/casty/ru/ · все команды с описанием: https://savvax.github.io/casty/ru/commands/
+Документация на шести языках: https://castyfun.github.io/casty/ru/ · все команды с описанием: https://castyfun.github.io/casty/ru/commands/
 
 ```sh
-git clone https://github.com/savvax/casty.git && cd casty
+git clone https://github.com/castyfun/casty.git && cd casty
 ./scripts/deploy.sh --domain node.example.org   # all of the below, in order, and the page on the host behind HTTPS
 ```
 

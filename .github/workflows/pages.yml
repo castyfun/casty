@@ -1,6 +1,6 @@
 name: pages
 
-# The documentation site, in every language, at https://savvax.github.io/casty/.
+# The documentation site, in every language, at https://castyfun.github.io/casty/.
 on:
   push:
     branches: [main]
@@ -31,7 +31,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm docs:build
         env:
-          DOCS_SITE: https://savvax.github.io
+          DOCS_SITE: https://castyfun.github.io
           DOCS_BASE: /casty
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

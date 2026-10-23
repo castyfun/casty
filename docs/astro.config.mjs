@@ -2,7 +2,7 @@ import starlight from "@astrojs/starlight";
 import { defineConfig, passthroughImageService } from "astro/config";
 
 // The site is built for the root locally and in CI; the Pages workflow sets these for
-// https://savvax.github.io/casty/.
+// https://castyfun.github.io/casty/.
 const site = process.env.DOCS_SITE;
 const base = process.env.DOCS_BASE ?? "/";
 
@@ -20,7 +20,7 @@ export default defineConfig({
       description:
         "Your own Farcaster read node, and a client that reads from it and writes through it.",
       customCss: ["./src/styles/custom.css"],
-      social: [{ icon: "github", label: "GitHub", href: "https://github.com/savvax/casty" }],
+      social: [{ icon: "github", label: "GitHub", href: "https://github.com/castyfun/casty" }],
       defaultLocale: "root",
       locales: {
         root: { label: "English", lang: "en" },

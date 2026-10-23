@@ -5,10 +5,10 @@
 Votre propre nœud de lecture Farcaster, et un client en ligne de commande qui lit depuis ce nœud et écrit à travers lui.
 Pas de clé d'API, pas de RPC Ethereum sur le chemin normal, pas de transaction on-chain pour la clé d'application.
 
-Documentation en six langues : https://savvax.github.io/casty/fr/ · toutes les commandes expliquées : https://savvax.github.io/casty/fr/commands/
+Documentation en six langues : https://castyfun.github.io/casty/fr/ · toutes les commandes expliquées : https://castyfun.github.io/casty/fr/commands/
 
 ```sh
-git clone https://github.com/savvax/casty.git && cd casty
+git clone https://github.com/castyfun/casty.git && cd casty
 ./scripts/deploy.sh --domain node.example.org   # all of the below, in order, and the page on the host behind HTTPS
 ```
 

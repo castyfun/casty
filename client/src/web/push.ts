@@ -45,7 +45,7 @@ export interface Push {
 const VAPID_FILE = "vapid.json";
 const SUBSCRIPTIONS_FILE = "push.json";
 /** Who to reach about this sender, as RFC 8292 asks for. */
-const VAPID_SUBJECT = "https://github.com/savvax/casty";
+const VAPID_SUBJECT = "https://github.com/castyfun/casty";
 /** How long the push service may hold a notification for a phone that is off. */
 const TTL_SECONDS = 86_400;
 const RECORD_SIZE = 4096;

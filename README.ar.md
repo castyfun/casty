@@ -5,10 +5,10 @@
 عقدة قراءة Farcaster خاصة بك، وعميل سطر أوامر يقرأ منها ويكتب من خلالها.
 بلا مفاتيح API، وبلا Ethereum RPC في المسار المعتاد، وبلا معاملة على السلسلة لمفتاح التطبيق.
 
-التوثيق بست لغات: https://savvax.github.io/casty/ar/ · شرح جميع الأوامر: https://savvax.github.io/casty/ar/commands/
+التوثيق بست لغات: https://castyfun.github.io/casty/ar/ · شرح جميع الأوامر: https://castyfun.github.io/casty/ar/commands/
 
 ```sh
-git clone https://github.com/savvax/casty.git && cd casty
+git clone https://github.com/castyfun/casty.git && cd casty
 ./scripts/deploy.sh --domain node.example.org   # all of the below, in order, and the page on the host behind HTTPS
 ```
 

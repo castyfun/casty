@@ -5,10 +5,10 @@
 你自己的 Farcaster 只读节点，以及一个从它读取、通过它写入的命令行客户端。
 不需要 API 密钥，常规路径上不需要 Ethereum RPC，应用密钥也不需要链上交易。
 
-六种语言的文档：https://savvax.github.io/casty/zh-cn/ · 全部命令及说明：https://savvax.github.io/casty/zh-cn/commands/
+六种语言的文档：https://castyfun.github.io/casty/zh-cn/ · 全部命令及说明：https://castyfun.github.io/casty/zh-cn/commands/
 
 ```sh
-git clone https://github.com/savvax/casty.git && cd casty
+git clone https://github.com/castyfun/casty.git && cd casty
 ./scripts/deploy.sh --domain node.example.org   # all of the below, in order, and the page on the host behind HTTPS
 ```
 
