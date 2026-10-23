@@ -23,6 +23,31 @@ page for the browser and the phone. Your feed, mentions and threads are read fro
 casts, replies, likes, recasts and follows go out through it. The app key that signs them is
 added with one message your wallet signs: no transaction, no gas.
 
+## Quick start
+
+You need the fid of a Farcaster test account and a wallet that holds its custody address; for a new node also a Hetzner token, AWS credentials or a Linux host with 16 GB RAM and 2 TB free disk.
+
+```sh
+# a new node of your own
+git clone https://github.com/castyfun/casty.git && cd casty
+export HCLOUD_TOKEN=<token>            # Hetzner; or AWS credentials, or add -- --host user@ip below
+./scripts/deploy.sh --fid <your fid>   # server, node (syncs for hours), ./bin/casty
+./bin/casty web                        # open the link; under "you": "add a key with your wallet"
+./bin/casty feed                       # read; ./bin/casty cast "hello" writes
+./scripts/0-provision.sh --destroy     # when you are done: server, volume and firewall go
+```
+
+Or with no node of your own, on one that already runs:
+
+```sh
+# casty on a node that already runs
+git clone https://github.com/castyfun/casty.git && cd casty
+./scripts/2-client.sh --node https://snap.farcaster.xyz:3381 --fid <your fid>
+./bin/casty web                        # open the link; under "you": "add a key with your wallet"
+./bin/casty feed                       # read; ./bin/casty cast "hello" writes
+```
+
+
 ## Start with one command
 
 ### A new node of your own

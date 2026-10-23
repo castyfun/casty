@@ -23,6 +23,31 @@ terminal y una página para el navegador y el teléfono. Tu feed, tus menciones 
 tu nodo; tus casts, respuestas, likes, recasts y follows salen a través de él. La clave de aplicación
 que los firma se añade con un solo mensaje que firma tu billetera: sin transacción, sin gas.
 
+## Inicio rápido
+
+Necesitas el fid de una cuenta de prueba de Farcaster y una billetera que tenga su dirección de custodia; para un nodo nuevo, además, un token de Hetzner, credenciales de AWS o un host Linux con 16 GB de RAM y 2 TB libres.
+
+```sh
+# a new node of your own
+git clone https://github.com/castyfun/casty.git && cd casty
+export HCLOUD_TOKEN=<token>            # Hetzner; or AWS credentials, or add -- --host user@ip below
+./scripts/deploy.sh --fid <your fid>   # server, node (syncs for hours), ./bin/casty
+./bin/casty web                        # open the link; under "you": "add a key with your wallet"
+./bin/casty feed                       # read; ./bin/casty cast "hello" writes
+./scripts/0-provision.sh --destroy     # when you are done: server, volume and firewall go
+```
+
+O sin nodo propio, en uno que ya funciona:
+
+```sh
+# casty on a node that already runs
+git clone https://github.com/castyfun/casty.git && cd casty
+./scripts/2-client.sh --node https://snap.farcaster.xyz:3381 --fid <your fid>
+./bin/casty web                        # open the link; under "you": "add a key with your wallet"
+./bin/casty feed                       # read; ./bin/casty cast "hello" writes
+```
+
+
 ## Empieza con un solo comando
 
 ### Un nodo nuevo, tuyo

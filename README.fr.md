@@ -24,6 +24,31 @@ fils de discussion sont lus depuis votre nœud ; vos casts, réponses, likes, re
 partent à travers lui. La clé d'application qui les signe est ajoutée avec un seul message que
 votre portefeuille signe : pas de transaction, pas de gas.
 
+## Démarrage rapide
+
+Il vous faut le fid d'un compte de test Farcaster et un portefeuille qui détient son adresse de custody ; pour un nouveau nœud, aussi un jeton Hetzner, des identifiants AWS ou un hôte Linux avec 16 Go de RAM et 2 To libres.
+
+```sh
+# a new node of your own
+git clone https://github.com/castyfun/casty.git && cd casty
+export HCLOUD_TOKEN=<token>            # Hetzner; or AWS credentials, or add -- --host user@ip below
+./scripts/deploy.sh --fid <your fid>   # server, node (syncs for hours), ./bin/casty
+./bin/casty web                        # open the link; under "you": "add a key with your wallet"
+./bin/casty feed                       # read; ./bin/casty cast "hello" writes
+./scripts/0-provision.sh --destroy     # when you are done: server, volume and firewall go
+```
+
+Ou sans nœud à vous, sur un nœud qui tourne déjà :
+
+```sh
+# casty on a node that already runs
+git clone https://github.com/castyfun/casty.git && cd casty
+./scripts/2-client.sh --node https://snap.farcaster.xyz:3381 --fid <your fid>
+./bin/casty web                        # open the link; under "you": "add a key with your wallet"
+./bin/casty feed                       # read; ./bin/casty cast "hello" writes
+```
+
+
 ## Commencer avec une seule commande
 
 ### Un nouveau nœud à vous

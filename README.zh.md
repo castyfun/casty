@@ -22,6 +22,31 @@ Farcaster 的完整副本，并给你一个不与其他任何服务通信的客�
 手机的页面。你的时间线、提及和会话从你的节点读取；你的 cast、回复、点赞、recast 和关注通过它发出。
 为它们签名的应用密钥通过一条由你的钱包签署的消息添加：不需要交易，不需要 gas。
 
+## 快速开始
+
+你需要一个 Farcaster 测试账户的 fid，以及持有其托管地址的钱包；新建节点还需要 Hetzner 令牌、AWS 凭证，或一台有 16 GB 内存和 2 TB 可用磁盘的 Linux 主机。
+
+```sh
+# a new node of your own
+git clone https://github.com/castyfun/casty.git && cd casty
+export HCLOUD_TOKEN=<token>            # Hetzner; or AWS credentials, or add -- --host user@ip below
+./scripts/deploy.sh --fid <your fid>   # server, node (syncs for hours), ./bin/casty
+./bin/casty web                        # open the link; under "you": "add a key with your wallet"
+./bin/casty feed                       # read; ./bin/casty cast "hello" writes
+./scripts/0-provision.sh --destroy     # when you are done: server, volume and firewall go
+```
+
+或者不自建节点，使用一个已在运行的节点：
+
+```sh
+# casty on a node that already runs
+git clone https://github.com/castyfun/casty.git && cd casty
+./scripts/2-client.sh --node https://snap.farcaster.xyz:3381 --fid <your fid>
+./bin/casty web                        # open the link; under "you": "add a key with your wallet"
+./bin/casty feed                       # read; ./bin/casty cast "hello" writes
+```
+
+
 ## 用一条命令开始
 
 ### 一个属于你自己的新节点

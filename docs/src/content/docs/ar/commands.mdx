@@ -8,20 +8,26 @@ description: كل سكربت وكل أمر من أوامر casty، وما يفع
 
 ## البدء السريع
 
+تحتاج إلى fid لحساب Farcaster تجريبي ومحفظة تحمل عنوان الحفظ الخاص به؛ ولعقدة جديدة أيضًا رمز Hetzner أو بيانات اعتماد AWS أو مضيف Linux بذاكرة 16 GB وقرص فارغ 2 TB.
+
 ```sh
+# a new node of your own
 git clone https://github.com/castyfun/casty.git && cd casty
-./scripts/0-provision.sh   # a server with a 2 TB volume and a firewall, or --host user@ip for your own
-./scripts/1-node.sh        # Snapchain on that host, the wait for its sync, an SSH tunnel to it
-./scripts/2-client.sh      # casty in ./bin, an app key for your fid, your feed
-./bin/casty feed           # read
-./bin/casty cast "hello"   # write
-./bin/casty web            # the same in a browser
+export HCLOUD_TOKEN=<token>            # Hetzner; or AWS credentials, or add -- --host user@ip below
+./scripts/deploy.sh --fid <your fid>   # server, node (syncs for hours), ./bin/casty
+./bin/casty web                        # open the link; under "you": "add a key with your wallet"
+./bin/casty feed                       # read; ./bin/casty cast "hello" writes
+./scripts/0-provision.sh --destroy     # when you are done: server, volume and firewall go
 ```
 
-أو الخطوات الثلاث دفعة واحدة، مع الصفحة على المضيف خلف HTTPS:
+أو من دون عقدة خاصة بك، على عقدة تعمل بالفعل:
 
 ```sh
-./scripts/deploy.sh --domain node.example.org
+# casty on a node that already runs
+git clone https://github.com/castyfun/casty.git && cd casty
+./scripts/2-client.sh --node https://snap.farcaster.xyz:3381 --fid <your fid>
+./bin/casty web                        # open the link; under "you": "add a key with your wallet"
+./bin/casty feed                       # read; ./bin/casty cast "hello" writes
 ```
 
 ## السكربتات

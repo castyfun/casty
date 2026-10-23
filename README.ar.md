@@ -23,6 +23,31 @@
 النشر والمتابعات. يُضاف مفتاح التطبيق الذي يوقّعها برسالة واحدة توقّعها محفظتك: بلا معاملة، وبلا
 رسوم غاز.
 
+## البدء السريع
+
+تحتاج إلى fid لحساب Farcaster تجريبي ومحفظة تحمل عنوان الحفظ الخاص به؛ ولعقدة جديدة أيضًا رمز Hetzner أو بيانات اعتماد AWS أو مضيف Linux بذاكرة 16 GB وقرص فارغ 2 TB.
+
+```sh
+# a new node of your own
+git clone https://github.com/castyfun/casty.git && cd casty
+export HCLOUD_TOKEN=<token>            # Hetzner; or AWS credentials, or add -- --host user@ip below
+./scripts/deploy.sh --fid <your fid>   # server, node (syncs for hours), ./bin/casty
+./bin/casty web                        # open the link; under "you": "add a key with your wallet"
+./bin/casty feed                       # read; ./bin/casty cast "hello" writes
+./scripts/0-provision.sh --destroy     # when you are done: server, volume and firewall go
+```
+
+أو من دون عقدة خاصة بك، على عقدة تعمل بالفعل:
+
+```sh
+# casty on a node that already runs
+git clone https://github.com/castyfun/casty.git && cd casty
+./scripts/2-client.sh --node https://snap.farcaster.xyz:3381 --fid <your fid>
+./bin/casty web                        # open the link; under "you": "add a key with your wallet"
+./bin/casty feed                       # read; ./bin/casty cast "hello" writes
+```
+
+
 ## ابدأ بأمر واحد
 
 ### عقدة جديدة خاصة بك

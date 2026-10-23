@@ -23,6 +23,31 @@ casty ставит read-ноду [Snapchain](https://snapchain.farcaster.xyz), �
 ваши касты, ответы, лайки, рекасты и подписки уходят через неё. Ключ приложения, который их
 подписывает, добавляется одним сообщением, которое подписывает ваш кошелёк: без транзакции, без газа.
 
+## Быстрый старт
+
+Нужны fid тестового аккаунта Farcaster и кошелёк с его custody-адресом; для новой ноды ещё токен Hetzner, ключи AWS или Linux-хост с 16 ГБ RAM и 2 ТБ свободного диска.
+
+```sh
+# a new node of your own
+git clone https://github.com/castyfun/casty.git && cd casty
+export HCLOUD_TOKEN=<token>            # Hetzner; or AWS credentials, or add -- --host user@ip below
+./scripts/deploy.sh --fid <your fid>   # server, node (syncs for hours), ./bin/casty
+./bin/casty web                        # open the link; under "you": "add a key with your wallet"
+./bin/casty feed                       # read; ./bin/casty cast "hello" writes
+./scripts/0-provision.sh --destroy     # when you are done: server, volume and firewall go
+```
+
+Или без своей ноды, на уже работающей:
+
+```sh
+# casty on a node that already runs
+git clone https://github.com/castyfun/casty.git && cd casty
+./scripts/2-client.sh --node https://snap.farcaster.xyz:3381 --fid <your fid>
+./bin/casty web                        # open the link; under "you": "add a key with your wallet"
+./bin/casty feed                       # read; ./bin/casty cast "hello" writes
+```
+
+
 ## Начните с одной команды
 
 ### Новая собственная нода
