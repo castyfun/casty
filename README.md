@@ -1,146 +1,168 @@
+<div align="center">
+
 # casty
+
+**Your own Farcaster read node, and a client that reads from it and writes through it.**<br>
+Three commands. No API keys, no Ethereum RPC, no gas.
+
+[![ci](https://github.com/castyfun/casty/actions/workflows/ci.yml/badge.svg)](https://github.com/castyfun/casty/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-c4390a)](LICENSE)
+[![docs](https://img.shields.io/badge/docs-6%20languages-191813)](https://castyfun.github.io/casty/)
 
 English · [Русский](README.ru.md) · [中文](README.zh.md) · [Español](README.es.md) · [Français](README.fr.md) · [العربية](README.ar.md)
 
-Your own Farcaster read node, and a command-line client that reads from it and writes through it.
-No API keys, no Ethereum RPC on the normal path, no onchain transaction for the app key.
+<img src="docs/src/assets/hero.webp" width="880" alt="casty web on a laptop in the dark theme and on a phone in the light theme">
 
-Documentation in six languages: https://castyfun.github.io/casty/ · every command explained: https://castyfun.github.io/casty/commands/
+**[Website and documentation](https://castyfun.github.io/casty/)** · [Every command](https://castyfun.github.io/casty/commands/) · [Deploy with an agent](https://castyfun.github.io/casty/agents/) · [llms.txt](llms.txt)
+
+</div>
+
+casty puts a [Snapchain](https://snapchain.farcaster.xyz) read node, a full copy of Farcaster, on
+a host you control, and gives you a client that talks to nothing else: a terminal command and a
+page for the browser and the phone. Your feed, mentions and threads are read from your node; your
+casts, replies, likes, recasts and follows go out through it. The app key that signs them is
+added with one message your wallet signs: no transaction, no gas.
+
+## Start with one command
+
+### A new node of your own
 
 ```sh
 git clone https://github.com/castyfun/casty.git && cd casty
-./scripts/deploy.sh --domain node.example.org   # all of the below, in order, and the page on the host behind HTTPS
+./scripts/deploy.sh --fid <your fid> --domain node.example.org
 ```
 
-Or step by step, which is what `deploy.sh` runs:
+`deploy.sh` rents a server with a 2 TB volume and a firewall on Hetzner (`HCLOUD_TOKEN`) or AWS
+(AWS CLI credentials), installs Snapchain and waits for its sync (a few hours), installs `casty`
+on your machine, and puts the page on the host behind HTTPS. It shows what it will create and
+bill, and goes ahead only once you confirm. With `--fid` no seed phrase is typed: add the key in
+`./bin/casty web` when it says so, then run the same command again for the page on the host.
+Every step is safe to run again: the same command picks up where a run stopped. A Linux machine
+of your own with 16 GB RAM and 2 TB free works too: add `-- --host user@ip`.
+
+### casty on a node that already runs
 
 ```sh
-./scripts/0-provision.sh   # a VM, 2 TB volume and firewall on Hetzner or AWS, whichever credentials are set; or --host user@ip
-./scripts/1-node.sh        # Snapchain read node, wait for sync, SSH tunnel to 127.0.0.1:3381
-./scripts/2-client.sh      # download casty, add a gasless app key with your wallet (--fid) or seed phrase, read your feed
+git clone https://github.com/castyfun/casty.git && cd casty
+./scripts/2-client.sh --node https://snap.farcaster.xyz:3381 --fid <your fid>
 ```
 
-A seed phrase controls the whole account. Use a test account for this tutorial, paste a seed
-phrase only into software from developers you trust, and prefer a key authorised by your
-wallet: `./scripts/2-client.sh --fid <fid>` (or `deploy.sh --fid <fid>`), then `./bin/casty web`
-and, under you, "add a key with your wallet".
+No server and no wait: casty connects to any Snapchain node's HTTP API, one of yours on another
+machine or a public one, and remembers it for every later command. Then run `./bin/casty web`
+and, under you, press "add a key with your wallet".
 
-| Step | You need | It leaves you with |
-| --- | --- | --- |
-| `0-provision.sh` | `hcloud` and `HCLOUD_TOKEN`, or the `aws` CLI and credentials; `~/.ssh/id_ed25519.pub` | a host and `node.env` |
-| `1-node.sh` | `ssh` and `jq`; a host with 16 GB RAM, 2 TB disk, Docker (cloud-init installs it) | a synced read node and a tunnel |
-| `2-client.sh` | `curl`; a test account's fid with a storage unit, and its seed phrase or a wallet. With `--from-source`: Node 22.12 or newer and pnpm through corepack | `./bin/casty`, one file, with an app key |
+### Let an agent do it
 
-Every step is safe to run again, so `deploy.sh` picks up where a run stopped: the first sync
-takes hours, and Ctrl-C during it loses nothing. `deploy.sh --tailscale` reaches the page over
-your tailnet instead of a domain; without either, it stops after the client. Until the first
-release is tagged, step 2 finds nothing to download and builds the client here instead, which
-needs Node 22.12 or newer. Every script takes `--help`. `0-provision.sh --dry-run` and `1-node.sh --dry-run` print each
-command instead of running it; a real `0-provision.sh` run lists what it will create and bill,
-and goes ahead only once you type the server name back. The first sync downloads a snapshot of several hundred GB and takes
-hours; `./scripts/1-node.sh status` shows how far each shard is behind.
+Paste the prompt from [Deploy with an agent](https://castyfun.github.io/casty/agents/) into
+Claude Code, Codex, Cursor or another coding agent. It reads [llms.txt](llms.txt), asks which of
+the two you want, shows you the plan before anything costs money, and never asks for your seed
+phrase.
 
-`./bin/casty --help` lists the client commands: `doctor`, `init`, `whoami`, `feed`, `mentions`,
-`thread`, `cast`, `reply`, `like` and `unlike`, `recast` and `unrecast`, `follow` and `unfollow`, `delete`,
-`clients`, `storage`, `key list`, `key revoke`, `node status`, `web`, and `serve`, which
-`1-node.sh serve` runs on the host. With `casty init --fid <fid>`
-the seed phrase is never typed: the page adds the key with the wallet in the browser. Otherwise
-the phrase is used once to sign the key request and is never written to disk. The app key is stored encrypted (scrypt, XChaCha20-Poly1305) in `~/.config/casty/keys.enc.json`.
-[SECURITY.md](SECURITY.md) lists every secret involved, where it lives and how to revoke it.
+> A seed phrase controls the whole account. casty never needs it: `--fid` sets up without one,
+> and the key is approved by your wallet in `casty web`. If you do use `casty init` with a phrase,
+> use a test account and type it only into software from developers you trust.
 
-## In a browser and on a phone
+## How it fits together
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/src/assets/architecture-dark.png">
+  <img src="docs/src/assets/architecture-light.png" width="880" alt="Your terminal and your browser or phone reach your own Snapchain read node over an SSH tunnel or HTTPS; the node holds a full copy of Farcaster and gossips your messages to the validators.">
+</picture>
+
+Reads come from your node, so the feed is as fast as the machine it runs on. Writes are signed on
+your machine and relayed by your node. Nothing goes through a hosted Farcaster API.
+
+## On a laptop and on a phone
 
 <p>
-  <img src="docs/src/assets/web-phone-light.png" width="260" alt="casty web on a phone, light theme: the numbered feed">
-  <img src="docs/src/assets/web-phone-dark.png" width="260" alt="casty web on a phone, dark theme: a cast with what it answers and its reply">
+  <img src="docs/src/assets/desktop-feed-light.png" width="600" alt="The feed on a laptop, light theme">
+  <img src="docs/src/assets/phone-mentions-dark.png" width="240" alt="Mentions on a phone, dark theme">
+</p>
+<p>
+  <img src="docs/src/assets/desktop-compose-dark.png" width="600" alt="A new cast on a laptop, dark theme">
+  <img src="docs/src/assets/phone-feed-light.png" width="240" alt="The feed on a phone, light theme">
 </p>
 
-`./bin/casty web` serves the CLI's commands as a page on `http://127.0.0.1:3390`, apart from
-removing keys, and prints a link that pairs a browser; under you it adds an app key with your
-wallet. `--listen 0.0.0.0:3390` adds a
-QR code for a phone on the same network. [docs/src/content/docs/web.mdx](docs/src/content/docs/web.mdx)
-has the details.
+`./bin/casty web` serves the feed, threads, mentions, profiles and a compose box at
+`http://127.0.0.1:3390` and prints a link that pairs a browser; `--listen 0.0.0.0:3390` adds a QR
+code for a phone on the same network. `./scripts/1-node.sh serve --domain <name>` runs the same
+page on the node's host behind HTTPS, with push notifications for mentions and replies, so a phone
+reads and writes from any network.
 
-`./scripts/1-node.sh serve --domain <name>` (or `--tailscale`) runs the same page on the node's
-host behind HTTPS, so a phone reads and writes from any network: the client is built there in a
-container, Caddy gets the certificate (open 80 and 443 with `0-provision.sh --https`), and the
-app key and its passphrase go to the host as a Docker secret unless `--read-only`. There the
-feed comes from an index that follows the node's events, and a mention or a reply reaches the
-phone as a push notification naming the sender and nothing else.
-[docs/src/content/docs/serve.mdx](docs/src/content/docs/serve.mdx) has the details and the trade.
-
-## Without a node
-
-The mock node in `test/mock-node` serves the Snapchain HTTP API from fixtures, checks signatures
-on submitted messages and merges them, so the whole client runs offline. `pnpm demo` (after
-`pnpm install`) starts one on a free port, adds an app key with the test phrase, reads the feed
-with and without one app, casts, and removes its throwaway config at the end:
+## In the terminal
 
 ```text
 $ casty feed --limit 3
-1  @casty-test · 1s · via casty
-   hello from casty
+1  @casty-test · 0s · via casty
+   Reading the feed from my own node. No API key, no rate limit.
 
-2  @user-2000000002 · 17d · via app-alpha
+2  @user-2000000002 · 22d · via app-alpha
    @casty-test thanks for the pointer, it worked.
    https://example.com/2000000002/3
 
-3  @user-2000000011 · 17d · via app-beta
+3  @user-2000000011 · 22d · via app-beta
    Reading the Snapchain docs on a train. A good way to spend an hour.
 
 $ casty like 2
+liked 2000000002:0x973d398ad75e1f25fa780085f3c22d30b01d2504
 ```
 
-`pnpm demo:web` does the same setup, then serves `casty web` on a free port until Ctrl-C.
+| Command | What it does |
+| --- | --- |
+| `./scripts/deploy.sh` | steps 0, 1 and 2 in order, and the page on the host with `--domain` or `--tailscale` |
+| `./scripts/0-provision.sh` | a server, a 2 TB volume and a firewall on Hetzner or AWS, or `--host user@ip` for your own |
+| `./scripts/1-node.sh` | Snapchain on the host, the wait for its sync, an SSH tunnel; `status`, `logs`, `upgrade`, `serve`, `down` |
+| `./scripts/2-client.sh` | `casty` in `./bin`, checked against the release's checksums, an app key, your feed |
+| `casty feed`, `mentions`, `thread` | read, from your node, with numbers the next command takes |
+| `casty cast`, `reply`, `like`, `recast`, `follow`, `delete` | write, through your node, confirmed once it is read back |
+| `casty web`, `casty serve` | the page, on this machine or on the host |
+| `casty doctor`, `whoami`, `key list`, `storage` | the node's sync, your account, your keys, your storage |
 
-`via` names the app that requested the key a cast was signed with; `--only-app` and
-`--exclude-app` filter on it. The number in front of a cast is what `like`, `reply`, `recast`
-and `delete` take, as well as `<fid>:<hash>` or the cast's farcaster.xyz link. Step by step:
+[Commands](https://castyfun.github.io/casty/commands/) explains every one of them and its
+options; every script and command also takes `--help`.
+
+## Without a node
+
+The mock Snapchain node in `test/mock-node` serves the same HTTP API from fixtures and checks the
+signature of every message submitted to it, so the whole client runs offline:
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm mock-node &                      # http://127.0.0.1:3381, fixtures from test/mock-node/fixtures/basic
-export XDG_CONFIG_HOME=$(mktemp -d)   # keeps the test key out of your real config
-./scripts/2-client.sh --no-init --from-source   # builds ./bin/casty from this checkout and runs casty doctor
-printf 'test test test test test test test test test test test junk\n' \
-  | CASTY_PASSPHRASE=x ./bin/casty init --mnemonic-stdin
-./bin/casty feed --limit 20
-./bin/casty cast "hello from casty"
+pnpm demo       # a throwaway app key, the feed with and without one app, a cast, a like
+pnpm demo:web   # the same, then casty web until Ctrl-C
 ```
 
-In the fixtures the BIP-39 reference phrase above owns fid 2000000001. `CASTY_PASSPHRASE` exists for
-tests; without it casty asks on the terminal. `pnpm mock-node gen --fids 300 --casts 50 --seed 42`
-writes a bigger set to `test/mock-node/fixtures/generated`, served with
-`pnpm mock-node serve --fixtures generated`.
+The fixtures use the BIP-39 test phrase `test test test test test test test test test test test
+junk` and fids from 2000000001, which belong to no one.
 
-## Checks
+## Development
 
 ```sh
 make check                                       # lint, types, tests, shellcheck, bats, docs
-pnpm --filter @casty/client test -- --coverage   # fails below 95 % of lines on client/src, cli/ excluded
-pnpm --filter @casty/docs dev                    # the documentation site at localhost:4321
+pnpm --filter @casty/client test -- --coverage   # fails below 95 % of lines on client/src
+pnpm --filter @casty/docs dev                    # the website at localhost:4321
 ```
 
-`make check` runs offline and needs `shellcheck`, `jq` and `yq` (mikefarah) besides Node and pnpm;
-lychee is used when installed. CI also runs the coverage and, weekly too, `pnpm audit`. The docs'
-links between pages work on the site, not when the `.mdx` files are read on GitHub. Real-node tests in `client/test/e2e` run
-only when `CASTY_E2E_NODE_URL` and `CASTY_E2E_MNEMONIC` (a test account's phrase) are set; with `CASTY_E2E_READ_FID`, an
-account that has been mentioned and replied to, they also check the node's answers the client relies on.
-
-## Layout
+`make check` runs offline and needs `shellcheck`, `jq` and `yq` (mikefarah) besides Node 22.12+
+and pnpm. CI runs it on Linux and the shell suites on macOS's bash 3.2, plus `pnpm audit` and a
+link check. Tests against a real node in `client/test/e2e` run only when `CASTY_E2E_NODE_URL` is
+set.
 
 | Path | What |
 | --- | --- |
 | `scripts/` | the three steps, `deploy.sh` and `demo.sh`, their libraries and templates; bats suites in `scripts/tests` |
 | `client/` | the `casty` CLI (TypeScript) and the `casty web` page in `client/src/web` |
 | `test/mock-node/` | the mock Snapchain node and its fixture generator |
-| `test/fakebin/` | fake `hcloud`, `aws`, `cherryctl`, `ssh`, `sudo`, `docker`, `curl`, `crontab`, `cloud-init`, `tailscale` for the bats suites |
-| `docs/` | the documentation site (Astro Starlight) |
-| `SECURITY.md` | secrets, exposure, what to do if something leaks |
+| `docs/` | the website and documentation (Astro Starlight), in six languages |
+| `llms.txt` | the project for coding agents, with the one-prompt setup |
 
-`1-node.sh --autoupgrade` installs Snapchain's weekly upgrade job, which runs
-`docker system prune --volumes -f` on the whole host. On Windows, run the scripts in WSL2.
+[SECURITY.md](SECURITY.md) lists every secret involved, where it lives and how to revoke it, and
+how to report a vulnerability.
 
-MIT licensed. Snapchain (GPL-3.0) is downloaded and run on your host, never vendored here. The
-release binary has about twenty MIT and Apache-2.0 packages inside it; their notices are in
-`THIRD_PARTY_LICENSES` next to it.
+## License
+
+casty is released under the [MIT License](LICENSE). The repository holds only casty's own code.
+Snapchain, which is GPL-3.0, is not part of it: `1-node.sh` downloads Snapchain's own Docker image
+and compose file onto your host and runs them there. The one-file `casty` binary of each release
+bundles about twenty MIT and Apache-2.0 packages, whose notices ship next to it in
+`THIRD_PARTY_LICENSES`.

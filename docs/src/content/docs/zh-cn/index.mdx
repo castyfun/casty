@@ -7,6 +7,9 @@ sidebar:
   order: 0
 hero:
   title: casty
+  image:
+    file: ../../../assets/hero.webp
+    alt: 笔记本电脑上深色主题的 casty web 和手机上浅色主题的 casty web
   tagline: 你自己的 Farcaster 只读节点，以及一个从它读取、通过它写入的客户端。三条命令，不需要 API 密钥，不需要 gas。
   actions:
     - text: 开始教程
@@ -21,52 +24,118 @@ hero:
       variant: minimal
 ---
 
-## casty 是什么
+import Architecture from "../../../components/Architecture.astro";
+import Gallery from "../../../components/Gallery.astro";
 
-casty 在一台由你掌控的主机上放置一个 [Snapchain](https://snapchain.farcaster.xyz) 只读节点，
-并给你一个不与其他任何服务通信的客户端。节点保存 Farcaster 的完整副本；客户端从它读取你的时间线、
-提及和会话，并通过它发布 cast、回复、点赞、recast 和关注。任何内容都不经过托管的 Farcaster API，
-你和网络之间也没有别人的密钥或速率限制。
 
-- **三个脚本。** `0-provision.sh` 在 Hetzner 或 AWS 上租用一台带 2 TB 卷和防火墙的服务器，
-  或检查一台你已有的机器。`1-node.sh` 安装 Snapchain，等待它同步，并打开一条 SSH 隧道。
-  `2-client.sh` 安装 `casty`，添加应用密钥并读取你的时间线。`deploy.sh` 依次运行这三个脚本。
-- **不需要 gas 的应用密钥。** 为你的 cast 签名的密钥通过一条签名消息添加，而不是一笔交易：
-  由你的钱包在浏览器中签名，或者在终端中用助记词签名一次。不需要 ETH，也不需要 RPC。
-- **终端客户端。** `casty feed`、`casty cast`、`casty like 2`：每条命令都输出纯文本，
-  或者在使用 `--json` 时输出供脚本使用的 JSON。
-- **用于浏览器和手机的页面。** `casty web` 在本机提供时间线、会话、提及和撰写框；
-  `casty serve` 把同一个页面以 HTTPS 放到节点主机上，并为提及和回复提供推送通知。
-- **离线测试。** 一个模拟 Snapchain 节点检查每一个签名，因此整个客户端、脚本和页面都能在 CI 中
-  不依赖真实节点运行。
+<div class="lede">
 
-## 快速开始
+casty 在一台由你掌控的主机上放置一个 [Snapchain](https://snapchain.farcaster.xyz) 只读节点，即
+Farcaster 的完整副本，并给你一个不与其他任何服务通信的客户端：一条终端命令，以及一个用于浏览器和
+手机的页面。你的时间线、提及和会话从你的节点读取；你的 cast、回复、点赞、recast 和关注通过它发出。
+你和网络之间没有任何托管 API，所以不需要申请 API 密钥，也不会遇到速率限制。
 
-```sh
+</div>
+
+## 用一条命令开始
+
+<div class="ways">
+<div class="way">
+
+### 一个属于你自己的新节点
+
+Hetzner 或 AWS 上一台带 2 TB 卷和防火墙的服务器，上面运行 Snapchain，客户端在你的机器上，
+页面以 HTTPS 放在主机上。节点需要同步数小时。
+
+```sh wrap
 git clone https://github.com/castyfun/casty.git && cd casty
-./scripts/deploy.sh --domain node.example.org   # everything below in order, and the page on the host behind HTTPS
+./scripts/deploy.sh --fid <your fid> --domain node.example.org
 ```
 
-`deploy.sh` 运行这三个步骤，在使用 `--domain` 或 `--tailscale` 时还会运行第四步，[从任何
-网络访问](serve/)。[完整流程](guide/)按顺序讲解全部步骤以及之后的日常使用。每一步都可以安全地重复运行，
-所以同一条命令会从上次中断的地方继续。分步运行：
+已经有一台 2 TB 可用空间的 Linux 机器？加上 `-- --host user@ip`。
 
-```sh
-./scripts/0-provision.sh   # a VM, 2 TB volume and firewall on Hetzner or AWS, whichever credentials are set; or --host user@ip
-./scripts/1-node.sh        # Snapchain read node, wait for sync, SSH tunnel to 127.0.0.1:3381
-./scripts/2-client.sh      # download casty, add a gasless app key with your wallet (--fid) or seed phrase, read your feed
+</div>
+<div class="way">
+
+### 在已经运行的节点上使用 casty
+
+不需要服务器：casty 连接任何 Snapchain 节点，可以是你在另一台机器上的节点，也可以是公共节点，
+并记住它。一分钟即可就绪。
+
+```sh wrap
+git clone https://github.com/castyfun/casty.git && cd casty
+./scripts/2-client.sh --node https://snap.farcaster.xyz:3381 --fid <your fid>
 ```
 
-助记词掌控整个账户。跟着本教程操作时请使用测试账户，只把助记词粘贴到你信任的开发者所写的软件中，
-并优先使用由钱包授权的密钥：`casty init --fid <fid>`，然后运行 `casty web`，在“你”页面中选择
-“add a key with your wallet”。
+然后运行 `./bin/casty web`，在 “you” 下选择 “add a key with your wallet”。
 
-在 casty 仓库的检出目录中按顺序运行这三个脚本。完成后，你会在一台由你掌控的主机上拥有一个
-[Snapchain](https://snapchain.farcaster.xyz) 只读节点，以及 `./bin/casty`，
-一个从该节点读取你的时间线并通过它发布内容的客户端。
+</div>
+<div class="way">
 
-客户端不需要托管 Farcaster 服务的 API 密钥，常规路径上也不需要 Ethereum RPC。
-它的应用密钥通过一条签名消息添加，而不是链上交易，因此无需支付 gas。
+### 让智能体来做
+
+把[一条提示词](agents/)粘贴到 Claude Code、Codex、Cursor 或其他编程智能体中。它会阅读
+[llms.txt](https://castyfun.github.io/casty/llms.txt)，询问你要两种方式中的哪一种，并且从不
+索要你的助记词。
+
+```text wrap
+Set up casty for me: https://github.com/castyfun/casty.
+Read https://castyfun.github.io/casty/llms-full.txt first.
+...
+```
+
+</div>
+</div>
+
+## 各部分如何配合
+
+<Architecture />
+
+读取来自你的节点，所以时间线的速度取决于运行它的机器。写入在你的机器上用只有 casty 持有的应用密钥
+签名，再由你的节点转发给验证者。这个密钥通过一条签名消息添加，由你的钱包在浏览器中批准：不需要交易，
+不需要 gas，也不需要 Ethereum RPC。
+
+## 你会得到什么
+
+<div class="features">
+
+- **三个脚本和一条命令。** `0-provision.sh` 租用服务器或检查你的服务器，
+  `1-node.sh` 安装 Snapchain 并等待它同步，`2-client.sh` 安装 `casty` 并添加
+  密钥。`deploy.sh` 依次运行它们，并从上次中断的地方继续。
+- **终端客户端。** `casty feed`、`casty cast`、`casty like 2`：给你看的纯文本，给脚本用的 `--json`，
+  以及从一条命令延续到下一条命令的编号。
+- **用于浏览器和手机的页面。** 时间线、会话、提及、个人资料和撰写框，
+  浅色和深色主题，在笔记本电脑上有键盘快捷键，在手机上可以添加到主屏幕。
+- **你的节点，在任何地方。** `casty serve` 把页面以 HTTPS 放到节点主机上，带有
+  立即响应的时间线索引，以及提及和回复的推送通知。
+- **看得见的密钥。** 你账户的每一个应用密钥、它可以签署什么、何时失效，以及
+  在终端中或用密钥本身撤销它。
+- **不用节点即可测试。** 一个模拟 Snapchain 节点检查每一个签名，因此客户端、
+  脚本和页面都在 CI 中离线运行它们的检查。
+
+</div>
+
+## 在终端中
+
+```text
+$ casty feed --limit 3
+1  @casty-test · 0s · via casty
+   Reading the feed from my own node. No API key, no rate limit.
+
+2  @user-2000000002 · 22d · via app-alpha
+   @casty-test thanks for the pointer, it worked.
+   https://example.com/2000000002/3
+
+3  @user-2000000011 · 22d · via app-beta
+   Reading the Snapchain docs on a train. A good way to spend an hour.
+
+$ casty like 2
+liked 2000000002:0x973d398ad75e1f25fa780085f3c22d30b01d2504
+```
+
+## 在浏览器和手机上
+
+<Gallery captions={["“you”：账户、它的密钥和存储", "一条新 cast，在时间线的任何位置按 n", "手机上的提及和回复，深色主题", "手机上的撰写框，浅色主题"]} />
 
 ## 需要准备什么
 

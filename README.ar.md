@@ -1,141 +1,161 @@
+<div align="center" dir="rtl">
+
 # casty
+
+**عقدة قراءة Farcaster خاصة بك، وعميل يقرأ منها ويكتب من خلالها.**<br>
+ثلاثة أوامر. بلا مفاتيح API، وبلا Ethereum RPC، وبلا رسوم غاز.
+
+[![ci](https://github.com/castyfun/casty/actions/workflows/ci.yml/badge.svg)](https://github.com/castyfun/casty/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-c4390a)](LICENSE)
+[![docs](https://img.shields.io/badge/docs-6%20languages-191813)](https://castyfun.github.io/casty/)
 
 [English](README.md) · [Русский](README.ru.md) · [中文](README.zh.md) · [Español](README.es.md) · [Français](README.fr.md) · العربية
 
-عقدة قراءة Farcaster خاصة بك، وعميل سطر أوامر يقرأ منها ويكتب من خلالها.
-بلا مفاتيح API، وبلا Ethereum RPC في المسار المعتاد، وبلا معاملة على السلسلة لمفتاح التطبيق.
+<img src="docs/src/assets/hero.webp" width="880" alt="casty web على حاسوب محمول بالسمة الداكنة وعلى هاتف بالسمة الفاتحة">
 
-التوثيق بست لغات: https://castyfun.github.io/casty/ar/ · شرح جميع الأوامر: https://castyfun.github.io/casty/ar/commands/
+**[الموقع والتوثيق](https://castyfun.github.io/casty/ar/)** · [كل الأوامر](https://castyfun.github.io/casty/ar/commands/) · [النشر بمساعدة وكيل](https://castyfun.github.io/casty/ar/agents/) · [llms.txt](llms.txt)
+
+</div>
+
+يضع casty عقدة قراءة [Snapchain](https://snapchain.farcaster.xyz)، وهي نسخة كاملة من Farcaster، على
+مضيف تتحكم فيه، ويمنحك عميلًا لا يتصل بشيء غيرها: أمرًا في الطرفية وصفحة للمتصفح والهاتف. تُقرأ
+تغذيتك وإشارات الذِكر وسلاسل المحادثة من عقدتك؛ وتخرج من خلالها منشوراتك وردودك وإعجاباتك وإعادات
+النشر والمتابعات. يُضاف مفتاح التطبيق الذي يوقّعها برسالة واحدة توقّعها محفظتك: بلا معاملة، وبلا
+رسوم غاز.
+
+## ابدأ بأمر واحد
+
+### عقدة جديدة خاصة بك
 
 ```sh
 git clone https://github.com/castyfun/casty.git && cd casty
-./scripts/deploy.sh --domain node.example.org   # all of the below, in order, and the page on the host behind HTTPS
+./scripts/deploy.sh --fid <your fid> --domain node.example.org
 ```
 
-أو خطوة بخطوة، وهو ما يشغّله `deploy.sh`:
+يستأجر `deploy.sh` خادمًا مع قرص بسعة 2 TB وجدار حماية على Hetzner (`HCLOUD_TOKEN`) أو AWS
+(بيانات اعتماد AWS CLI)، ويثبّت Snapchain وينتظر اكتمال مزامنته (بضع ساعات)، ويثبّت `casty`
+على جهازك، ويضع الصفحة على المضيف خلف HTTPS. ويعرض ما سينشئه وما سيُحاسَب عليه، ولا يتابع إلا بعد
+أن تؤكد. مع `--fid` لا تُكتب عبارة البذرة: أضف المفتاح في `./bin/casty web` حين يطلب ذلك، ثم شغّل
+الأمر نفسه مجددًا للصفحة على المضيف. يمكن إعادة تشغيل كل خطوة بأمان: يتابع الأمر نفسه من حيث توقف
+التشغيل السابق. ويصلح أيضًا جهاز Linux خاص بك بذاكرة 16 GB و2 TB من القرص الحر: أضف `-- --host user@ip`.
+
+### casty على عقدة تعمل بالفعل
 
 ```sh
-./scripts/0-provision.sh   # a VM, 2 TB volume and firewall on Hetzner or AWS, whichever credentials are set; or --host user@ip
-./scripts/1-node.sh        # Snapchain read node, wait for sync, SSH tunnel to 127.0.0.1:3381
-./scripts/2-client.sh      # download casty, add a gasless app key with your wallet (--fid) or seed phrase, read your feed
+git clone https://github.com/castyfun/casty.git && cd casty
+./scripts/2-client.sh --node https://snap.farcaster.xyz:3381 --fid <your fid>
 ```
 
-عبارة البذرة تتحكم في الحساب كله. استخدم حساب اختبار لهذا الدليل، ولا تلصق عبارة البذرة إلا في
-برامج من مطورين تثق بهم، وفضّل مفتاحًا تأذن به محفظتك: `./scripts/2-client.sh --fid <fid>`
-(أو `deploy.sh --fid <fid>`)، ثم `./bin/casty web`، ومن صفحتك اختر «add a key with your wallet».
+بلا خادم وبلا انتظار: يتصل casty بواجهة HTTP API لأي عقدة Snapchain، عقدة لك على جهاز آخر أو عقدة
+عامة، ويتذكرها لكل أمر لاحق. ثم شغّل `./bin/casty web` واضغط، تحت «you»، على «add a key with your wallet».
 
-| الخطوة | ما تحتاجه | ما يبقى لك |
-| --- | --- | --- |
-| `0-provision.sh` | `hcloud` و`HCLOUD_TOKEN`، أو أداة `aws` مع بيانات الاعتماد؛ و`~/.ssh/id_ed25519.pub` | مضيف وملف `node.env` |
-| `1-node.sh` | `ssh` و`jq`؛ مضيف بذاكرة 16 GB وقرص 2 TB وDocker (يثبّته cloud-init) | عقدة قراءة متزامنة ونفق |
-| `2-client.sh` | `curl`؛ معرّف fid لحساب اختبار له storage unit، وعبارة البذرة الخاصة به أو محفظة. مع `--from-source`: Node 22.12 أو أحدث وpnpm عبر corepack | `./bin/casty`، ملف واحد، مع مفتاح تطبيق |
+### دع وكيلًا يقوم بذلك
 
-يمكن إعادة تشغيل كل خطوة بأمان، لذا يتابع `deploy.sh` من حيث توقف التشغيل السابق: تستغرق المزامنة
-الأولى ساعات، والضغط على Ctrl-C أثناءها لا يُضيع شيئًا. يصل `deploy.sh --tailscale` إلى الصفحة عبر
-شبكة tailnet الخاصة بك بدل نطاق؛ وبدون أي منهما يتوقف بعد العميل. إلى أن يُوسَم أول إصدار، لا تجد
-الخطوة 2 ما تنزّله فتبني العميل هنا بدلًا من ذلك، وهذا يحتاج إلى Node 22.12 أو أحدث. كل سكربت يقبل
-`--help`. يطبع `0-provision.sh --dry-run` و`1-node.sh --dry-run` كل أمر بدل تنفيذه؛ أما التشغيل الفعلي
-لـ `0-provision.sh` فيعرض ما سينشئه وما سيُحاسَب عليه، ولا يتابع إلا بعد أن تكتب اسم الخادم مجددًا.
-تنزّل المزامنة الأولى لقطة بحجم عدة مئات من GB وتستغرق ساعات؛ ويعرض `./scripts/1-node.sh status`
-مقدار تأخر كل شريحة.
+الصق الموجّه (prompt) من [النشر بمساعدة وكيل](https://castyfun.github.io/casty/ar/agents/) في
+Claude Code أو Codex أو Cursor أو أي وكيل برمجة آخر. يقرأ [llms.txt](llms.txt)، ويسألك أيّ الطريقتين
+تريد، ويعرض عليك الخطة قبل أن يكلّف أي شيء مالًا، ولا يطلب منك عبارة البذرة أبدًا.
 
-يعرض `./bin/casty --help` أوامر العميل: `doctor` و`init` و`whoami` و`feed` و`mentions` و`thread` و`cast`
-و`reply` و`like` و`unlike` و`recast` و`unrecast` و`follow` و`unfollow` و`delete` و`clients` و`storage`
-و`key list` و`key revoke` و`node status` و`web`، و`serve` الذي يشغّله `1-node.sh serve` على المضيف. مع
-`casty init --fid <fid>` لا تُكتب عبارة البذرة أبدًا: تضيف الصفحة المفتاح بالمحفظة في المتصفح. وإلا
-فتُستخدم العبارة مرة واحدة لتوقيع طلب المفتاح ولا تُكتب على القرص أبدًا. يُحفظ مفتاح التطبيق مشفرًا
-(scrypt وXChaCha20-Poly1305) في `~/.config/casty/keys.enc.json`.
-يسرد [SECURITY.md](SECURITY.md) كل سر معني، وأين يوجد، وكيف يُلغى.
+> عبارة البذرة تتحكم في الحساب كله. لا يحتاج casty إليها أبدًا: يُعِدّ `--fid` كل شيء بدونها،
+> وتأذن محفظتك بالمفتاح في `casty web`. وإن استخدمت `casty init` مع عبارة، فاستخدم حساب اختبار،
+> ولا تكتبها إلا في برامج من مطورين تثق بهم.
 
-## في المتصفح وعلى الهاتف
+## كيف تترابط الأجزاء
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/src/assets/architecture-dark.png">
+  <img src="docs/src/assets/architecture-light.png" width="880" alt="تصل طرفيتك ومتصفحك أو هاتفك إلى عقدة قراءة Snapchain الخاصة بك عبر نفق SSH أو HTTPS؛ تحتفظ العقدة بنسخة كاملة من Farcaster وتمرر رسائلك إلى المدقِّقين عبر gossip.">
+</picture>
+
+تأتي القراءات من عقدتك، فتكون التغذية بسرعة الجهاز الذي تعمل عليه. وتُوقَّع الكتابات على جهازك
+وتنقلها عقدتك. لا يمر شيء عبر واجهة Farcaster API مستضافة.
+
+## على حاسوب محمول وعلى هاتف
 
 <p>
-  <img src="docs/src/assets/web-phone-light.png" width="260" alt="casty web على هاتف، السمة الفاتحة: التغذية المرقّمة">
-  <img src="docs/src/assets/web-phone-dark.png" width="260" alt="casty web على هاتف، السمة الداكنة: منشور مع ما يرد عليه والرد عليه">
+  <img src="docs/src/assets/desktop-feed-light.png" width="600" alt="التغذية على حاسوب محمول، السمة الفاتحة">
+  <img src="docs/src/assets/phone-mentions-dark.png" width="240" alt="إشارات الذِكر على هاتف، السمة الداكنة">
+</p>
+<p>
+  <img src="docs/src/assets/desktop-compose-dark.png" width="600" alt="منشور جديد على حاسوب محمول، السمة الداكنة">
+  <img src="docs/src/assets/phone-feed-light.png" width="240" alt="التغذية على هاتف، السمة الفاتحة">
 </p>
 
-يقدّم `./bin/casty web` أوامر سطر الأوامر كصفحة على `http://127.0.0.1:3390`، عدا إزالة المفاتيح، ويطبع
-رابطًا يقرن المتصفح؛ ومن صفحتك يضيف مفتاح تطبيق بمحفظتك. يضيف `--listen 0.0.0.0:3390` رمز QR لهاتف
-على الشبكة نفسها. التفاصيل في [docs/src/content/docs/web.mdx](docs/src/content/docs/web.mdx).
+يقدّم `./bin/casty web` التغذية وسلاسل المحادثة وإشارات الذِكر والملفات الشخصية ومربع كتابة على
+`http://127.0.0.1:3390`، ويطبع رابطًا يقرن المتصفح؛ ويضيف `--listen 0.0.0.0:3390` رمز QR لهاتف
+على الشبكة نفسها. ويشغّل `./scripts/1-node.sh serve --domain <name>` الصفحة نفسها على مضيف العقدة خلف
+HTTPS، مع إشعارات دفع لإشارات الذِكر والردود، فيقرأ الهاتف ويكتب من أي شبكة.
 
-يشغّل `./scripts/1-node.sh serve --domain <name>` (أو `--tailscale`) الصفحة نفسها على مضيف العقدة خلف HTTPS،
-فيقرأ الهاتف ويكتب من أي شبكة: يُبنى العميل هناك داخل حاوية، ويحصل Caddy على الشهادة (افتح المنفذين 80
-و443 بـ `0-provision.sh --https`)، وينتقل مفتاح التطبيق وكلمة مروره إلى المضيف كسر Docker ما لم تحدد
-`--read-only`. هناك تأتي التغذية من فهرس يتابع أحداث العقدة، ويصل الذِكر أو الرد إلى الهاتف كإشعار دفع
-يذكر اسم المرسل ولا شيء غيره. التفاصيل والمقايضة في
-[docs/src/content/docs/serve.mdx](docs/src/content/docs/serve.mdx).
-
-## بدون عقدة
-
-تقدّم العقدة الوهمية في `test/mock-node` واجهة Snapchain HTTP API من بيانات ثابتة، وتتحقق من تواقيع
-الرسائل المرسلة وتدمجها، فيعمل العميل كله دون اتصال. يشغّل `pnpm demo` (بعد `pnpm install`) عقدة على
-منفذ حر، ويضيف مفتاح تطبيق بعبارة الاختبار، ويقرأ التغذية مع تطبيق واحد وبدونه، وينشر منشورًا، ثم يحذف
-إعداداته المؤقتة في النهاية:
+## في الطرفية
 
 ```text
 $ casty feed --limit 3
-1  @casty-test · 1s · via casty
-   hello from casty
+1  @casty-test · 0s · via casty
+   Reading the feed from my own node. No API key, no rate limit.
 
-2  @user-2000000002 · 17d · via app-alpha
+2  @user-2000000002 · 22d · via app-alpha
    @casty-test thanks for the pointer, it worked.
    https://example.com/2000000002/3
 
-3  @user-2000000011 · 17d · via app-beta
+3  @user-2000000011 · 22d · via app-beta
    Reading the Snapchain docs on a train. A good way to spend an hour.
 
 $ casty like 2
+liked 2000000002:0x973d398ad75e1f25fa780085f3c22d30b01d2504
 ```
 
-يقوم `pnpm demo:web` بالتهيئة نفسها، ثم يقدّم `casty web` على منفذ حر حتى الضغط على Ctrl-C.
+| الأمر | ما يفعله |
+| --- | --- |
+| `./scripts/deploy.sh` | الخطوات 0 و1 و2 بالترتيب، والصفحة على المضيف مع `--domain` أو `--tailscale` |
+| `./scripts/0-provision.sh` | خادم وقرص بسعة 2 TB وجدار حماية على Hetzner أو AWS، أو `--host user@ip` لجهازك |
+| `./scripts/1-node.sh` | Snapchain على المضيف، وانتظار مزامنته، ونفق SSH؛ `status` و`logs` و`upgrade` و`serve` و`down` |
+| `./scripts/2-client.sh` | `casty` في `./bin`، مُتحقَّق منه مقابل المجاميع الاختبارية للإصدار، ومفتاح تطبيق، وتغذيتك |
+| `casty feed`، `mentions`، `thread` | القراءة، من عقدتك، مع أرقام يأخذها الأمر التالي |
+| `casty cast`، `reply`، `like`، `recast`، `follow`، `delete` | الكتابة، من خلال عقدتك، مع التأكيد حين تُقرأ مجددًا |
+| `casty web`، `casty serve` | الصفحة، على هذا الجهاز أو على المضيف |
+| `casty doctor`، `whoami`، `key list`، `storage` | مزامنة العقدة، وحسابك، ومفاتيحك، وتخزينك |
 
-يذكر `via` التطبيق الذي طلب المفتاح الذي وُقّع به المنشور؛ ويرشّح `--only-app` و`--exclude-app` بحسبه.
-الرقم أمام المنشور هو ما تقبله `like` و`reply` و`recast` و`delete`، وكذلك `<fid>:<hash>` أو رابط المنشور على
-farcaster.xyz. خطوة بخطوة:
+تشرح صفحة [الأوامر](https://castyfun.github.io/casty/ar/commands/) كل واحد منها وخياراته؛ ويقبل
+كل سكربت وكل أمر أيضًا `--help`.
+
+## بدون عقدة
+
+تقدّم عقدة Snapchain الوهمية في `test/mock-node` واجهة HTTP API نفسها من بيانات ثابتة، وتتحقق من
+توقيع كل رسالة تُرسل إليها، فيعمل العميل كله دون اتصال:
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm mock-node &                      # http://127.0.0.1:3381, fixtures from test/mock-node/fixtures/basic
-export XDG_CONFIG_HOME=$(mktemp -d)   # keeps the test key out of your real config
-./scripts/2-client.sh --no-init --from-source   # builds ./bin/casty from this checkout and runs casty doctor
-printf 'test test test test test test test test test test test junk\n' \
-  | CASTY_PASSPHRASE=x ./bin/casty init --mnemonic-stdin
-./bin/casty feed --limit 20
-./bin/casty cast "hello from casty"
+pnpm demo       # a throwaway app key, the feed with and without one app, a cast, a like
+pnpm demo:web   # the same, then casty web until Ctrl-C
 ```
 
-في البيانات الثابتة، تملك عبارة BIP-39 المرجعية أعلاه المعرّف fid 2000000001. يوجد `CASTY_PASSPHRASE`
-للاختبارات؛ وبدونه يسأل casty في الطرفية. يكتب `pnpm mock-node gen --fids 300 --casts 50 --seed 42`
-مجموعة أكبر في `test/mock-node/fixtures/generated`، تُقدَّم بالأمر `pnpm mock-node serve --fixtures generated`.
+تستخدم البيانات الثابتة عبارة الاختبار BIP-39 `test test test test test test test test test test test
+junk` ومعرّفات fid تبدأ من 2000000001، ولا تخص أحدًا.
 
-## الفحوصات
+## التطوير
 
 ```sh
 make check                                       # lint, types, tests, shellcheck, bats, docs
-pnpm --filter @casty/client test -- --coverage   # fails below 95 % of lines on client/src, cli/ excluded
-pnpm --filter @casty/docs dev                    # the documentation site at localhost:4321
+pnpm --filter @casty/client test -- --coverage   # fails below 95 % of lines on client/src
+pnpm --filter @casty/docs dev                    # the website at localhost:4321
 ```
 
-يعمل `make check` دون اتصال ويحتاج إلى `shellcheck` و`jq` و`yq` (mikefarah) إلى جانب Node وpnpm؛ ويُستخدم
-lychee إن كان مثبتًا. يشغّل CI أيضًا فحص التغطية، وأسبوعيًا كذلك، `pnpm audit`. تعمل روابط التوثيق بين
-الصفحات على الموقع، لا عند قراءة ملفات `.mdx` على GitHub. لا تعمل اختبارات العقدة الحقيقية في
-`client/test/e2e` إلا عند ضبط `CASTY_E2E_NODE_URL` و`CASTY_E2E_MNEMONIC` (عبارة حساب اختبار)؛ ومع
-`CASTY_E2E_READ_FID`، وهو حساب ذُكر ورُدّ عليه، تتحقق أيضًا من إجابات العقدة التي يعتمد عليها العميل.
-
-## البنية
+يعمل `make check` دون اتصال ويحتاج إلى `shellcheck` و`jq` و`yq` (mikefarah) إلى جانب Node 22.12 أو أحدث
+وpnpm. يشغّله CI على Linux، ويشغّل مجموعات الصدفة على bash 3.2 في macOS، إضافة إلى `pnpm audit` وفحص
+للروابط. لا تعمل الاختبارات على عقدة حقيقية في `client/test/e2e` إلا عند ضبط `CASTY_E2E_NODE_URL`.
 
 | المسار | المحتوى |
 | --- | --- |
 | `scripts/` | الخطوات الثلاث و`deploy.sh` و`demo.sh`، ومكتباتها وقوالبها؛ مجموعات bats في `scripts/tests` |
-| `client/` | أداة `casty` (TypeScript) وصفحة `casty web` في `client/src/web` |
+| `client/` | أداة `casty` لسطر الأوامر (TypeScript) وصفحة `casty web` في `client/src/web` |
 | `test/mock-node/` | عقدة Snapchain الوهمية ومولّد بياناتها الثابتة |
-| `test/fakebin/` | نسخ وهمية من `hcloud` و`aws` و`cherryctl` و`ssh` و`sudo` و`docker` و`curl` و`crontab` و`cloud-init` و`tailscale` لمجموعات bats |
-| `docs/` | موقع التوثيق (Astro Starlight) |
-| `SECURITY.md` | الأسرار، وما هو مكشوف، وما يجب فعله عند تسريب شيء |
+| `docs/` | الموقع والتوثيق (Astro Starlight)، بست لغات |
+| `llms.txt` | المشروع لوكلاء البرمجة، مع الإعداد بموجّه واحد |
 
-يثبّت `1-node.sh --autoupgrade` مهمة الترقية الأسبوعية لـ Snapchain، التي تشغّل
-`docker system prune --volumes -f` على المضيف كله. على Windows، شغّل السكربتات داخل WSL2.
+يسرد [SECURITY.md](SECURITY.md) كل سر معني، وأين يوجد، وكيف يُلغى، وكيف تُبلّغ عن ثغرة.
 
-مرخّص برخصة MIT. يُنزَّل Snapchain (GPL-3.0) ويُشغَّل على مضيفك، ولا يُضمَّن هنا أبدًا. يحتوي
-الملف التنفيذي للإصدار على نحو عشرين حزمة برخصتي MIT وApache-2.0؛ وإشعاراتها في `THIRD_PARTY_LICENSES`
-بجانبه.
+## الترخيص
+
+يُنشر casty بموجب [رخصة MIT](LICENSE). لا يحتوي المستودع إلا على شيفرة casty نفسها. أما Snapchain،
+المرخّص بـ GPL-3.0، فليس جزءًا منه: ينزّل `1-node.sh` صورة Docker الخاصة بـ Snapchain وملف compose
+الخاص به إلى مضيفك ويشغّلهما هناك. ويضم ملف `casty` التنفيذي الواحد في كل إصدار نحو عشرين حزمة برخصتي
+MIT وApache-2.0، وتأتي إشعاراتها بجانبه في `THIRD_PARTY_LICENSES`.

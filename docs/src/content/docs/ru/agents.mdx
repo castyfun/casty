@@ -1,0 +1,45 @@
+---
+title: Развернуть с агентом
+description: Один промпт для агента-программиста, который настраивает casty за вас, и файлы llms.txt, которые он читает.
+---
+
+Агент для программирования, который умеет запускать команды оболочки (Claude Code, Codex, Cursor,
+Gemini CLI, Aider и подобные), может выполнить всю настройку по одному промпту. Документацию он
+читает из двух текстовых файлов, сделанных для агентов:
+
+- [llms.txt](https://castyfun.github.io/casty/llms.txt): что такое casty, команды и ссылки
+  на каждую страницу;
+- [llms-full.txt](https://castyfun.github.io/casty/llms-full.txt): каждая страница этой
+  документации в одном файле.
+
+Тот же `llms.txt` лежит в корне репозитория.
+
+## Промпт
+
+Вставьте его как есть. Агент спросит ваш fid и нужный вам вариант: новая собственная нода
+или casty, подключённый к уже работающей ноде.
+
+```text
+Set up casty for me: https://github.com/castyfun/casty. Read https://castyfun.github.io/casty/llms-full.txt first.
+1. Clone the repository and cd into it.
+2. Ask me for my Farcaster fid, and which of these I want:
+   a) a new node of my own: I give you HCLOUD_TOKEN or AWS credentials, or user@ip of a Linux host with 16 GB RAM and 2 TB free disk;
+   b) no node of my own: connect casty to an existing Snapchain node URL (default https://snap.farcaster.xyz:3381).
+3. For a), first run ./scripts/deploy.sh --fid <fid> --dry-run (add -- --host user@ip for my own host), show me what it would create and what it costs, and only after my "yes" run the same command with --yes instead of --dry-run. The node sync takes hours: if the wait stops, run ./scripts/1-node.sh status --wait, then run deploy.sh again; it resumes.
+   For b), run ./scripts/2-client.sh --node <url> --fid <fid>.
+4. Never ask me for my seed phrase or recovery phrase and never type one anywhere. The app key is added with my wallet: tell me to run ./bin/casty web in my own terminal (it asks me for a new passphrase), open the link it prints, go to "you" and press "add a key with your wallet".
+5. Check the result with ./bin/casty doctor and ./bin/casty whoami, then show me ./bin/casty feed --limit 5.
+If a step fails, read its error line and hint, look the message up in https://castyfun.github.io/casty/troubleshooting/, fix the cause and run the same command again.
+```
+
+## Что остаётся за вами
+
+- **Деньги.** Ничего платного не создаётся, пока вы не увидели план из `--dry-run`
+  и не ответили «да». `./scripts/0-provision.sh --destroy` снова всё удаляет.
+- **Seed-фраза.** Промпт запрещает агенту её спрашивать. Ключ приложения одобряет ваш кошелёк
+  в `casty web`, который вы запускаете сами, поэтому и пароль хранилища ключей тоже ваш.
+- **Облачные учётные данные.** `HCLOUD_TOKEN` или учётные данные AWS нужны агенту только для новой
+  ноды. Дайте ему токен, который можно отозвать, и отзовите его, когда нода заработает; casty он
+  снова понадобится только для удаления сервера.
+
+Каждый задействованный секрет и как отозвать каждый из них перечислены в разделе [Безопасность](../security/).

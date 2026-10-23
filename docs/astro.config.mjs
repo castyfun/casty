@@ -34,6 +34,7 @@ export default defineConfig({
         "index",
         "guide",
         "commands",
+        "agents",
         "0-provision",
         "1-node",
         "2-client",

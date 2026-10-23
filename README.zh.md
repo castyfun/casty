@@ -1,137 +1,163 @@
+<div align="center">
+
 # casty
+
+**你自己的 Farcaster 只读节点，以及一个从它读取、通过它写入的客户端。**<br>
+三条命令。不需要 API 密钥，不需要 Ethereum RPC，不需要 gas。
+
+[![ci](https://github.com/castyfun/casty/actions/workflows/ci.yml/badge.svg)](https://github.com/castyfun/casty/actions/workflows/ci.yml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-c4390a)](LICENSE)
+[![docs](https://img.shields.io/badge/docs-6%20languages-191813)](https://castyfun.github.io/casty/)
 
 [English](README.md) · [Русский](README.ru.md) · 中文 · [Español](README.es.md) · [Français](README.fr.md) · [العربية](README.ar.md)
 
-你自己的 Farcaster 只读节点，以及一个从它读取、通过它写入的命令行客户端。
-不需要 API 密钥，常规路径上不需要 Ethereum RPC，应用密钥也不需要链上交易。
+<img src="docs/src/assets/hero.webp" width="880" alt="笔记本电脑上深色主题的 casty web 和手机上浅色主题的 casty web">
 
-六种语言的文档：https://castyfun.github.io/casty/zh-cn/ · 全部命令及说明：https://castyfun.github.io/casty/zh-cn/commands/
+**[网站和文档](https://castyfun.github.io/casty/zh-cn/)** · [全部命令](https://castyfun.github.io/casty/zh-cn/commands/) · [用智能体部署](https://castyfun.github.io/casty/zh-cn/agents/) · [llms.txt](llms.txt)
+
+</div>
+
+casty 在一台由你掌控的主机上放置一个 [Snapchain](https://snapchain.farcaster.xyz) 只读节点，即
+Farcaster 的完整副本，并给你一个不与其他任何服务通信的客户端：一条终端命令，以及一个用于浏览器和
+手机的页面。你的时间线、提及和会话从你的节点读取；你的 cast、回复、点赞、recast 和关注通过它发出。
+为它们签名的应用密钥通过一条由你的钱包签署的消息添加：不需要交易，不需要 gas。
+
+## 用一条命令开始
+
+### 一个属于你自己的新节点
 
 ```sh
 git clone https://github.com/castyfun/casty.git && cd casty
-./scripts/deploy.sh --domain node.example.org   # all of the below, in order, and the page on the host behind HTTPS
+./scripts/deploy.sh --fid <your fid> --domain node.example.org
 ```
 
-也可以分步运行，`deploy.sh` 执行的就是这些步骤：
+`deploy.sh` 在 Hetzner（`HCLOUD_TOKEN`）或 AWS（AWS CLI 凭据）上租用一台带 2 TB 卷和防火墙的服务器，
+安装 Snapchain 并等待它同步（数小时），在你的机器上安装 `casty`，并把页面以 HTTPS 放到主机上。
+它会显示将要创建和计费的内容，只有在你确认之后才会继续。使用 `--fid` 时不需要输入助记词：在
+`./bin/casty web` 提示时添加密钥，然后再次运行同一条命令，把页面放到主机上。
+每一步都可以安全地重复运行：同一条命令会从上次中断的地方继续。你自己的一台有 16 GB 内存和 2 TB
+可用空间的 Linux 机器也可以：加上 `-- --host user@ip`。
+
+### 在已经运行的节点上使用 casty
 
 ```sh
-./scripts/0-provision.sh   # a VM, 2 TB volume and firewall on Hetzner or AWS, whichever credentials are set; or --host user@ip
-./scripts/1-node.sh        # Snapchain read node, wait for sync, SSH tunnel to 127.0.0.1:3381
-./scripts/2-client.sh      # download casty, add a gasless app key with your wallet (--fid) or seed phrase, read your feed
+git clone https://github.com/castyfun/casty.git && cd casty
+./scripts/2-client.sh --node https://snap.farcaster.xyz:3381 --fid <your fid>
 ```
 
-助记词掌控整个账户。跟着本教程操作时请使用测试账户，只把助记词粘贴到你信任的开发者所写的软件中，
-并优先使用由钱包授权的密钥：`./scripts/2-client.sh --fid <fid>`（或 `deploy.sh --fid <fid>`），
-然后运行 `./bin/casty web`，在“你”页面中选择 “add a key with your wallet”。
+不需要服务器，也不需要等待：casty 连接任何 Snapchain 节点的 HTTP API，可以是你在另一台机器上的节点，
+也可以是公共节点，并在之后的每条命令中记住它。然后运行 `./bin/casty web`，在 “you” 下按
+“add a key with your wallet”。
 
-| 步骤 | 需要什么 | 得到什么 |
-| --- | --- | --- |
-| `0-provision.sh` | `hcloud` 和 `HCLOUD_TOKEN`，或 `aws` CLI 及其凭据；`~/.ssh/id_ed25519.pub` | 一台主机和 `node.env` |
-| `1-node.sh` | `ssh` 和 `jq`；一台有 16 GB 内存、2 TB 磁盘和 Docker（cloud-init 会安装）的主机 | 一个已同步的只读节点和一条隧道 |
-| `2-client.sh` | `curl`；一个测试账户的 fid，带 storage unit，以及它的助记词或一个钱包。使用 `--from-source` 时：Node 22.12 或更新版本，以及通过 corepack 提供的 pnpm | `./bin/casty`，单个文件，带应用密钥 |
+### 让智能体来做
 
-每一步都可以安全地重复运行，所以 `deploy.sh` 会从上次中断的地方继续：首次同步需要数小时，期间按
-Ctrl-C 不会丢失任何东西。`deploy.sh --tailscale` 通过你的 tailnet 而不是域名访问页面；两者都不指定时，
-它在客户端这一步之后停止。在第一个发布版打上标签之前，第 2 步找不到可下载的内容，会改为在本机构建
-客户端，这需要 Node 22.12 或更新版本。每个脚本都接受 `--help`。`0-provision.sh --dry-run` 和
-`1-node.sh --dry-run` 只打印每条命令而不执行；真正运行 `0-provision.sh` 时会列出将要创建和计费的内容，
-只有你把服务器名称输回去之后才会继续。首次同步会下载几百 GB 的快照，需要数小时；
-`./scripts/1-node.sh status` 显示每个分片落后多少。
+把[用智能体部署](https://castyfun.github.io/casty/zh-cn/agents/)中的提示词粘贴到
+Claude Code、Codex、Cursor 或其他编程智能体中。它会阅读 [llms.txt](llms.txt)，询问你要两种方式中的
+哪一种，在任何花钱的操作之前先给你看计划，并且从不索要你的助记词。
 
-`./bin/casty --help` 列出客户端命令：`doctor`、`init`、`whoami`、`feed`、`mentions`、`thread`、
-`cast`、`reply`、`like` 和 `unlike`、`recast` 和 `unrecast`、`follow` 和 `unfollow`、`delete`、
-`clients`、`storage`、`key list`、`key revoke`、`node status`、`web`，以及由 `1-node.sh serve` 在主机上
-运行的 `serve`。使用 `casty init --fid <fid>` 时完全不需要输入助记词：页面会在浏览器中用钱包添加密钥。
-否则，助记词只用一次，用来签署密钥请求，从不写入磁盘。应用密钥以加密形式（scrypt，
-XChaCha20-Poly1305）保存在 `~/.config/casty/keys.enc.json`。
-[SECURITY.md](SECURITY.md) 列出了涉及的每一个机密、它存放的位置以及如何撤销。
+> 助记词掌控整个账户。casty 从不需要它：`--fid` 不用助记词即可完成设置，
+> 密钥由你的钱包在 `casty web` 中批准。如果你确实要用助记词运行 `casty init`，
+> 请使用测试账户，并且只把它输入到你信任的开发者所写的软件中。
 
-## 在浏览器和手机上
+## 各部分如何配合
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/src/assets/architecture-dark.png">
+  <img src="docs/src/assets/architecture-light.png" width="880" alt="你的终端以及你的浏览器或手机通过 SSH 隧道或 HTTPS 访问你自己的 Snapchain 只读节点；节点保存 Farcaster 的完整副本，并把你的消息通过 gossip 传播给验证者。">
+</picture>
+
+读取来自你的节点，所以时间线的速度取决于运行它的机器。写入在你的机器上签名，由你的节点转发。
+任何内容都不经过托管的 Farcaster API。
+
+## 在笔记本电脑和手机上
 
 <p>
-  <img src="docs/src/assets/web-phone-light.png" width="260" alt="手机上的 casty web，浅色主题：带编号的时间线">
-  <img src="docs/src/assets/web-phone-dark.png" width="260" alt="手机上的 casty web，深色主题：一条 cast、它所回复的内容和对它的回复">
+  <img src="docs/src/assets/desktop-feed-light.png" width="600" alt="笔记本电脑上的时间线，浅色主题">
+  <img src="docs/src/assets/phone-mentions-dark.png" width="240" alt="手机上的提及，深色主题">
+</p>
+<p>
+  <img src="docs/src/assets/desktop-compose-dark.png" width="600" alt="笔记本电脑上的一条新 cast，深色主题">
+  <img src="docs/src/assets/phone-feed-light.png" width="240" alt="手机上的时间线，浅色主题">
 </p>
 
-`./bin/casty web` 把 CLI 的命令（删除密钥除外）作为页面提供在 `http://127.0.0.1:3390`，并打印一个
-用于配对浏览器的链接；在“你”页面中，它会用你的钱包添加应用密钥。`--listen 0.0.0.0:3390` 会为同一
-网络中的手机加上二维码。详见 [docs/src/content/docs/web.mdx](docs/src/content/docs/web.mdx)。
+`./bin/casty web` 在 `http://127.0.0.1:3390` 提供时间线、会话、提及、个人资料和撰写框，并打印一个
+用于配对浏览器的链接；`--listen 0.0.0.0:3390` 会为同一网络中的手机加上二维码。
+`./scripts/1-node.sh serve --domain <name>` 在节点主机上以 HTTPS 运行同一个页面，并为提及和回复
+提供推送通知，所以手机可以从任何网络读写。
 
-`./scripts/1-node.sh serve --domain <name>`（或 `--tailscale`）在节点主机上以 HTTPS 运行同一个页面，
-手机可以从任何网络读写：客户端在那里的容器中构建，Caddy 获取证书（用 `0-provision.sh --https`
-打开 80 和 443 端口），除非指定 `--read-only`，否则应用密钥及其口令会作为 Docker secret 送到主机。
-在那里，时间线来自一个跟随节点事件的索引，提及或回复会以推送通知到达手机，通知里只有发送者的名字。
-详情与取舍见 [docs/src/content/docs/serve.mdx](docs/src/content/docs/serve.mdx)。
-
-## 没有节点时
-
-`test/mock-node` 中的模拟节点用预置数据提供 Snapchain HTTP API，检查提交消息的签名并合并它们，
-因此整个客户端可以离线运行。`pnpm demo`（先 `pnpm install`）会在空闲端口启动一个模拟节点，用测试
-助记词添加应用密钥，分别在包含和排除一个应用的情况下读取时间线，发一条 cast，最后删除临时配置：
+## 在终端中
 
 ```text
 $ casty feed --limit 3
-1  @casty-test · 1s · via casty
-   hello from casty
+1  @casty-test · 0s · via casty
+   Reading the feed from my own node. No API key, no rate limit.
 
-2  @user-2000000002 · 17d · via app-alpha
+2  @user-2000000002 · 22d · via app-alpha
    @casty-test thanks for the pointer, it worked.
    https://example.com/2000000002/3
 
-3  @user-2000000011 · 17d · via app-beta
+3  @user-2000000011 · 22d · via app-beta
    Reading the Snapchain docs on a train. A good way to spend an hour.
 
 $ casty like 2
+liked 2000000002:0x973d398ad75e1f25fa780085f3c22d30b01d2504
 ```
 
-`pnpm demo:web` 做同样的准备，然后在空闲端口提供 `casty web`，直到按下 Ctrl-C。
+| 命令 | 作用 |
+| --- | --- |
+| `./scripts/deploy.sh` | 依次运行第 0、1、2 步，使用 `--domain` 或 `--tailscale` 时还把页面放到主机上 |
+| `./scripts/0-provision.sh` | 在 Hetzner 或 AWS 上的一台服务器、一个 2 TB 卷和一个防火墙，或用 `--host user@ip` 使用你自己的机器 |
+| `./scripts/1-node.sh` | 主机上的 Snapchain、等待它同步、一条 SSH 隧道；`status`、`logs`、`upgrade`、`serve`、`down` |
+| `./scripts/2-client.sh` | `./bin` 中的 `casty`（按发布版的校验和检查）、一个应用密钥、你的时间线 |
+| `casty feed`、`mentions`、`thread` | 从你的节点读取，带有下一条命令可以使用的编号 |
+| `casty cast`、`reply`、`like`、`recast`、`follow`、`delete` | 通过你的节点写入，读回之后才算确认 |
+| `casty web`、`casty serve` | 页面，在本机或在主机上 |
+| `casty doctor`、`whoami`、`key list`、`storage` | 节点的同步状态、你的账户、你的密钥、你的存储 |
 
-`via` 给出请求了签署这条 cast 的密钥的应用；`--only-app` 和 `--exclude-app` 据此过滤。cast 前面的
-数字是 `like`、`reply`、`recast` 和 `delete` 接受的参数，也可以用 `<fid>:<hash>` 或这条 cast 在
-farcaster.xyz 上的链接。分步操作：
+[命令](https://castyfun.github.io/casty/zh-cn/commands/)讲解其中每一条命令及其选项；
+每个脚本和命令也都接受 `--help`。
+
+## 没有节点时
+
+`test/mock-node` 中的模拟 Snapchain 节点用预置数据提供相同的 HTTP API，并检查提交给它的每条消息的
+签名，因此整个客户端可以离线运行：
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm mock-node &                      # http://127.0.0.1:3381, fixtures from test/mock-node/fixtures/basic
-export XDG_CONFIG_HOME=$(mktemp -d)   # keeps the test key out of your real config
-./scripts/2-client.sh --no-init --from-source   # builds ./bin/casty from this checkout and runs casty doctor
-printf 'test test test test test test test test test test test junk\n' \
-  | CASTY_PASSPHRASE=x ./bin/casty init --mnemonic-stdin
-./bin/casty feed --limit 20
-./bin/casty cast "hello from casty"
+pnpm demo       # a throwaway app key, the feed with and without one app, a cast, a like
+pnpm demo:web   # the same, then casty web until Ctrl-C
 ```
 
-在预置数据中，上面的 BIP-39 参考助记词拥有 fid 2000000001。`CASTY_PASSPHRASE` 只为测试而存在；
-没有它时 casty 会在终端询问。`pnpm mock-node gen --fids 300 --casts 50 --seed 42` 会向
-`test/mock-node/fixtures/generated` 写入更大的数据集，用 `pnpm mock-node serve --fixtures generated` 提供。
+预置数据使用 BIP-39 测试助记词 `test test test test test test test test test test test
+junk` 和从 2000000001 开始的 fid，这些 fid 不属于任何人。
 
-## 检查
+## 开发
 
 ```sh
 make check                                       # lint, types, tests, shellcheck, bats, docs
-pnpm --filter @casty/client test -- --coverage   # fails below 95 % of lines on client/src, cli/ excluded
-pnpm --filter @casty/docs dev                    # the documentation site at localhost:4321
+pnpm --filter @casty/client test -- --coverage   # fails below 95 % of lines on client/src
+pnpm --filter @casty/docs dev                    # the website at localhost:4321
 ```
 
-`make check` 离线运行，除 Node 和 pnpm 外还需要 `shellcheck`、`jq` 和 `yq`（mikefarah）；
-安装了 lychee 时也会用到它。CI 还会运行覆盖率检查，并且每周运行 `pnpm audit`。文档页面之间的链接
-在站点上有效，在 GitHub 上直接阅读 `.mdx` 文件时无效。`client/test/e2e` 中的真实节点测试只在设置了
-`CASTY_E2E_NODE_URL` 和 `CASTY_E2E_MNEMONIC`（测试账户的助记词）时运行；再加上
-`CASTY_E2E_READ_FID`（一个被提及和被回复过的账户），它们还会检查客户端所依赖的节点应答。
-
-## 目录结构
+`make check` 离线运行，除 Node 22.12+ 和 pnpm 外还需要 `shellcheck`、`jq` 和 `yq`（mikefarah）。
+CI 在 Linux 上运行它，在 macOS 的 bash 3.2 上运行 shell 测试集，此外还运行 `pnpm audit` 和链接检查。
+`client/test/e2e` 中针对真实节点的测试只在设置了 `CASTY_E2E_NODE_URL` 时运行。
 
 | 路径 | 内容 |
 | --- | --- |
 | `scripts/` | 三个步骤、`deploy.sh` 和 `demo.sh`、它们的库和模板；bats 测试集在 `scripts/tests` |
 | `client/` | `casty` CLI（TypeScript）和 `client/src/web` 中的 `casty web` 页面 |
 | `test/mock-node/` | 模拟 Snapchain 节点及其预置数据生成器 |
-| `test/fakebin/` | 供 bats 测试集使用的假 `hcloud`、`aws`、`cherryctl`、`ssh`、`sudo`、`docker`、`curl`、`crontab`、`cloud-init`、`tailscale` |
-| `docs/` | 文档站点（Astro Starlight） |
-| `SECURITY.md` | 机密、暴露面、泄露时该怎么做 |
+| `docs/` | 网站和文档（Astro Starlight），六种语言 |
+| `llms.txt` | 面向编程智能体的项目说明，附一条提示词完成设置的方法 |
 
-`1-node.sh --autoupgrade` 安装 Snapchain 的每周升级任务，它会在整台主机上运行
-`docker system prune --volumes -f`。在 Windows 上请在 WSL2 中运行这些脚本。
+[SECURITY.md](SECURITY.md) 列出了涉及的每一个机密、它存放的位置以及如何撤销，
+以及如何报告漏洞。
 
-MIT 许可。Snapchain（GPL-3.0）在你的主机上下载并运行，从不打包进本仓库。发布版二进制文件内含
-大约二十个 MIT 和 Apache-2.0 许可的软件包；它们的许可声明在同目录下的 `THIRD_PARTY_LICENSES` 中。
+## 许可
+
+casty 以 [MIT 许可](LICENSE)发布。本仓库只包含 casty 自己的代码。
+Snapchain 采用 GPL-3.0，不属于本仓库：`1-node.sh` 把 Snapchain 自己的 Docker 镜像和
+compose 文件下载到你的主机上并在那里运行。每个发布版的单文件 `casty` 二进制文件内含
+大约二十个 MIT 和 Apache-2.0 许可的软件包，它们的许可声明随附在旁边的
+`THIRD_PARTY_LICENSES` 中。

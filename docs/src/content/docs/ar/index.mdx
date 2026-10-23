@@ -7,6 +7,9 @@ sidebar:
   order: 0
 hero:
   title: casty
+  image:
+    file: ../../../assets/hero.webp
+    alt: casty web على حاسوب محمول بالسمة الداكنة وعلى هاتف بالسمة الفاتحة
   tagline: عقدة قراءة Farcaster خاصة بك، وعميل يقرأ منها ويكتب من خلالها. ثلاثة أوامر، بلا مفاتيح API، وبلا رسوم غاز.
   actions:
     - text: ابدأ الدليل
@@ -21,57 +24,120 @@ hero:
       variant: minimal
 ---
 
-## ما هو casty
+import Architecture from "../../../components/Architecture.astro";
+import Gallery from "../../../components/Gallery.astro";
 
-يضع casty عقدة قراءة [Snapchain](https://snapchain.farcaster.xyz) على مضيف تتحكم فيه،
-ويمنحك عميلًا لا يتصل بشيء غيرها. تحتفظ العقدة بنسخة كاملة من Farcaster؛ ويقرأ العميل منها
-تغذيتك وإشارات الذِكر وسلاسل المحادثة، وينشر من خلالها المنشورات والردود والإعجابات وإعادات النشر
-والمتابعات. لا يمر شيء عبر واجهة Farcaster API مستضافة، ولا يقف بينك وبين الشبكة مفتاح أحد آخر
-أو حدّ معدّل طلباته.
 
-- **ثلاثة سكربتات.** يستأجر `0-provision.sh` خادمًا مع قرص بسعة 2 TB وجدار حماية على
-  Hetzner أو AWS، أو يفحص جهازًا لديك بالفعل. يثبّت `1-node.sh` برنامج Snapchain، وينتظر
-  اكتمال مزامنته، ويفتح نفق SSH. يثبّت `2-client.sh` أداة `casty`، ويضيف مفتاح تطبيق، ويقرأ
-  تغذيتك. ويشغّل `deploy.sh` الثلاثة.
-- **مفتاح تطبيق بلا رسوم غاز.** يُضاف المفتاح الذي يوقّع منشوراتك برسالة موقّعة واحدة، لا
-  بمعاملة: توقّعها محفظتك في المتصفح، أو عبارة البذرة مرة واحدة في الطرفية. بلا
-  ETH، وبلا RPC.
-- **عميل للطرفية.** `casty feed` و`casty cast` و`casty like 2`: كل أمر يطبع نصًا عاديًا
-  أو، مع `--json`، بيانات JSON للسكربتات.
-- **صفحة للمتصفح والهاتف.** يقدّم `casty web` التغذية وسلاسل المحادثة وإشارات الذِكر ومربع
-  كتابة على هذا الجهاز؛ ويضع `casty serve` الصفحة نفسها على مضيف العقدة خلف
-  HTTPS، مع إشعارات دفع لإشارات الذِكر والردود.
-- **مُختبَر دون اتصال.** تتحقق عقدة Snapchain وهمية من كل توقيع، فيعمل العميل كله والسكربتات
-  والصفحة في CI دون عقدة حقيقية.
+<div class="lede">
 
-## بداية سريعة
+يضع casty عقدة قراءة [Snapchain](https://snapchain.farcaster.xyz)، وهي نسخة كاملة من Farcaster، على
+مضيف تتحكم فيه، ويمنحك عميلًا لا يتصل بشيء غيرها: أمرًا في الطرفية وصفحة للمتصفح والهاتف. تُقرأ
+تغذيتك وإشارات الذِكر وسلاسل المحادثة من عقدتك؛ وتخرج من خلالها منشوراتك وردودك وإعجاباتك وإعادات
+النشر والمتابعات. لا تقف واجهة API مستضافة بينك وبين الشبكة، فلا يوجد مفتاح API تحصل عليه ولا حدّ
+لمعدّل الطلبات تلتزم به.
 
-```sh
+</div>
+
+## ابدأ بأمر واحد
+
+<div class="ways">
+<div class="way">
+
+### عقدة جديدة خاصة بك
+
+خادم مع قرص بسعة 2 TB وجدار حماية على Hetzner أو AWS، وعليه Snapchain، والعميل على جهازك، والصفحة
+على المضيف خلف HTTPS. تتزامن العقدة لبضع ساعات.
+
+```sh wrap
 git clone https://github.com/castyfun/casty.git && cd casty
-./scripts/deploy.sh --domain node.example.org   # everything below in order, and the page on the host behind HTTPS
+./scripts/deploy.sh --fid <your fid> --domain node.example.org
 ```
 
-يشغّل `deploy.sh` الخطوات الثلاث، ومع `--domain` أو `--tailscale` خطوة رابعة، [من أي
-شبكة](serve/). يشرح [الطريق كله](guide/) كل ذلك، ثم تشغيله، بالترتيب. يمكن إعادة تشغيل كل خطوة بأمان، لذا يتابع الأمر نفسه من حيث
-توقف التشغيل السابق. خطوة بخطوة:
+لديك بالفعل جهاز Linux فيه 2 TB من القرص الحر؟ أضف `-- --host user@ip`.
 
-```sh
-./scripts/0-provision.sh   # a VM, 2 TB volume and firewall on Hetzner or AWS, whichever credentials are set; or --host user@ip
-./scripts/1-node.sh        # Snapchain read node, wait for sync, SSH tunnel to 127.0.0.1:3381
-./scripts/2-client.sh      # download casty, add a gasless app key with your wallet (--fid) or seed phrase, read your feed
+</div>
+<div class="way">
+
+### casty على عقدة تعمل بالفعل
+
+بلا خادم: يتصل casty بأي عقدة Snapchain، عقدة لك على جهاز آخر أو عقدة عامة، ويتذكرها. جاهز
+خلال دقيقة.
+
+```sh wrap
+git clone https://github.com/castyfun/casty.git && cd casty
+./scripts/2-client.sh --node https://snap.farcaster.xyz:3381 --fid <your fid>
 ```
 
-عبارة البذرة تتحكم في الحساب كله. استخدم حساب اختبار لهذا الدليل، ولا تلصق عبارة
-البذرة إلا في برامج من مطورين تثق بهم، وفضّل مفتاحًا تأذن به
-محفظتك: `casty init --fid <fid>`، ثم `casty web`، وتحت «you» اختر «add a key with your wallet».
+ثم `./bin/casty web`، وتحت «you»، «add a key with your wallet».
 
-شغّل السكربتات الثلاثة بالترتيب من نسخة محلية من مستودع casty. في النهاية يكون لديك
-عقدة قراءة [Snapchain](https://snapchain.farcaster.xyz) على مضيف تتحكم فيه، و`./bin/casty`،
-وهو عميل يقرأ تغذيتك من تلك العقدة وينشر من خلالها.
+</div>
+<div class="way">
 
-لا يحتاج العميل إلى مفتاح API من خدمة Farcaster مستضافة، ولا إلى Ethereum RPC في المسار
-المعتاد. يُضاف مفتاح تطبيقه برسالة موقّعة، لا بمعاملة على السلسلة، فلا توجد رسوم غاز
-تدفعها.
+### دع وكيلًا يقوم بذلك
+
+الصق [موجّهًا واحدًا](agents/) في Claude Code أو Codex أو Cursor أو أي وكيل برمجة آخر. يقرأ
+[llms.txt](https://castyfun.github.io/casty/llms.txt)، ويسألك أيّ الطريقتين تريد، ولا يطلب منك
+عبارة البذرة أبدًا.
+
+```text wrap
+Set up casty for me: https://github.com/castyfun/casty.
+Read https://castyfun.github.io/casty/llms-full.txt first.
+...
+```
+
+</div>
+</div>
+
+## كيف تترابط الأجزاء
+
+<Architecture />
+
+تأتي القراءات من عقدتك، فتكون التغذية بسرعة الجهاز الذي تعمل عليه. وتُوقَّع الكتابات على جهازك
+بمفتاح تطبيق لا يحمله إلا casty، وتنقلها عقدتك إلى المدقِّقين. يُضاف المفتاح برسالة موقّعة واحدة،
+تأذن بها محفظتك في المتصفح: بلا معاملة، وبلا رسوم غاز، وبلا Ethereum RPC.
+
+## ما تحصل عليه
+
+<div class="features">
+
+- **ثلاثة سكربتات وأمر واحد.** يستأجر `0-provision.sh` الخادم أو يفحص جهازك، ويثبّت
+  `1-node.sh` برنامج Snapchain وينتظر اكتمال مزامنته، ويثبّت `2-client.sh` أداة `casty` ويضيف
+  مفتاحًا. ويشغّلها `deploy.sh` بالترتيب ويتابع من حيث توقف التشغيل السابق.
+- **عميل للطرفية.** `casty feed` و`casty cast` و`casty like 2`: نص عادي لك، و`--json`
+  للسكربتات، وأرقام تنتقل من أمر إلى الذي يليه.
+- **صفحة للمتصفح والهاتف.** التغذية وسلاسل المحادثة وإشارات الذِكر والملفات الشخصية ومربع
+  كتابة، بسمة فاتحة وداكنة، مع اختصارات لوحة المفاتيح على الحاسوب المحمول والتثبيت على الشاشة
+  الرئيسية على الهاتف.
+- **عقدتك، من أي مكان.** يضع `casty serve` الصفحة على مضيف العقدة خلف HTTPS، مع فهرس للتغذية
+  يجيب فورًا وإشعارات دفع لإشارات الذِكر والردود.
+- **مفاتيح تراها.** كل مفتاح تطبيق لحسابك، وما يجوز له أن يوقّعه، ومتى تنتهي صلاحيته، وإلغاؤه
+  من الطرفية أو بالمفتاح نفسه.
+- **مُختبَر بدون عقدة.** تتحقق عقدة Snapchain وهمية من كل توقيع، فيُجري العميل والسكربتات
+  والصفحة فحوصاتها دون اتصال في CI.
+
+</div>
+
+## في الطرفية
+
+```text
+$ casty feed --limit 3
+1  @casty-test · 0s · via casty
+   Reading the feed from my own node. No API key, no rate limit.
+
+2  @user-2000000002 · 22d · via app-alpha
+   @casty-test thanks for the pointer, it worked.
+   https://example.com/2000000002/3
+
+3  @user-2000000011 · 22d · via app-beta
+   Reading the Snapchain docs on a train. A good way to spend an hour.
+
+$ casty like 2
+liked 2000000002:0x973d398ad75e1f25fa780085f3c22d30b01d2504
+```
+
+## في المتصفح وعلى الهاتف
+
+<Gallery captions={["«you»: الحساب ومفاتيحه وتخزينه", "منشور جديد، من أي مكان في التغذية بالمفتاح n", "إشارات الذِكر والردود على هاتف، السمة الداكنة", "مربع الكتابة على هاتف، السمة الفاتحة"]} />
 
 ## ما تحتاجه
 

@@ -7,6 +7,9 @@ sidebar:
   order: 0
 hero:
   title: casty
+  image:
+    file: ../../../assets/hero.webp
+    alt: casty web sur un ordinateur portable en thème sombre et sur un téléphone en thème clair
   tagline: "Votre propre nœud de lecture Farcaster, et un client qui lit depuis ce nœud et écrit à travers lui. Trois commandes, pas de clé d'API, pas de gas."
   actions:
     - text: Commencer le tutoriel
@@ -21,59 +24,124 @@ hero:
       variant: minimal
 ---
 
-## Ce qu'est casty
+import Architecture from "../../../components/Architecture.astro";
+import Gallery from "../../../components/Gallery.astro";
 
-casty installe un nœud de lecture [Snapchain](https://snapchain.farcaster.xyz) sur un hôte que vous
-contrôlez et vous donne un client qui ne parle à rien d'autre. Le nœud détient une copie complète de
-Farcaster ; le client y lit votre fil, vos mentions et vos fils de discussion, et publie à travers lui
-des casts, des réponses, des likes, des recasts et des follows. Rien ne passe par une API Farcaster
-hébergée, et ni la clé ni la limite de débit de quelqu'un d'autre ne se trouve entre vous et le réseau.
 
-- **Trois scripts.** `0-provision.sh` loue un serveur avec un volume de 2 To et un pare-feu chez
-  Hetzner ou AWS, ou vérifie une machine que vous avez déjà. `1-node.sh` installe Snapchain, attend
-  qu'il soit synchronisé et ouvre un tunnel SSH. `2-client.sh` installe `casty`, ajoute une clé
-  d'application et lit votre fil. `deploy.sh` exécute les trois.
-- **Une clé d'application sans gas.** La clé qui signe vos casts est ajoutée avec un seul message
-  signé, pas une transaction : votre portefeuille le signe dans le navigateur, ou la phrase de
-  récupération une seule fois dans un terminal. Pas d'ETH, pas de RPC.
-- **Un client en terminal.** `casty feed`, `casty cast`, `casty like 2` : chaque commande affiche du
-  texte brut ou, avec `--json`, du JSON pour les scripts.
-- **Une page pour le navigateur et le téléphone.** `casty web` sert le fil, les fils de discussion,
-  les mentions et une zone de rédaction sur cette machine ; `casty serve` met la même page sur l'hôte
-  du nœud derrière HTTPS, avec des notifications push pour les mentions et les réponses.
-- **Testé hors ligne.** Un nœud Snapchain factice vérifie chaque signature, si bien que tout le
-  client, les scripts et la page tournent en CI sans nœud réel.
+<div class="lede">
 
-## Démarrage rapide
+casty installe un nœud de lecture [Snapchain](https://snapchain.farcaster.xyz), une copie complète
+de Farcaster, sur un hôte que vous contrôlez, et vous donne un client qui ne parle à rien d'autre :
+une commande de terminal et une page pour le navigateur et le téléphone. Votre fil, vos mentions et
+vos fils de discussion sont lus depuis votre nœud ; vos casts, réponses, likes, recasts et follows
+partent à travers lui. Aucune API hébergée ne se trouve entre vous et le réseau, donc il n'y a ni
+clé d'API à obtenir ni limite de débit à respecter.
 
-```sh
+</div>
+
+## Commencer avec une seule commande
+
+<div class="ways">
+<div class="way">
+
+### Un nouveau nœud à vous
+
+Un serveur avec un volume de 2 To et un pare-feu chez Hetzner ou AWS, Snapchain dessus, le client
+sur votre machine, et la page sur l'hôte derrière HTTPS. Le nœud se synchronise pendant quelques
+heures.
+
+```sh wrap
 git clone https://github.com/castyfun/casty.git && cd casty
-./scripts/deploy.sh --domain node.example.org   # everything below in order, and the page on the host behind HTTPS
+./scripts/deploy.sh --fid <your fid> --domain node.example.org
 ```
 
-`deploy.sh` exécute les trois étapes et, avec `--domain` ou `--tailscale`, une quatrième, [Depuis
-n'importe quel réseau](serve/). [Tout le parcours](guide/) passe en revue l'ensemble, puis son
-utilisation, dans l'ordre. Chaque étape peut être relancée sans risque, si bien que la même commande
-reprend là où une exécution s'est arrêtée. Étape par étape :
+Vous avez déjà une machine Linux avec 2 To libres ? Ajoutez `-- --host user@ip`.
 
-```sh
-./scripts/0-provision.sh   # a VM, 2 TB volume and firewall on Hetzner or AWS, whichever credentials are set; or --host user@ip
-./scripts/1-node.sh        # Snapchain read node, wait for sync, SSH tunnel to 127.0.0.1:3381
-./scripts/2-client.sh      # download casty, add a gasless app key with your wallet (--fid) or seed phrase, read your feed
+</div>
+<div class="way">
+
+### casty sur un nœud qui tourne déjà
+
+Pas de serveur : casty se connecte à n'importe quel nœud Snapchain, l'un des vôtres sur une autre
+machine ou un nœud public, et le retient. Prêt en une minute.
+
+```sh wrap
+git clone https://github.com/castyfun/casty.git && cd casty
+./scripts/2-client.sh --node https://snap.farcaster.xyz:3381 --fid <your fid>
 ```
 
-Une phrase de récupération contrôle tout le compte. Utilisez un compte de test pour ce tutoriel, ne
-collez une phrase de récupération que dans un logiciel de développeurs en qui vous avez confiance, et
-préférez une clé autorisée par votre portefeuille : `casty init --fid <fid>`, puis `casty web` et,
-dans votre compte, « add a key with your wallet ».
+Puis `./bin/casty web` et, dans « you », « add a key with your wallet ».
 
-Exécutez les trois scripts dans l'ordre depuis une copie du dépôt casty. À la fin, vous avez un nœud
-de lecture [Snapchain](https://snapchain.farcaster.xyz) sur un hôte que vous contrôlez, et
-`./bin/casty`, un client qui lit votre fil depuis ce nœud et publie à travers lui.
+</div>
+<div class="way">
 
-Le client n'a besoin d'aucune clé d'API d'un service Farcaster hébergé ni d'aucun RPC Ethereum sur le
-chemin normal. Sa clé d'application est ajoutée avec un message signé, pas une transaction on-chain,
-si bien qu'il n'y a pas de gas à payer.
+### Laisser un agent le faire
+
+Collez [un seul prompt](agents/) dans Claude Code, Codex, Cursor ou un autre agent de programmation.
+Il lit [llms.txt](https://castyfun.github.io/casty/llms.txt), vous demande laquelle des deux voies
+vous voulez, et ne vous demande jamais votre phrase de récupération.
+
+```text wrap
+Set up casty for me: https://github.com/castyfun/casty.
+Read https://castyfun.github.io/casty/llms-full.txt first.
+...
+```
+
+</div>
+</div>
+
+## Comment l'ensemble s'articule
+
+<Architecture />
+
+Les lectures viennent de votre nœud, donc le fil est aussi rapide que la machine sur laquelle il
+tourne. Les écritures sont signées sur votre machine avec une clé d'application que seul casty
+détient, et votre nœud les relaie aux validateurs. La clé est ajoutée avec un seul message signé,
+approuvé par votre portefeuille dans le navigateur : pas de transaction, pas de gas, pas de RPC
+Ethereum.
+
+## Ce que vous obtenez
+
+<div class="features">
+
+- **Trois scripts et une commande.** `0-provision.sh` loue le serveur ou vérifie le vôtre,
+  `1-node.sh` installe Snapchain et attend sa synchronisation, `2-client.sh` installe `casty` et
+  ajoute une clé. `deploy.sh` les exécute dans l'ordre et reprend là où une exécution s'est arrêtée.
+- **Un client en terminal.** `casty feed`, `casty cast`, `casty like 2` : du texte brut pour vous,
+  `--json` pour les scripts, des numéros qui passent d'une commande à la suivante.
+- **Une page pour le navigateur et le téléphone.** Le fil, les fils de discussion, les mentions, les
+  profils et une zone de rédaction, en clair et en sombre, avec des raccourcis clavier sur un
+  ordinateur portable et l'ajout à l'écran d'accueil sur un téléphone.
+- **Votre nœud, de partout.** `casty serve` met la page sur l'hôte du nœud derrière HTTPS, avec un
+  index du fil qui répond immédiatement et des notifications push pour les mentions et les réponses.
+- **Des clés que vous voyez.** Chaque clé d'application de votre compte, ce qu'elle peut signer,
+  quand elle expire, et la révocation depuis le terminal ou avec la clé elle-même.
+- **Testé sans nœud.** Un nœud Snapchain factice vérifie chaque signature, si bien que le client,
+  les scripts et la page passent leurs vérifications hors ligne en CI.
+
+</div>
+
+## Dans le terminal
+
+```text
+$ casty feed --limit 3
+1  @casty-test · 0s · via casty
+   Reading the feed from my own node. No API key, no rate limit.
+
+2  @user-2000000002 · 22d · via app-alpha
+   @casty-test thanks for the pointer, it worked.
+   https://example.com/2000000002/3
+
+3  @user-2000000011 · 22d · via app-beta
+   Reading the Snapchain docs on a train. A good way to spend an hour.
+
+$ casty like 2
+liked 2000000002:0x973d398ad75e1f25fa780085f3c22d30b01d2504
+```
+
+## Dans le navigateur et sur le téléphone
+
+<Gallery captions={["« you » : le compte, ses clés et son stockage", "un nouveau cast, depuis n'importe où dans le fil avec n", "les mentions et les réponses sur un téléphone, thème sombre", "la zone de rédaction sur un téléphone, thème clair"]} />
 
 ## Ce qu'il vous faut
 

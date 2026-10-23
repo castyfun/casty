@@ -1,0 +1,46 @@
+---
+title: Despliegue con un agente
+description: Un prompt para un agente de programación que configura casty por ti, y los archivos llms.txt que lee.
+---
+
+Un agente de programación que puede ejecutar comandos de shell (Claude Code, Codex, Cursor, Gemini
+CLI, Aider y similares) puede hacer toda la configuración a partir de un solo prompt. Lee la
+documentación de dos archivos de texto plano hechos para agentes:
+
+- [llms.txt](https://castyfun.github.io/casty/llms.txt): qué es casty, los comandos y enlaces a
+  todas las páginas;
+- [llms-full.txt](https://castyfun.github.io/casty/llms-full.txt): todas las páginas de esta
+  documentación en un solo archivo.
+
+El repositorio lleva el mismo `llms.txt` en su raíz.
+
+## El prompt
+
+Pégalo tal cual. El agente te pide tu fid y la opción que quieres: un nodo nuevo, tuyo, o casty
+conectado a un nodo que ya funciona.
+
+```text
+Set up casty for me: https://github.com/castyfun/casty. Read https://castyfun.github.io/casty/llms-full.txt first.
+1. Clone the repository and cd into it.
+2. Ask me for my Farcaster fid, and which of these I want:
+   a) a new node of my own: I give you HCLOUD_TOKEN or AWS credentials, or user@ip of a Linux host with 16 GB RAM and 2 TB free disk;
+   b) no node of my own: connect casty to an existing Snapchain node URL (default https://snap.farcaster.xyz:3381).
+3. For a), first run ./scripts/deploy.sh --fid <fid> --dry-run (add -- --host user@ip for my own host), show me what it would create and what it costs, and only after my "yes" run the same command with --yes instead of --dry-run. The node sync takes hours: if the wait stops, run ./scripts/1-node.sh status --wait, then run deploy.sh again; it resumes.
+   For b), run ./scripts/2-client.sh --node <url> --fid <fid>.
+4. Never ask me for my seed phrase or recovery phrase and never type one anywhere. The app key is added with my wallet: tell me to run ./bin/casty web in my own terminal (it asks me for a new passphrase), open the link it prints, go to "you" and press "add a key with your wallet".
+5. Check the result with ./bin/casty doctor and ./bin/casty whoami, then show me ./bin/casty feed --limit 5.
+If a step fails, read its error line and hint, look the message up in https://castyfun.github.io/casty/troubleshooting/, fix the cause and run the same command again.
+```
+
+## Lo que queda en tus manos
+
+- **El dinero.** No se crea nada que cueste dinero antes de que hayas visto el plan de `--dry-run`
+  y hayas dicho que sí. `./scripts/0-provision.sh --destroy` lo vuelve a borrar.
+- **La frase semilla.** El prompt prohíbe al agente pedirla. La clave de aplicación la autoriza tu
+  billetera en `casty web`, que arrancas tú mismo, así que la contraseña del almacén de claves
+  también es tuya.
+- **Las credenciales de la nube.** El agente necesita `HCLOUD_TOKEN` o credenciales de AWS solo para
+  un nodo nuevo. Dale un token que puedas revocar, y revócalo cuando el nodo esté en marcha; casty
+  solo lo vuelve a necesitar para borrar el servidor.
+
+Consulta [Seguridad](../security/) para ver cada secreto involucrado y cómo revocar cada uno.

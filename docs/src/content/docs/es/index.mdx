@@ -7,6 +7,9 @@ sidebar:
   order: 0
 hero:
   title: casty
+  image:
+    file: ../../../assets/hero.webp
+    alt: casty web en un portátil con el tema oscuro y en un teléfono con el tema claro
   tagline: Tu propio nodo de lectura de Farcaster y un cliente que lee de él y escribe a través de él. Tres comandos, sin claves de API, sin gas.
   actions:
     - text: Empezar el tutorial
@@ -21,57 +24,123 @@ hero:
       variant: minimal
 ---
 
-## Qué es casty
+import Architecture from "../../../components/Architecture.astro";
+import Gallery from "../../../components/Gallery.astro";
 
-casty pone un nodo de lectura de [Snapchain](https://snapchain.farcaster.xyz) en un host que tú
-controlas y te da un cliente que no habla con nada más. El nodo guarda una copia completa de
-Farcaster; el cliente lee de él tu feed, tus menciones y tus hilos, y publica a través de él casts,
-respuestas, likes, recasts y follows. Nada pasa por una API de Farcaster alojada, y ni la clave ni el
-límite de peticiones de nadie más se interponen entre tú y la red.
 
-- **Tres scripts.** `0-provision.sh` alquila un servidor con un volumen de 2 TB y un firewall en
-  Hetzner o AWS, o comprueba una máquina que ya tienes. `1-node.sh` instala Snapchain, espera a que
-  se sincronice y abre un túnel SSH. `2-client.sh` instala `casty`, añade una clave de aplicación y
-  lee tu feed. `deploy.sh` ejecuta los tres.
-- **Una clave de aplicación sin gas.** La clave que firma tus casts se añade con un solo mensaje
-  firmado, no con una transacción: tu billetera lo firma en el navegador, o la frase semilla una vez
-  en una terminal. Sin ETH, sin RPC.
-- **Un cliente de terminal.** `casty feed`, `casty cast`, `casty like 2`: cada comando imprime texto
-  plano o, con `--json`, JSON para scripts.
-- **Una página para el navegador y el teléfono.** `casty web` sirve el feed, los hilos, las menciones
-  y un cuadro de redacción en esta máquina; `casty serve` pone la misma página en el host del nodo
-  detrás de HTTPS, con notificaciones push para menciones y respuestas.
-- **Probado sin conexión.** Un nodo Snapchain simulado comprueba cada firma, así que el cliente
-  entero, los scripts y la página se ejecutan en CI sin un nodo real.
+<div class="lede">
 
-## Inicio rápido
+casty pone un nodo de lectura de [Snapchain](https://snapchain.farcaster.xyz), una copia completa de
+Farcaster, en un host que tú controlas, y te da un cliente que no habla con nada más: un comando de
+terminal y una página para el navegador y el teléfono. Tu feed, tus menciones y tus hilos se leen de
+tu nodo; tus casts, respuestas, likes, recasts y follows salen a través de él. No hay ninguna API
+alojada entre tú y la red, así que no hay clave de API que conseguir ni límite de peticiones que
+respetar.
 
-```sh
+</div>
+
+## Empieza con un solo comando
+
+<div class="ways">
+<div class="way">
+
+### Un nodo nuevo, tuyo
+
+Un servidor con un volumen de 2 TB y un firewall en Hetzner o AWS, Snapchain en él, el cliente en tu
+máquina y la página en el host detrás de HTTPS. El nodo se sincroniza durante unas horas.
+
+```sh wrap
 git clone https://github.com/castyfun/casty.git && cd casty
-./scripts/deploy.sh --domain node.example.org   # everything below in order, and the page on the host behind HTTPS
+./scripts/deploy.sh --fid <your fid> --domain node.example.org
 ```
 
-`deploy.sh` ejecuta los tres pasos y, con `--domain` o `--tailscale`, un cuarto, [Desde cualquier
-red](serve/). [El camino completo](guide/) recorre todo ello, y luego su uso, en orden. Cada paso se puede volver a ejecutar sin riesgo, así que el mismo comando retoma donde se detuvo
-una ejecución. Paso a paso:
+¿Ya tienes una máquina Linux con 2 TB libres? Añade `-- --host user@ip`.
 
-```sh
-./scripts/0-provision.sh   # a VM, 2 TB volume and firewall on Hetzner or AWS, whichever credentials are set; or --host user@ip
-./scripts/1-node.sh        # Snapchain read node, wait for sync, SSH tunnel to 127.0.0.1:3381
-./scripts/2-client.sh      # download casty, add a gasless app key with your wallet (--fid) or seed phrase, read your feed
+</div>
+<div class="way">
+
+### casty en un nodo que ya funciona
+
+Sin servidor: casty se conecta a cualquier nodo Snapchain, uno tuyo en otra máquina o uno público, y
+lo recuerda. Listo en un minuto.
+
+```sh wrap
+git clone https://github.com/castyfun/casty.git && cd casty
+./scripts/2-client.sh --node https://snap.farcaster.xyz:3381 --fid <your fid>
 ```
 
-Una frase semilla controla toda la cuenta. Usa una cuenta de prueba para este tutorial, pega una
-frase semilla solo en software de desarrolladores en los que confíes y prefiere una clave autorizada
-por tu billetera: `casty init --fid <fid>`, luego `casty web` y, en tu cuenta, "add a key with your wallet".
+Luego `./bin/casty web` y, en «you», «add a key with your wallet».
 
-Ejecuta los tres scripts en orden desde una copia del repositorio de casty. Al final tienes un nodo
-de lectura de [Snapchain](https://snapchain.farcaster.xyz) en un host que tú controlas, y `./bin/casty`,
-un cliente que lee tu feed de ese nodo y publica a través de él.
+</div>
+<div class="way">
 
-El cliente no necesita ninguna clave de API de un servicio de Farcaster alojado ni un RPC de Ethereum
-en el camino normal. Su clave de aplicación se añade con un mensaje firmado, no con una transacción en
-cadena, así que no hay gas que pagar.
+### Deja que lo haga un agente
+
+Pega [un prompt](agents/) en Claude Code, Codex, Cursor u otro agente de programación. Lee
+[llms.txt](https://castyfun.github.io/casty/llms.txt), te pregunta cuál de las dos opciones quieres y
+nunca te pide la frase semilla.
+
+```text wrap
+Set up casty for me: https://github.com/castyfun/casty.
+Read https://castyfun.github.io/casty/llms-full.txt first.
+...
+```
+
+</div>
+</div>
+
+## Cómo encaja todo
+
+<Architecture />
+
+Las lecturas vienen de tu nodo, así que el feed es tan rápido como la máquina en la que funciona. Las
+escrituras se firman en tu máquina con una clave de aplicación que solo tiene casty, y tu nodo las
+retransmite a los validadores. La clave se añade con un solo mensaje firmado, aprobado por tu
+billetera en el navegador: sin transacción, sin gas, sin RPC de Ethereum.
+
+## Qué obtienes
+
+<div class="features">
+
+- **Tres scripts y un comando.** `0-provision.sh` alquila el servidor o comprueba el tuyo,
+  `1-node.sh` instala Snapchain y espera a que se sincronice, `2-client.sh` instala `casty` y añade
+  una clave. `deploy.sh` los ejecuta en orden y retoma donde se detuvo una ejecución.
+- **Un cliente de terminal.** `casty feed`, `casty cast`, `casty like 2`: texto plano para ti,
+  `--json` para scripts, números que pasan de un comando al siguiente.
+- **Una página para el navegador y el teléfono.** El feed, los hilos, las menciones, los perfiles y
+  un cuadro de redacción, en claro y en oscuro, con atajos de teclado en un portátil y la opción de
+  instalarla en la pantalla de inicio de un teléfono.
+- **Tu nodo, desde cualquier lugar.** `casty serve` pone la página en el host del nodo detrás de
+  HTTPS, con un índice del feed que responde al instante y notificaciones push para menciones y
+  respuestas.
+- **Claves a la vista.** Cada clave de aplicación de tu cuenta, lo que puede firmar, cuándo caduca, y
+  su revocación desde la terminal o con la propia clave.
+- **Probado sin un nodo.** Un nodo Snapchain simulado comprueba cada firma, así que el cliente, los
+  scripts y la página ejecutan sus comprobaciones sin conexión en CI.
+
+</div>
+
+## En la terminal
+
+```text
+$ casty feed --limit 3
+1  @casty-test · 0s · via casty
+   Reading the feed from my own node. No API key, no rate limit.
+
+2  @user-2000000002 · 22d · via app-alpha
+   @casty-test thanks for the pointer, it worked.
+   https://example.com/2000000002/3
+
+3  @user-2000000011 · 22d · via app-beta
+   Reading the Snapchain docs on a train. A good way to spend an hour.
+
+$ casty like 2
+liked 2000000002:0x973d398ad75e1f25fa780085f3c22d30b01d2504
+```
+
+## En el navegador y en el teléfono
+
+<Gallery captions={["«you»: la cuenta, sus claves y su almacenamiento", "un cast nuevo, desde cualquier punto del feed con n", "menciones y respuestas en un teléfono, tema oscuro", "el cuadro de redacción en un teléfono, tema claro"]} />
 
 ## Qué necesitas
 

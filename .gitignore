@@ -12,3 +12,6 @@ test/mock-node/fixtures/generated/
 *.firewall.json
 .DS_Store
 /client/release/
+# Written by docs/tools/llms.mjs at build time.
+docs/public/llms.txt
+docs/public/llms-full.txt

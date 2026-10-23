@@ -1,0 +1,212 @@
+---
+// How the pieces connect: your devices, your node, the network. One cast travels the path once
+// the diagram is on screen; with reduced motion it stays still.
+---
+
+<figure class="arch not-content" aria-label="casty on your laptop and phone talks to your own Snapchain read node over an SSH tunnel or HTTPS; the node holds a full copy of Farcaster and relays your messages to the network.">
+  <svg viewBox="0 0 960 400" role="img" aria-hidden="true">
+    <defs>
+      <marker id="arch-tip" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 z" class="tip"></path>
+      </marker>
+      <pattern id="arch-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+        <path d="M24 0 H0 V24" class="grid"></path>
+      </pattern>
+    </defs>
+
+    <rect x="0" y="0" width="960" height="400" rx="20" class="board"></rect>
+    <rect x="0" y="0" width="960" height="400" rx="20" fill="url(#arch-grid)"></rect>
+
+    <!-- your devices -->
+    <text x="48" y="58" class="eyebrow">your devices</text>
+    <g transform="translate(40 76)">
+      <rect width="232" height="112" rx="14" class="card"></rect>
+      <rect x="16" y="16" width="200" height="26" rx="6" class="term"></rect>
+      <text x="28" y="34" class="mono small on-term">$ casty feed</text>
+      <text x="16" y="70" class="title">Terminal</text>
+      <text x="16" y="92" class="mono small muted">feed · cast · like</text>
+    </g>
+    <g transform="translate(40 212)">
+      <rect width="232" height="128" rx="14" class="card"></rect>
+      <rect x="16" y="16" width="64" height="96" rx="12" class="device"></rect>
+      <rect x="25" y="30" width="46" height="5" rx="2" class="line"></rect>
+      <rect x="25" y="42" width="38" height="5" rx="2" class="line soft"></rect>
+      <rect x="25" y="54" width="42" height="5" rx="2" class="line soft"></rect>
+      <rect x="25" y="70" width="46" height="5" rx="2" class="line"></rect>
+      <rect x="25" y="82" width="30" height="5" rx="2" class="line soft"></rect>
+      <text x="96" y="52" class="title">Browser</text>
+      <text x="96" y="74" class="title">and phone</text>
+      <text x="96" y="100" class="mono small muted">casty web</text>
+    </g>
+
+    <!-- the links -->
+    <path d="M272 132 C 300 132, 296 210, 300 210" class="link"></path>
+    <path d="M272 276 C 300 276, 296 210, 300 210" class="link"></path>
+    <path id="arch-in" d="M300 210 C 340 210, 340 200, 388 200" class="link"></path>
+    <text x="344" y="182" text-anchor="middle" class="mono small muted">SSH tunnel</text>
+    <text x="344" y="230" text-anchor="middle" class="mono small muted">or HTTPS</text>
+
+    <!-- your node -->
+    <text x="398" y="58" class="eyebrow">your host</text>
+    <g transform="translate(390 76)">
+      <rect width="250" height="264" rx="16" class="card node"></rect>
+      <circle cx="28" cy="32" r="6" class="ok"></circle>
+      <text x="44" y="37" class="mono small muted">synced</text>
+      <text x="20" y="84" class="big">Snapchain</text>
+      <text x="20" y="112" class="title">read node</text>
+      <g transform="translate(20 140)">
+        <rect width="210" height="10" rx="5" class="disk"></rect>
+        <rect width="150" height="10" rx="5" class="disk-used"></rect>
+      </g>
+      <text x="20" y="178" class="mono small muted">a full copy of Farcaster</text>
+      <text x="20" y="214" class="mono small">reads  · from here</text>
+      <text x="20" y="238" class="mono small">writes · relayed on</text>
+    </g>
+
+    <path id="arch-out" d="M640 200 C 700 200, 700 200, 752 200" class="link"></path>
+    <text x="696" y="176" text-anchor="middle" class="mono small muted">gossip</text>
+
+    <!-- the network -->
+    <text x="760" y="58" class="eyebrow">Farcaster</text>
+    <g transform="translate(752 76)">
+      <rect width="168" height="264" rx="16" class="card"></rect>
+      <g class="mesh">
+        <line x1="44" y1="70" x2="122" y2="96"></line>
+        <line x1="44" y1="70" x2="64" y2="150"></line>
+        <line x1="122" y1="96" x2="64" y2="150"></line>
+        <line x1="122" y1="96" x2="128" y2="176"></line>
+        <line x1="64" y1="150" x2="128" y2="176"></line>
+        <line x1="64" y1="150" x2="52" y2="214"></line>
+        <line x1="128" y1="176" x2="52" y2="214"></line>
+      </g>
+      <circle cx="44" cy="70" r="9" class="peer"></circle>
+      <circle cx="122" cy="96" r="9" class="peer"></circle>
+      <circle cx="64" cy="150" r="11" class="peer strong"></circle>
+      <circle cx="128" cy="176" r="9" class="peer"></circle>
+      <circle cx="52" cy="214" r="9" class="peer"></circle>
+      <text x="84" y="248" text-anchor="middle" class="mono small muted">validators</text>
+    </g>
+
+    <!-- a cast on its way -->
+    <circle r="7" class="cast">
+      <animateMotion dur="5s" repeatCount="indefinite" keyPoints="0;1" keyTimes="0;1" calcMode="linear">
+        <mpath href="#arch-path"></mpath>
+      </animateMotion>
+    </circle>
+    <path id="arch-path" d="M272 132 C 300 132, 296 210, 300 210 C 340 210, 340 200, 388 200 L 640 200 C 700 200, 700 200, 752 200" fill="none" stroke="none"></path>
+  </svg>
+</figure>
+
+<style>
+  .arch {
+    margin: 0;
+  }
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .board {
+    fill: var(--sl-color-gray-7, #f6f5f1);
+  }
+  :global([data-theme="dark"]) .board {
+    fill: var(--sl-color-gray-6);
+  }
+  .grid {
+    fill: none;
+    stroke: var(--sl-color-hairline-light);
+    stroke-width: 1;
+  }
+  .card {
+    fill: var(--sl-color-bg);
+    stroke: var(--sl-color-hairline-shade);
+    stroke-width: 1.5;
+  }
+  .card.node {
+    stroke: var(--sl-color-accent);
+    stroke-width: 2;
+  }
+  .term {
+    fill: var(--sl-color-gray-1);
+  }
+  .on-term {
+    fill: var(--sl-color-gray-7);
+  }
+  .device {
+    fill: none;
+    stroke: var(--sl-color-gray-3);
+    stroke-width: 1.5;
+  }
+  .line {
+    fill: var(--sl-color-gray-3);
+  }
+  .line.soft {
+    fill: var(--sl-color-gray-5);
+  }
+  text {
+    fill: var(--sl-color-white);
+    font-family: var(--sl-font-system);
+  }
+  .mono {
+    font-family: var(--sl-font-system-mono);
+  }
+  .small {
+    font-size: 13px;
+  }
+  .muted {
+    fill: var(--sl-color-gray-3);
+  }
+  .eyebrow {
+    font-family: var(--sl-font-system-mono);
+    font-size: 13px;
+    fill: var(--sl-color-gray-3);
+  }
+  .title {
+    font-size: 19px;
+    font-weight: 600;
+  }
+  .big {
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .ok {
+    fill: #2e7d32;
+  }
+  .disk {
+    fill: var(--sl-color-gray-5);
+  }
+  .disk-used {
+    fill: var(--sl-color-accent);
+  }
+  .link {
+    fill: none;
+    stroke: var(--sl-color-gray-3);
+    stroke-width: 2;
+    stroke-dasharray: 6 6;
+  }
+  .tip {
+    fill: var(--sl-color-gray-3);
+  }
+  .mesh line {
+    stroke: var(--sl-color-gray-4);
+    stroke-width: 1.5;
+  }
+  .peer {
+    fill: var(--sl-color-bg);
+    stroke: var(--sl-color-gray-2);
+    stroke-width: 2;
+  }
+  .peer.strong {
+    stroke: var(--sl-color-accent);
+  }
+  .cast {
+    fill: var(--sl-color-accent);
+    filter: drop-shadow(0 0 6px var(--sl-color-accent));
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cast {
+      display: none;
+    }
+  }
+</style>

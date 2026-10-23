@@ -1,0 +1,54 @@
+# casty
+
+> casty puts a Snapchain read node (a full copy of Farcaster) on a host you control and gives you a client, a terminal CLI and a web page for desktop and phone, that reads from that node and writes through it. No API keys, no Ethereum RPC on the normal path, no gas: the app key is added with one signed message. MIT licensed. Repository: https://github.com/castyfun/casty
+
+Everything runs from a checkout of the repository on macOS or Linux (Windows: WSL2):
+
+- `./scripts/deploy.sh` runs the three steps below in order and is safe to run again; it resumes where a run stopped.
+- `./scripts/0-provision.sh` creates a server with a 2 TB volume and a firewall on Hetzner (`HCLOUD_TOKEN`) or AWS (AWS CLI credentials), or with `--host user@ip` checks a Linux machine you already have (16 GB RAM, 4 vCPU, 2 TB free disk, Docker). It writes `node.env`.
+- `./scripts/1-node.sh` installs Snapchain on that host, waits for it to sync (hours: a snapshot of several hundred GB, then the blocks since) and opens an SSH tunnel to `127.0.0.1:3381`.
+- `./scripts/2-client.sh` downloads `casty` into `./bin`, checks the node with `casty doctor`, adds an app key and reads the feed. With `--node <url>` it uses any Snapchain node instead, for example `https://snap.farcaster.xyz:3381`, and casty remembers that node.
+- `./bin/casty web` serves the feed, mentions, threads, profiles and a compose box at `http://127.0.0.1:3390`; under "you" it adds an app key with the wallet in the browser.
+
+Exit codes of the scripts: 0 done, 1 not synced yet, 2 bad arguments, 3 a prerequisite is missing, 4 provider, SSH or download failure, 5 the host falls short. Every step prints a one-line fix when it stops.
+
+## Deploy casty with an agent
+
+Paste this prompt into a coding agent that can run shell commands (Claude Code, Codex, Cursor, Gemini CLI, Aider or similar):
+
+```text
+Set up casty for me: https://github.com/castyfun/casty. Read https://castyfun.github.io/casty/llms-full.txt first.
+1. Clone the repository and cd into it.
+2. Ask me for my Farcaster fid, and which of these I want:
+   a) a new node of my own: I give you HCLOUD_TOKEN or AWS credentials, or user@ip of a Linux host with 16 GB RAM and 2 TB free disk;
+   b) no node of my own: connect casty to an existing Snapchain node URL (default https://snap.farcaster.xyz:3381).
+3. For a), first run ./scripts/deploy.sh --fid <fid> --dry-run (add -- --host user@ip for my own host), show me what it would create and what it costs, and only after my "yes" run the same command with --yes instead of --dry-run. The node sync takes hours: if the wait stops, run ./scripts/1-node.sh status --wait, then run deploy.sh again; it resumes.
+   For b), run ./scripts/2-client.sh --node <url> --fid <fid>.
+4. Never ask me for my seed phrase or recovery phrase and never type one anywhere. The app key is added with my wallet: tell me to run ./bin/casty web in my own terminal (it asks me for a new passphrase), open the link it prints, go to "you" and press "add a key with your wallet".
+5. Check the result with ./bin/casty doctor and ./bin/casty whoami, then show me ./bin/casty feed --limit 5.
+If a step fails, read its error line and hint, look the message up in https://castyfun.github.io/casty/troubleshooting/, fix the cause and run the same command again.
+```
+
+## Docs
+
+- [Overview](https://castyfun.github.io/casty/): what casty is, what you need, how long it takes
+- [The whole way](https://castyfun.github.io/casty/guide/): from nothing to daily use and back, in order
+- [Commands](https://castyfun.github.io/casty/commands/): every script and casty command, what it does, exit codes
+- [Deploy with an agent](https://castyfun.github.io/casty/agents/): the one prompt above, and what stays with you
+- [0. Provision a host](https://castyfun.github.io/casty/0-provision/): Hetzner, AWS or a host you have; the firewall; node.env
+- [1. Run the read node](https://castyfun.github.io/casty/1-node/): Snapchain install, sync, tunnel, upgrades
+- [2. Install the client](https://castyfun.github.io/casty/2-client/): casty, the app key, reading and writing
+- [In a browser and on a phone](https://castyfun.github.io/casty/web/): casty web, pairing, adding a key with a wallet
+- [From any network](https://castyfun.github.io/casty/serve/): casty serve on the node's host behind HTTPS, push notifications
+- [A node at home](https://castyfun.github.io/casty/home-node/): your own machine as the node host
+- [Security](https://castyfun.github.io/casty/security/): every secret involved and how to revoke it
+- [Troubleshooting](https://castyfun.github.io/casty/troubleshooting/): every error message and what to do
+
+## Optional
+
+- [Full documentation in one file](https://castyfun.github.io/casty/llms-full.txt)
+- [Custody address and app keys](https://castyfun.github.io/casty/concepts/custody-and-app-keys/)
+- [Read nodes and validators](https://castyfun.github.io/casty/concepts/read-nodes-vs-validators/)
+- [Snapchain messages](https://castyfun.github.io/casty/concepts/snapchain-messages/)
+- [Storage rent](https://castyfun.github.io/casty/concepts/storage-rent/)
+- [Wallets and keys](https://castyfun.github.io/casty/concepts/wallets/)
