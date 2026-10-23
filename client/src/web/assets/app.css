@@ -996,6 +996,8 @@ textarea:focus-visible {
   dialog {
     width: min(600px, calc(100% - 2rem));
     height: auto;
+    /* A modal dialog is inset 0 on every side, which stretches an auto height to the screen. */
+    bottom: auto;
     margin: 10vh auto auto;
     border: 1px solid var(--line);
     border-radius: 14px;
@@ -1004,6 +1006,10 @@ textarea:focus-visible {
 
   .compose-head {
     padding-top: 0.375rem;
+  }
+
+  textarea {
+    min-height: 12rem;
   }
 }
 
