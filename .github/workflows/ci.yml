@@ -29,6 +29,8 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 22
+          # corepack provides pnpm only in the next step, so setup-node must not look for it.
+          package-manager-cache: false
       - run: corepack enable
       - id: pnpm-store
         run: echo "dir=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
@@ -60,6 +62,8 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 22
+          # corepack provides pnpm only in the next step, so setup-node must not look for it.
+          package-manager-cache: false
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: brew install yq
@@ -84,6 +88,8 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 22
+          # corepack provides pnpm only in the next step, so setup-node must not look for it.
+          package-manager-cache: false
       - run: corepack enable
       - run: pnpm audit --audit-level moderate
 

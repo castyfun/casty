@@ -22,6 +22,8 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 22
+          # corepack provides pnpm only in the next step, so setup-node must not look for it.
+          package-manager-cache: false
       - run: corepack enable
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
@@ -48,6 +50,8 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: 22
+          # corepack provides pnpm only in the next step, so setup-node must not look for it.
+          package-manager-cache: false
       - run: corepack enable
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
