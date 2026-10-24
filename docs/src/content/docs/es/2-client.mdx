@@ -53,6 +53,12 @@ A seed phrase controls the whole account. Use a test account to try casty, and p
 phrase only into software from developers you trust. Prefer a key authorised by your wallet:
 casty init --fid <fid>, then casty web and, under you, "add a key with your wallet".
 custody address 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 holds fid 2000000001
+the custody address signs one KEY_ADD message, and only this:
+  fid           2000000001
+  new app key   0x4224ff3035db6350cfae06e0ad54b79d98a6bbcb962488e0c090c24bd54e6190
+  may sign      cast, reaction, link
+  lapses        30 days after its last use
+  requested by  fid 2000000001, this account
 adding a gasless app key (no transaction, no gas)
 fid      2000000001
 custody  0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
