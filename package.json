@@ -2,7 +2,7 @@
   "name": "casty-workspace",
   "private": true,
   "license": "MIT",
-  "repository": "github:savvax/casty",
+  "repository": "github:castyfun/casty",
   "type": "module",
   "packageManager": "pnpm@10.34.7",
   "engines": {
