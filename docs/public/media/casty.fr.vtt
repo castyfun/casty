@@ -1,0 +1,49 @@
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:03.950
+casty : votre propre nœud de lecture Farcaster et son client.
+
+2
+00:00:04.000 --> 00:00:07.950
+Clonez le dépôt.
+
+3
+00:00:08.000 --> 00:00:11.250
+(0) Le calcul : un serveur loué ou un hôte que vous avez déjà.
+
+4
+00:00:11.300 --> 00:00:14.650
+(1) Un nœud de lecture Snapchain : installé, synchronisé, tunnel ouvert.
+
+5
+00:00:14.700 --> 00:00:21.950
+(2) Le client reçoit sa propre clé d'application. La phrase de récupération n'apparaît jamais à l'écran.
+
+6
+00:00:22.000 --> 00:00:29.950
+Lisez votre fil depuis votre nœud. Publiez et aimez à travers lui.
+
+7
+00:00:30.000 --> 00:00:33.950
+casty web : le même fil dans un navigateur.
+
+8
+00:00:34.000 --> 00:00:37.950
+Sur un téléphone aussi, depuis n'importe quel réseau.
+
+9
+00:00:38.000 --> 00:00:41.950
+Écrivez depuis n'importe où dans le fil : appuyez sur n.
+
+10
+00:00:42.000 --> 00:00:45.950
+Chaque clé d'application de votre compte, et ce qu'elle peut signer.
+
+11
+00:00:46.000 --> 00:00:51.950
+Les lectures viennent de votre nœud. Les écritures sont signées sur votre machine et relayées par lui.
+
+12
+00:00:52.000 --> 00:00:58.950
+Sans clé d'API, sans gas. castyfun.github.io/casty

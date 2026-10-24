@@ -50,6 +50,9 @@ git clone https://github.com/castyfun/casty.git && cd casty
 ./bin/casty feed                       # read; ./bin/casty cast "hello" writes
 ```
 
+<img src="docs/src/assets/casty-demo.gif" width="880" alt="The three scripts and casty in a terminal: provisioning, the node syncing, the client with its app key, then the feed, a cast and a like">
+
+录制时使用模拟节点和服务器替身，因此真实脚本在一分钟内跑完；[59 秒视频](https://castyfun.github.io/casty/media/casty.mp4)还展示了笔记本和手机上的页面。
 
 ## 用一条命令开始
 

@@ -1,0 +1,49 @@
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:03.950
+casty: tu propio nodo de lectura de Farcaster y su cliente.
+
+2
+00:00:04.000 --> 00:00:07.950
+Clona el repositorio.
+
+3
+00:00:08.000 --> 00:00:11.250
+(0) Cómputo: un servidor alquilado o un host que ya tienes.
+
+4
+00:00:11.300 --> 00:00:14.650
+(1) Un nodo de lectura de Snapchain: instalado, sincronizado y con túnel.
+
+5
+00:00:14.700 --> 00:00:21.950
+(2) El cliente obtiene su propia clave de app. La frase semilla nunca aparece en pantalla.
+
+6
+00:00:22.000 --> 00:00:29.950
+Lee tu feed desde tu nodo. Publica y da me gusta a través de él.
+
+7
+00:00:30.000 --> 00:00:33.950
+casty web: el mismo feed en el navegador.
+
+8
+00:00:34.000 --> 00:00:37.950
+También en el teléfono, desde cualquier red.
+
+9
+00:00:38.000 --> 00:00:41.950
+Escribe desde cualquier punto del feed: pulsa n.
+
+10
+00:00:42.000 --> 00:00:45.950
+Cada clave de app de tu cuenta y lo que puede firmar.
+
+11
+00:00:46.000 --> 00:00:51.950
+Las lecturas salen de tu nodo. Las escrituras se firman en tu equipo y tu nodo las retransmite.
+
+12
+00:00:52.000 --> 00:00:58.950
+Sin claves de API, sin gas. castyfun.github.io/casty

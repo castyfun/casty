@@ -51,6 +51,9 @@ git clone https://github.com/castyfun/casty.git && cd casty
 ./bin/casty feed                       # read; ./bin/casty cast "hello" writes
 ```
 
+<img src="docs/src/assets/casty-demo.gif" width="880" alt="The three scripts and casty in a terminal: provisioning, the node syncing, the client with its app key, then the feed, a cast and a like">
+
+Grabado con el nodo simulado y sustitutos del servidor, así que los scripts reales terminan en menos de un minuto; [el vídeo de 59 s](https://castyfun.github.io/casty/media/casty.mp4) muestra además la página en un portátil y en un teléfono.
 
 ## Empieza con un solo comando
 
