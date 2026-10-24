@@ -23,7 +23,7 @@ casty 只使用托管地址一次，用来添加应用密钥，并且只保存�
 
 从引擎版本 16 起，Snapchain 用一条 `KEY_ADD` 消息而不是链上交易来注册这样的密钥：不需要 gas，
 消息合并后密钥立即可用。casty 用 `@farcaster/core` 的辅助函数 `makeKeyAddBody` 和 `makeKeyAdd`
-构建它。见 Snapchain 文档中的[写入消息](https://snapchain.farcaster.xyz/guides/writing-messages)。
+构建它。见 Snapchain 文档中的[写入消息](https://snapchain.farcaster.xyz/guides/writing-messages)。旧的教程（包括 hub-monorepo 中的 hello-world 示例）仍通过向 OP Mainnet 上的 KeyGateway 合约发送交易来添加密钥：这需要支付 gas、有余额的钱包和 RPC，casty 不使用这种方式。
 
 一条 `KEY_ADD` 携带三个签名：
 

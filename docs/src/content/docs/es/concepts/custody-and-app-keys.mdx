@@ -27,7 +27,7 @@ Desde la versión 16 del motor, Snapchain registra estas claves con un mensaje `
 transacción en cadena: sin gas, y la clave se puede usar en cuanto el mensaje se fusiona. casty lo
 construye con los helpers de `@farcaster/core` `makeKeyAddBody` y `makeKeyAdd`. Consulta
 [writing messages](https://snapchain.farcaster.xyz/guides/writing-messages) en la documentación de
-Snapchain.
+Snapchain. Los tutoriales antiguos, entre ellos el ejemplo hello-world de hub-monorepo, aún añaden la clave con una transacción al contrato KeyGateway en OP Mainnet: cuesta gas y exige una billetera con fondos y un RPC, y casty no usa ese camino.
 
 Un `KEY_ADD` lleva tres firmas:
 

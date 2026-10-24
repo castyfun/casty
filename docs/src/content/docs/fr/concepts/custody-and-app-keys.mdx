@@ -27,7 +27,7 @@ Depuis la version 16 du moteur, Snapchain enregistre ces clés avec un message `
 transaction on-chain : pas de gas, et la clé est utilisable dès que le message est fusionné. casty le
 construit avec les fonctions utilitaires `makeKeyAddBody` et `makeKeyAdd` de `@farcaster/core`. Voir
 [writing messages](https://snapchain.farcaster.xyz/guides/writing-messages) dans la documentation de
-Snapchain.
+Snapchain. Les anciens tutoriels, dont l'exemple hello-world de hub-monorepo, ajoutent encore la clé par une transaction vers le contrat KeyGateway sur OP Mainnet : cela coûte du gas, demande un portefeuille approvisionné et un RPC, et casty n'utilise pas cette voie.
 
 Un `KEY_ADD` porte trois signatures :
 

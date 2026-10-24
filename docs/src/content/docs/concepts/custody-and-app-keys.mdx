@@ -27,7 +27,7 @@ Since engine version 16, Snapchain registers such keys with a `KEY_ADD` message 
 onchain transaction: no gas, and the key is usable as soon as the message merges. casty builds
 it with the `@farcaster/core` helpers `makeKeyAddBody` and `makeKeyAdd`. See
 [writing messages](https://snapchain.farcaster.xyz/guides/writing-messages) in the Snapchain
-docs.
+docs. Older tutorials, the hello-world example in hub-monorepo among them, still add the key with a transaction to the KeyGateway contract on OP Mainnet: that costs gas and needs a funded wallet and an RPC, and casty does not use it.
 
 A `KEY_ADD` carries three signatures:
 

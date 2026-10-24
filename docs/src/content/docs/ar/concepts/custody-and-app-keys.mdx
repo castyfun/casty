@@ -24,7 +24,7 @@ sidebar:
 منذ إصدار المحرك 16، يسجّل Snapchain هذه المفاتيح برسالة `KEY_ADD` بدل معاملة على السلسلة: بلا غاز،
 ويصبح المفتاح قابلًا للاستخدام فور دمج الرسالة. يبنيها casty بدالتي `@farcaster/core` المساعدتين
 `makeKeyAddBody` و`makeKeyAdd`. راجع
-[كتابة الرسائل](https://snapchain.farcaster.xyz/guides/writing-messages) في توثيق Snapchain.
+[كتابة الرسائل](https://snapchain.farcaster.xyz/guides/writing-messages) في توثيق Snapchain. ما زالت الأدلة القديمة، ومنها مثال hello-world في hub-monorepo، تضيف المفتاح بمعاملة إلى عقد KeyGateway على OP Mainnet: وهذا يكلّف رسوم gas ويتطلب محفظة ممولة وRPC، ولا يستخدم casty هذا الطريق.
 
 تحمل رسالة `KEY_ADD` ثلاثة تواقيع:
 

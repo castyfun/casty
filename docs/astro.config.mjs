@@ -20,6 +20,11 @@ export default defineConfig({
       description:
         "Your own Farcaster read node, and a client that reads from it and writes through it.",
       customCss: ["./src/styles/custom.css"],
+      // The card a link to the site shows in a feed: on Farcaster, X and in chat apps.
+      head: ["og:image", "twitter:image"].map((property) => ({
+        tag: "meta",
+        attrs: { property, content: `${site ?? ""}${base.replace(/\/?$/, "/")}og.png` },
+      })),
       social: [{ icon: "github", label: "GitHub", href: "https://github.com/castyfun/casty" }],
       defaultLocale: "root",
       locales: {
