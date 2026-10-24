@@ -103,13 +103,8 @@ Claude Code、Codex、Cursor 或其他编程智能体中。它会阅读 [llms.tx
 
 ## 在笔记本电脑和手机上
 
-<p>
-  <img src="docs/src/assets/desktop-feed-light.png" width="600" alt="笔记本电脑上的时间线，浅色主题">
-  <img src="docs/src/assets/phone-mentions-dark.png" width="240" alt="手机上的提及，深色主题">
-</p>
-<p>
-  <img src="docs/src/assets/desktop-compose-dark.png" width="600" alt="笔记本电脑上的一条新 cast，深色主题">
-  <img src="docs/src/assets/phone-feed-light.png" width="240" alt="手机上的时间线，浅色主题">
+<p align="center">
+  <img src="docs/src/assets/screens.webp" width="760" alt="笔记本和手机上的 casty web：浅色主题的时间线，深色主题的提及和新帖">
 </p>
 
 `./bin/casty web` 在 `http://127.0.0.1:3390` 提供时间线、会话、提及、个人资料和撰写框，并打印一个

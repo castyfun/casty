@@ -111,13 +111,8 @@ une API Farcaster hébergée.
 
 ## Sur un ordinateur portable et sur un téléphone
 
-<p>
-  <img src="docs/src/assets/desktop-feed-light.png" width="600" alt="Le fil sur un ordinateur portable, thème clair">
-  <img src="docs/src/assets/phone-mentions-dark.png" width="240" alt="Les mentions sur un téléphone, thème sombre">
-</p>
-<p>
-  <img src="docs/src/assets/desktop-compose-dark.png" width="600" alt="Un nouveau cast sur un ordinateur portable, thème sombre">
-  <img src="docs/src/assets/phone-feed-light.png" width="240" alt="Le fil sur un téléphone, thème clair">
+<p align="center">
+  <img src="docs/src/assets/screens.webp" width="760" alt="casty web sur un portable et un téléphone : le fil en thème clair, les mentions et un nouveau cast en thème sombre">
 </p>
 
 `./bin/casty web` sert le fil, les fils de discussion, les mentions, les profils et une zone de

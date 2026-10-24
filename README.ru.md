@@ -108,13 +108,8 @@ Claude Code, Codex, Cursor или другой агент для програм�
 
 ## На ноутбуке и на телефоне
 
-<p>
-  <img src="docs/src/assets/desktop-feed-light.png" width="600" alt="Лента на ноутбуке, светлая тема">
-  <img src="docs/src/assets/phone-mentions-dark.png" width="240" alt="Упоминания на телефоне, тёмная тема">
-</p>
-<p>
-  <img src="docs/src/assets/desktop-compose-dark.png" width="600" alt="Новый каст на ноутбуке, тёмная тема">
-  <img src="docs/src/assets/phone-feed-light.png" width="240" alt="Лента на телефоне, светлая тема">
+<p align="center">
+  <img src="docs/src/assets/screens.webp" width="760" alt="casty web на ноутбуке и телефоне: лента в светлой теме, упоминания и новый каст в тёмной">
 </p>
 
 `./bin/casty web` отдаёт ленту, треды, упоминания, профили и поле для нового каста на

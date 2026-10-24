@@ -106,13 +106,8 @@ your machine and relayed by your node. Nothing goes through a hosted Farcaster A
 
 ## On a laptop and on a phone
 
-<p>
-  <img src="docs/src/assets/desktop-feed-light.png" width="600" alt="The feed on a laptop, light theme">
-  <img src="docs/src/assets/phone-mentions-dark.png" width="240" alt="Mentions on a phone, dark theme">
-</p>
-<p>
-  <img src="docs/src/assets/desktop-compose-dark.png" width="600" alt="A new cast on a laptop, dark theme">
-  <img src="docs/src/assets/phone-feed-light.png" width="240" alt="The feed on a phone, light theme">
+<p align="center">
+  <img src="docs/src/assets/screens.webp" width="760" alt="casty web on a laptop and a phone: the feed in the light theme, mentions and a new cast in the dark theme">
 </p>
 
 `./bin/casty web` serves the feed, threads, mentions, profiles and a compose box at

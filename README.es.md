@@ -108,13 +108,8 @@ alojada.
 
 ## En un portátil y en un teléfono
 
-<p>
-  <img src="docs/src/assets/desktop-feed-light.png" width="600" alt="El feed en un portátil, tema claro">
-  <img src="docs/src/assets/phone-mentions-dark.png" width="240" alt="Las menciones en un teléfono, tema oscuro">
-</p>
-<p>
-  <img src="docs/src/assets/desktop-compose-dark.png" width="600" alt="Un cast nuevo en un portátil, tema oscuro">
-  <img src="docs/src/assets/phone-feed-light.png" width="240" alt="El feed en un teléfono, tema claro">
+<p align="center">
+  <img src="docs/src/assets/screens.webp" width="760" alt="casty web en un portátil y un teléfono: el feed en tema claro, las menciones y un cast nuevo en tema oscuro">
 </p>
 
 `./bin/casty web` sirve el feed, los hilos, las menciones, los perfiles y un cuadro de redacción en

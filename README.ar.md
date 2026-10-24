@@ -103,13 +103,8 @@ Claude Code أو Codex أو Cursor أو أي وكيل برمجة آخر. يقر�
 
 ## على حاسوب محمول وعلى هاتف
 
-<p>
-  <img src="docs/src/assets/desktop-feed-light.png" width="600" alt="التغذية على حاسوب محمول، السمة الفاتحة">
-  <img src="docs/src/assets/phone-mentions-dark.png" width="240" alt="إشارات الذِكر على هاتف، السمة الداكنة">
-</p>
-<p>
-  <img src="docs/src/assets/desktop-compose-dark.png" width="600" alt="منشور جديد على حاسوب محمول، السمة الداكنة">
-  <img src="docs/src/assets/phone-feed-light.png" width="240" alt="التغذية على هاتف، السمة الفاتحة">
+<p align="center">
+  <img src="docs/src/assets/screens.webp" width="760" alt="casty web على حاسوب محمول وهاتف: الموجز بالسمة الفاتحة، والإشارات ومنشور جديد بالسمة الداكنة">
 </p>
 
 يقدّم `./bin/casty web` التغذية وسلاسل المحادثة وإشارات الذِكر والملفات الشخصية ومربع كتابة على
