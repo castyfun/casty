@@ -5,3 +5,9 @@ packages:
 # A release is installed only once it is two weeks old (in minutes), so a compromised version
 # has time to be found and pulled first.
 minimumReleaseAge: 20160
+# Security fixes come in before they are two weeks old: the patched test tools (GHSA-qxg6-89mg-rqv8,
+# GHSA-xp26-3454-mjgp, GHSA-834v-8h66-3h79). Each is pinned to the exact patched version below.
+minimumReleaseAgeExclude:
+  - vitest
+  - "@vitest/*"
+  - happy-dom
