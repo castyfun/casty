@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/src/assets/logo.svg" width="88" alt="casty">
+
 # casty
 
 **Ваша собственная read-нода Farcaster и клиент, который читает из неё и пишет через неё.**<br>

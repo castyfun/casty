@@ -17,6 +17,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: "casty",
+      logo: { src: "./src/assets/logo.svg" },
       description:
         "Your own Farcaster read node, and a client that reads from it and writes through it.",
       customCss: ["./src/styles/custom.css"],

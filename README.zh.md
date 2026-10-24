@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/src/assets/logo.svg" width="88" alt="casty">
+
 # casty
 
 **你自己的 Farcaster 只读节点，以及一个从它读取、通过它写入的客户端。**<br>

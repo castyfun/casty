@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/src/assets/logo.svg" width="88" alt="casty">
+
 # casty
 
 **Tu propio nodo de lectura de Farcaster y un cliente que lee de él y escribe a través de él.**<br>

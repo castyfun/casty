@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/src/assets/logo.svg" width="88" alt="casty">
+
 # casty
 
 **Votre propre nœud de lecture Farcaster, et un client qui lit depuis ce nœud et écrit à travers lui.**<br>

@@ -1,5 +1,7 @@
 <div align="center" dir="rtl">
 
+<img src="docs/src/assets/logo.svg" width="88" alt="casty">
+
 # casty
 
 **عقدة قراءة Farcaster خاصة بك، وعميل يقرأ منها ويكتب من خلالها.**<br>

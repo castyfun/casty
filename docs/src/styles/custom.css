@@ -109,3 +109,13 @@
     order: 2;
   }
 }
+
+/* The mark beside the name in the header, as one lockup. */
+.site-title {
+  gap: 0.55rem;
+}
+
+.site-title img {
+  height: 1.9rem;
+  width: auto;
+}
