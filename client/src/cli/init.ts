@@ -202,6 +202,19 @@ async function init(ctx: Context, options: InitOptions): Promise<void> {
       remember({ ...record, keyAdd });
       await submitAndConfirm(ctx.node, message, registered(ctx, fid, pubkey), ctx.confirm);
     };
+    // What the phrase is about to authorise, in words, before anything is signed or sent.
+    ctx.note(
+      `the custody address signs one KEY_ADD message, and only this:\n${table([
+        ["fid", String(fid)],
+        ["new app key", pubkey],
+        ["may sign", scopeGroups(scopes).join(", ")],
+        ["lapses", `${span(ttl)} after its last use`],
+        ["requested by", `fid ${requestFid}${requestFid === fid ? ", this account" : ""}`],
+      ])
+        .split("\n")
+        .map((line) => `  ${line}`)
+        .join("\n")}`,
+    );
     ctx.note("adding a gasless app key (no transaction, no gas)");
     await addKey().catch(async (error) => {
       if (!(error instanceof NonceError)) throw error;

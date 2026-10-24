@@ -47,6 +47,23 @@ describe("init", () => {
     expect(stderr).toContain("next: casty feed");
   });
 
+  it("shows what the custody address signs before it signs", async () => {
+    const node = await startMock();
+    const args = ["init", "--mnemonic-stdin", "--ttl", "7d", ...flags(node.url, tempConfig())];
+    const { stdout, stderr } = await casty(args, { stdin: `${TEST_MNEMONIC}\n`, env: PASS });
+    const key = /^app key +(0x[0-9a-f]{64})$/m.exec(stdout)?.[1];
+    expect(key).toBeDefined();
+    const shown = stderr.indexOf("the custody address signs one KEY_ADD");
+    expect(shown).toBeGreaterThanOrEqual(0);
+    expect(shown).toBeLessThan(stderr.indexOf("adding a gasless app key"));
+    const summary = stderr.slice(shown, stderr.indexOf("adding a gasless app key"));
+    expect(summary).toContain(`fid           ${ME_FID}`);
+    expect(summary).toContain(`new app key   ${key}`);
+    expect(summary).toMatch(/may sign +cast, reaction, link/);
+    expect(summary).toMatch(/lapses +7 days after its last use/);
+    expect(summary).toMatch(new RegExp(`requested by +fid ${ME_FID}, this account`));
+  });
+
   it("can have the key requested by an app fid custodied by another index", async () => {
     const node = await startMock();
     const app = APPS[0].fid;
