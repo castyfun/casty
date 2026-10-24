@@ -27,6 +27,8 @@ que los firma se añade con un solo mensaje que firma tu billetera: sin transacc
 
 Necesitas el fid de una cuenta de prueba de Farcaster y una billetera que tenga su dirección de custodia; para un nodo nuevo, además, un token de Hetzner, credenciales de AWS o un host Linux con 16 GB de RAM y 2 TB libres.
 
+Una cuenta creada en la app de Farcaster guarda esa dirección en la propia app, no en una billetera del navegador: muestra su frase de recuperación en la app del teléfono e impórtala una vez en MetaMask o Rabby, o escríbela en `./bin/casty init` en tu propia terminal en lugar de usar `casty web`.
+
 ```sh
 # a new node of your own
 git clone https://github.com/castyfun/casty.git && cd casty

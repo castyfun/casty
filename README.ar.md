@@ -27,6 +27,8 @@
 
 تحتاج إلى fid لحساب Farcaster تجريبي ومحفظة تحمل عنوان الحفظ الخاص به؛ ولعقدة جديدة أيضًا رمز Hetzner أو بيانات اعتماد AWS أو مضيف Linux بذاكرة 16 GB وقرص فارغ 2 TB.
 
+الحساب الذي أُنشئ في تطبيق Farcaster يحفظ هذا العنوان داخل التطبيق لا في محفظة المتصفح: اعرض عبارة الاسترداد في التطبيق على هاتفك واستوردها مرة واحدة إلى MetaMask أو Rabby، أو أدخلها في `./bin/casty init` في طرفيتك الخاصة بدلًا من `casty web`.
+
 ```sh
 # a new node of your own
 git clone https://github.com/castyfun/casty.git && cd casty

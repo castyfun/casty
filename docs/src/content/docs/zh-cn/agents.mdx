@@ -26,7 +26,7 @@ Set up casty for me: https://github.com/castyfun/casty. Read https://castyfun.gi
    b) no node of my own: connect casty to an existing Snapchain node URL (default https://snap.farcaster.xyz:3381).
 3. For a), first run ./scripts/deploy.sh --fid <fid> --dry-run (add -- --host user@ip for my own host), show me what it would create and what it costs, and only after my "yes" run the same command with --yes instead of --dry-run. The node sync takes hours: if the wait stops, run ./scripts/1-node.sh status --wait, then run deploy.sh again; it resumes.
    For b), run ./scripts/2-client.sh --node <url> --fid <fid>.
-4. Never ask me for my seed phrase or recovery phrase and never type one anywhere. The app key is added with my wallet: tell me to run ./bin/casty web in my own terminal (it asks me for a new passphrase), open the link it prints, go to "you" and press "add a key with your wallet".
+4. Never ask me for my seed phrase or recovery phrase and never type one anywhere. The app key is added with my wallet: tell me to run ./bin/casty web in my own terminal (it asks me for a new passphrase), open the link it prints, go to "you" and press "add a key with your wallet". If my account was made in the Farcaster app, no browser wallet holds its custody key: tell me to show the recovery phrase in the app on my phone and import it once into a browser wallet (MetaMask or Rabby), or to run ./bin/casty init in my own terminal and type it there.
 5. Check the result with ./bin/casty doctor and ./bin/casty whoami, then show me ./bin/casty feed --limit 5.
 If a step fails, read its error line and hint, look the message up in https://castyfun.github.io/casty/troubleshooting/, fix the cause and run the same command again.
 ```

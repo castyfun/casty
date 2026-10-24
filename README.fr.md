@@ -28,6 +28,8 @@ votre portefeuille signe : pas de transaction, pas de gas.
 
 Il vous faut le fid d'un compte de test Farcaster et un portefeuille qui détient son adresse de custody ; pour un nouveau nœud, aussi un jeton Hetzner, des identifiants AWS ou un hôte Linux avec 16 Go de RAM et 2 To libres.
 
+Un compte créé dans l'application Farcaster garde cette adresse dans l'application, pas dans un portefeuille du navigateur : affichez sa phrase de récupération dans l'application sur votre téléphone et importez-la une fois dans MetaMask ou Rabby, ou saisissez-la dans `./bin/casty init` dans votre propre terminal au lieu de `casty web`.
+
 ```sh
 # a new node of your own
 git clone https://github.com/castyfun/casty.git && cd casty
