@@ -28,6 +28,17 @@ import Architecture from "../../../components/Architecture.astro";
 import Gallery from "../../../components/Gallery.astro";
 
 
+## Inicio rápido
+
+```sh
+git clone https://github.com/castyfun/casty.git && cd casty
+./scripts/0-provision.sh   # (0) compute: a server with a 2 TB volume, or --host user@ip for your own
+./scripts/1-node.sh        # (1) a Snapchain read node: installed, synced, with a tunnel to it
+./scripts/2-client.sh      # (2) a client: casty, an app key for your account, your feed from your node
+```
+
+Tres comandos: (0) cómputo, (1) un nodo de lectura, (2) un cliente. `./scripts/deploy.sh` ejecuta los tres de una vez, y [El camino completo](guide/) explica cada paso y el protocolo que hay detrás.
+
 <div class="lede">
 
 casty pone un nodo de lectura de [Snapchain](https://snapchain.farcaster.xyz), una copia completa de

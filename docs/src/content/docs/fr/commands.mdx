@@ -16,8 +16,10 @@ Un compte créé dans l'application Farcaster garde cette adresse dans l'applica
 ```sh
 # a new node of your own
 git clone https://github.com/castyfun/casty.git && cd casty
-export HCLOUD_TOKEN=<token>            # Hetzner; or AWS credentials, or add -- --host user@ip below
-./scripts/deploy.sh --fid <your fid>   # server, node (syncs for hours), ./bin/casty
+export HCLOUD_TOKEN=<token>            # Hetzner; or AWS credentials, or 0-provision.sh --host user@ip
+./scripts/0-provision.sh               # (0) compute: a server, a 2 TB volume, a firewall
+./scripts/1-node.sh                    # (1) a Snapchain read node, synced (hours), and a tunnel
+./scripts/2-client.sh --fid <your fid> # (2) a client, ./bin/casty, reading from your node
 ./bin/casty web                        # open the link; under "you": "add a key with your wallet"
 ./bin/casty feed                       # read; ./bin/casty cast "hello" writes
 ./scripts/0-provision.sh --destroy     # when you are done: server, volume and firewall go
