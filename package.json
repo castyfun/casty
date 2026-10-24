@@ -29,11 +29,12 @@
     "overrides": {
       "postcss-selector-parser": "7.1.6",
       "@types/node": "22.20.5",
-      "sharp": "-",
-      "@faker-js/faker": "-"
+      "sharp": "-"
     },
     "auditConfig": {
-      "ignoreGhsas": []
+      "ignoreGhsas": [
+        "GHSA-qxc2-j82w-r537"
+      ]
     },
     "onlyBuiltDependencies": [
       "esbuild"

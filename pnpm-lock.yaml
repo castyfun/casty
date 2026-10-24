@@ -8,7 +8,6 @@ overrides:
   postcss-selector-parser: 7.1.6
   '@types/node': 22.20.5
   sharp: '-'
-  '@faker-js/faker': '-'
 
 importers:
 
@@ -542,6 +541,10 @@ packages:
 
   '@expressive-code/plugin-text-markers@0.44.2':
     resolution: {integrity: sha512-SNI7EgUSiADqbqUzzMbj1ZeC/r2pa5eg3KyFOGAd3a7EsIA4qzjXQLp+ODWQtHVDKFCdGs4J3ovSJUqvKIK96g==}
+
+  '@faker-js/faker@7.6.0':
+    resolution: {integrity: sha512-XK6BTq1NDMo9Xqw/YkYyGjSsg44fbNwYRx7QK2CuoQgyy+f1rrTDHoExVM5PsyXCtfl2vs2vVJ0MN0yN6LppRw==}
+    engines: {node: '>=14.0.0', npm: '>=6.0.0'}
 
   '@farcaster/core@0.20.0':
     resolution: {integrity: sha512-GXrT0MKStzu7bZPATPG8k8N6qMDLohvp2QZ9XkOXYIWVK9Fr9WUe86ic8EAwqeiCzYieWZU6NB7mkBq0vHY4iQ==}
@@ -2413,8 +2416,11 @@ snapshots:
     dependencies:
       '@expressive-code/core': 0.44.2
 
+  '@faker-js/faker@7.6.0': {}
+
   '@farcaster/core@0.20.0(typescript@5.9.3)(zod@4.6.7)':
     dependencies:
+      '@faker-js/faker': 7.6.0
       '@noble/curves': 1.9.7
       '@noble/hashes': 1.8.0
       bs58: 5.0.0
