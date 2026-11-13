@@ -39,7 +39,7 @@ jobs:
           path: ${{ steps.pnpm-store.outputs.dir }}
           key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
       - run: pnpm install --frozen-lockfile
-      - uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
+      - uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2.90.3
         with:
           tool: lychee
       # Builds the one-file client that scripts/tests/binary.bats runs the acceptance list on.
